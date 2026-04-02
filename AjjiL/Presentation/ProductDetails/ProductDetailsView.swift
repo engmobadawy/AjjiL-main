@@ -1,4 +1,5 @@
 import SwiftUI
+import Kingfisher
 
 struct ProductDetailsView: View {
     @Environment(\.dismiss) private var dismiss
@@ -70,14 +71,14 @@ private struct ProductDetailsImageHeader: View {
     var body: some View {
         VStack(spacing: 16) {
             ZStack(alignment: .top) {
-                AsyncImage(url: URL(string: imageURL)) { image in
-                    image
-                        .resizable()
-                        .scaledToFit()
-                } placeholder: {
-                    ProgressView()
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                // 1. Updated Main Header Image
+                KFImage(URL(string: imageURL))
+                    .placeholder {
+                        ProgressView()
+                    }
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 
                 // Top Overlays
                 HStack(alignment: .top) {
@@ -121,24 +122,24 @@ private struct ThumbnailView: View {
     let isSelected: Bool
     
     var body: some View {
-        AsyncImage(url: URL(string: imageURL)) { image in
-            image
-                .resizable()
-                .scaledToFit()
-        } placeholder: {
-            Color.gray.opacity(0.1)
-        }
-        .frame(width: 56, height: 56)
-        .padding(6)
-        .background(.white)
-        .clipShape(.rect(cornerRadius: 12))
-        .overlay {
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(
-                    isSelected ? Color(red: 0.1, green: 0.6, blue: 0.5) : .gray.opacity(0.2),
-                    lineWidth: isSelected ? 1.5 : 1
-                )
-        }
+        // 2. Updated Thumbnail Image
+        KFImage(URL(string: imageURL))
+            .placeholder {
+                Color.gray.opacity(0.1)
+            }
+            .resizable()
+            .scaledToFit()
+            .frame(width: 56, height: 56)
+            .padding(6)
+            .background(.white)
+            .clipShape(.rect(cornerRadius: 12))
+            .overlay {
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(
+                        isSelected ? Color(red: 0.1, green: 0.6, blue: 0.5) : .gray.opacity(0.2),
+                        lineWidth: isSelected ? 1.5 : 1
+                    )
+            }
     }
 }
 
@@ -156,13 +157,15 @@ private struct ProductDetailsInfoSection: View {
                 .foregroundStyle(.black)
             
             HStack(spacing: 10) {
-                AsyncImage(url: URL(string: product.brandImage)) { image in
-                    image.resizable().scaledToFit()
-                } placeholder: {
-                    Circle().fill(.gray.opacity(0.1))
-                }
-                .frame(width: 28, height: 28)
-                .clipShape(.circle)
+                // 3. Updated Brand Image Icon
+                KFImage(URL(string: product.brandImage))
+                    .placeholder {
+                        Circle().fill(.gray.opacity(0.1))
+                    }
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 28, height: 28)
+                    .clipShape(.circle)
                 
                 Text(product.brand)
                     .font(.custom("Poppins-Regular", size: 16))

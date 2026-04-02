@@ -1,5 +1,5 @@
 import SwiftUI
-
+import Kingfisher
 struct StorescardVeiw: View {
     
     let imageURL: String
@@ -10,29 +10,20 @@ struct StorescardVeiw: View {
         Circle()
             .fill(.goodGray) // Assuming .goodGray is defined in your Color assets
             .overlay {
-                // Use AsyncImage to load the network URL
-                AsyncImage(url: URL(string: imageURL)) { phase in
-                    switch phase {
-                    case .empty:
-                        // Show a loading indicator while fetching
+                KFImage(URL(string: imageURL))
+                    // 1. Show the ProgressView while fetching from network/disk
+                    .placeholder {
                         ProgressView()
-                    case .success(let image):
-                        // Image loaded successfully
-                        image
-                            .resizable()
-                            .scaledToFit()
-                            .padding(imagePadding)
-                    case .failure:
-                        // Fallback icon if the network request fails
-                        Image(systemName: "storefront")
-                            .foregroundStyle(.gray) // Modern API replacing .foregroundColor()
-                    @unknown default:
-                        EmptyView()
                     }
-                }
+                    // 2. Fallback if the URL is broken or network fails
+                    // We use UIImage here because Kingfisher's failure modifier expects a cross-platform image object
+                    .onFailureImage(UIImage(systemName: "storefront")?.withTintColor(.systemGray, renderingMode: .alwaysOriginal))
+                    // 3. Modifiers applied to the successfully loaded image
+                    .resizable()
+                    .scaledToFit()
+                    .padding(imagePadding)
             }
             .frame(width: size, height: size)
-            // Modern API: Visually clips the content to the circle
             .clipShape(.circle)
             .accessibilityLabel("Store logo")
     }

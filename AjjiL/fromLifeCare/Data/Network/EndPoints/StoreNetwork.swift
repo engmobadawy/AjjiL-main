@@ -1,5 +1,5 @@
 import Foundation
-
+// get home offers still doesnot added by the backend    and i made it with uuid for now
 
 enum StoreNetwork {
     case getFeaturedProducts(storeId: Int, branchId: Int, skip: Int, take: Int)
@@ -136,7 +136,15 @@ struct StoreSlider: Codable, Identifiable {
     }
 }
 
-
+extension StoreSlider {
+    var asHomeBanner: HomeBannerDataEntity {
+        return HomeBannerDataEntity(
+            // Use sliderId, falling back to a stable hash of the image if nil
+            id: self.sliderId ?? self.image.hashValue,
+            image: self.image
+        )
+    }
+}
 
 
 import Foundation
@@ -203,30 +211,36 @@ import Foundation
 
 // MARK: - Product List Models
 struct ProductListResponse: Codable {
-    let status: Bool
-    let message: String
-    let data: [ProductItem]
+    let status: Bool?
+    let message: String?
+    let data: ProductListDataWrapper? // Wrap the data like you did in HomeModel
+}
+
+struct ProductListDataWrapper: Codable {
+    let products: [ProductItem]?
+    let count: Int?
 }
 
 struct ProductItem: Codable, Identifiable {
-    var id: Int { productBranchId } // Satisfies Identifiable for SwiftUI ForEach
+    var id: Int { productBranchId ?? 0 } // Safely unwrap for Identifiable
     
-    let productBranchId: Int
-    let branchId: Int
-    let productId: Int
-    let name: String
-    let categoryName: String
-    let storeId: Int
-    let storeName: String
-    let storeImage: String
-    let images: String
-    let price: Double
-    let finalPrice: Double
+    // Making properties optional (?) prevents crashes if the backend sends null
+    let productBranchId: Int?
+    let branchId: Int?
+    let productId: Int?
+    let name: String?
+    let categoryName: String?
+    let storeId: Int?
+    let storeName: String?
+    let storeImage: String?
+    let images: String?
+    let price: Double?
+    let finalPrice: Double?
     let offerType: String?
     let offerId: Int?
-    let offerDiscount: String
-    let barcode: String
-    let isFavorite: Bool
+    let offerDiscount: String?
+    let barcode: String?
+    let isFavorite: Bool?
     
     enum CodingKeys: String, CodingKey {
         case productBranchId = "product_branch_id"
@@ -245,5 +259,24 @@ struct ProductItem: Codable, Identifiable {
         case offerDiscount = "offer_discount"
         case barcode
         case isFavorite = "is_favorite"
+    }
+}
+
+extension ProductItem {
+    func asFeaturedProductEntity() -> HomeFeaturedProductDataEntity {
+        return HomeFeaturedProductDataEntity(
+            id: self.productBranchId ?? 0,
+            productId: self.productId ?? 0,
+            category: self.categoryName ?? "General",
+            name: self.name ?? "Unknown",
+            brand: self.storeName ?? "Unknown",
+            brandImage: self.storeImage ?? "",
+            price: self.finalPrice ?? 0.0,
+            originalPrice: self.price ?? 0.0,
+            discount: self.offerDiscount ?? "",
+            imageURL: self.images ?? "",
+            barcode: self.barcode ?? "",
+            isFavorite: self.isFavorite ?? false
+        )
     }
 }

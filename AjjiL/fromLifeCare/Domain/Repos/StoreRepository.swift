@@ -9,7 +9,7 @@
 import Foundation
 
 protocol StoreRepository {
-    func getFeaturedProducts(storeId: Int, branchId: Int, skip: Int, take: Int) async throws -> ProductListResponse
+    func GetFeaturedProductsUCForStore(storeId: Int, branchId: Int, skip: Int, take: Int) async throws -> ProductListResponse
     func getHomeCategories(storeId: Int) async throws -> StoreCategoryResponse
     func getHomeOffers(storeId: Int, branchId: Int) async throws -> StoreHomeOffersResponse
     func getStoreSliders(storeId: Int) async throws -> StoreSliderResponse

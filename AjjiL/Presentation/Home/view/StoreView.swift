@@ -1,12 +1,20 @@
 import SwiftUI
-
+import Kingfisher
 struct StoreView: View {
     let storeName: String
     let storeId: Int
     
     @Environment(\.dismiss) private var dismiss
     
-    var viewModel = DependencyContainer.HomeDependency.shared.homeVM
+    // Global HomeViewModel for shared state like favorites and branches
+    var homeViewModel = DependencyContainer.HomeDependency.shared.homeVM
+    
+    // Local StoreViewModel managing the store's specific state
+    @State private var storeViewModel = StoreViewModel(
+        getStoreSlidersUC: GetStoreSlidersUC(repo: StoreRepositoryImp(networkService: NetworkService())),
+        getFeaturedProductsUCForStore: GetFeaturedProductsUCForStore(repo: StoreRepositoryImp(networkService: NetworkService())),
+        getHomeCategoriesUC: GetHomeCategoriesUC(repo: StoreRepositoryImp(networkService: NetworkService()))
+    )
     
     @State private var selectedTab: StoreTab = .store
     @State private var selectedCategoryID: UUID?
@@ -14,6 +22,7 @@ struct StoreView: View {
     
     // MARK: - AppStorage State
     @AppStorage("isStoreMode") private var isStoreMode: Bool = false
+    @AppStorage("savedBranchID") private var savedBranchID: Int = 0
     
     private var currentMode: ShopMode {
         isStoreMode ? .inStore : .online
@@ -21,8 +30,6 @@ struct StoreView: View {
     
     @State private var showNotificationsView: Bool = false
     @State private var showCartView: Bool = false
-    
-    // MARK: - Branch Selection State
     @State private var showBranchSelection: Bool = true
     
     let categories = [
@@ -38,7 +45,7 @@ struct StoreView: View {
             VStack(spacing: 0) {
                 VStack(spacing: 0) {
                     TopRowNotForHome(
-                        title: storeName, // Displays the passed property
+                        title: storeName,
                         showBackButton: true,
                         kindOfTopRow: .withCartAndNotification,
                         onBack: { dismiss() },
@@ -54,19 +61,24 @@ struct StoreView: View {
                         switch selectedTab {
                         case .store:
                             StoreContentView(
-                                viewModel: viewModel,
+                                viewModel: homeViewModel,
+                                storeSliders: storeViewModel.storeSliders,
+                                storeProducts: storeViewModel.storeProducts,
+                                storeCategories: storeViewModel.storeCategories,
                                 search: $search,
                                 currentMode: currentMode
                             )
                         case .products, .offers:
                             ProductCatalogView(
-                                viewModel: viewModel,
+                                viewModel: homeViewModel,
+                                storeProducts: storeViewModel.storeProducts,
                                 categories: categories,
                                 selectedCategoryID: $selectedCategoryID
                             )
                         }
                     }
                 }
+                .scrollIndicators(.hidden)
             }
             .navigationBarBackButtonHidden(true)
             .background(Color(white: 0.98).ignoresSafeArea())
@@ -74,30 +86,38 @@ struct StoreView: View {
                 HomeView()
             }
             .navigationDestination(isPresented: $showCartView) {
-                CartView()
+                CartView() // Make sure this view exists in your project
             }
             
             // MARK: - Branch Popup Overlay
             if showBranchSelection {
-                            BranchSelectionView(
-                                branches: viewModel.branches, // NEW: Pass the live branches array here
-                                onDisplayProducts: { branch in
-                                    // TODO: Handle setting active branch and fetching branch products
-                                    showBranchSelection = false
-                                    
-                                },
-                                onDismiss: {
-                                    showBranchSelection = false
-                                    dismiss()
-                                }
-                            )
-                            .zIndex(2)
-                        }
+                BranchSelectionView(
+                    branches: homeViewModel.branches,
+                    storeName: storeName,
+                    onDisplayProducts: { branch in
+                        savedBranchID = branch.id
+                        showBranchSelection = false
+                    },
+                    onDismiss: {
+                        showBranchSelection = false
+                        dismiss()
                     }
-                    // NEW: Automatically cancel and restart async work if storeId changes
-                    .task(id: storeId) {
-                        await viewModel.fetchBranches(storeId: storeId)
-                    }
+                )
+                .zIndex(2)
+            }
+        }
+        .task(id: storeId) {
+            // Determine branch ID (fallback to 1 if savedBranchID is 0 to avoid errors)
+            let branchIdToFetch = savedBranchID == 0 ? 1 : savedBranchID
+            
+            // Execute tasks concurrently for better performance
+            async let fetchBranches: () = homeViewModel.fetchBranches(storeId: storeId)
+            async let fetchSliders: () = storeViewModel.fetchStoreSliders(storeId: storeId)
+            async let fetchProducts: () = storeViewModel.fetchStoreProducts(storeId: storeId, branchId: branchIdToFetch)
+            async let fetchCategories: () = storeViewModel.fetchStoreCategories(storeId: storeId)
+            
+            _ = await (fetchBranches, fetchSliders, fetchProducts, fetchCategories)
+        }
     }
 }
 
@@ -105,11 +125,14 @@ struct StoreView: View {
 
 struct StoreContentView: View {
     var viewModel: HomeViewModel
+    let storeSliders: [StoreSlider]
+    let storeProducts: [HomeFeaturedProductDataEntity]
+    let storeCategories: [StoreCategory]
     @Binding var search: String
     let currentMode: ShopMode
     
     private var isStoreEmpty: Bool {
-        viewModel.sliderCards.isEmpty && viewModel.featuredProducts.isEmpty
+        storeSliders.isEmpty && storeProducts.isEmpty && storeCategories.isEmpty
     }
     
     var body: some View {
@@ -119,12 +142,14 @@ struct StoreContentView: View {
             VStack(spacing: 0) {
                 ShopActionCard(mode: currentMode)
                 
-                SearchBarButton(text: $search)
-                    .padding(.horizontal, 18)
-                    .padding(.vertical, 14)
+                SearchBarButton(text: $search) {
+                    print("Searching for: \(search)")
+                }
+                .padding(.horizontal, 18)
+                .padding(.vertical, 14)
                 
-                if !viewModel.sliderCards.isEmpty {
-                    BannerCollectionView(banners: viewModel.sliderCards)
+                if !storeSliders.isEmpty {
+                    BannerCollectionView(banners: storeSliders.map { $0.asHomeBanner })
                         .padding(.horizontal, 18)
                         .padding(.bottom, 24)
                 }
@@ -132,11 +157,13 @@ struct StoreContentView: View {
                 PromotionalCarousel()
                     .padding(.bottom, 24)
                 
-                CategoryGridSection()
-                    .padding(.bottom, 24)
+                if !storeCategories.isEmpty {
+                    CategoryGridSection(categories: storeCategories)
+                        .padding(.bottom, 24)
+                }
                 
-                if !viewModel.featuredProducts.isEmpty {
-                    FeaturedProductsSection(viewModel: viewModel)
+                if !storeProducts.isEmpty {
+                    FeaturedProductsSection(viewModel: viewModel, products: storeProducts)
                 }
             }
             .padding(.bottom, 16)
@@ -147,7 +174,7 @@ struct StoreContentView: View {
 struct EmptyStoreStateView: View {
     var body: some View {
         VStack(spacing: 0) {
-            Image("stillUpdated")
+            Image("stillUpdated") // Ensure this image is in your Assets
                 .resizable()
                 .scaledToFit()
                 .frame(width: 153, height: 171)
@@ -162,15 +189,15 @@ struct EmptyStoreStateView: View {
 }
 
 struct PromotionalCarousel: View {
+    // Assuming mockPromoImages is defined elsewhere in your project
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 12) {
-                ForEach(mockPromoImages) { promo in
-                    Image(promo.imageName)
-                        .resizable()
-                        .scaledToFit()
+                // If you don't have mockPromoImages, replace with actual data
+                ForEach(0..<3, id: \.self) { _ in
+                    Color.gray.opacity(0.2) // Placeholder
                         .frame(width: 130, height: 148)
-                        .clipShape(.rect(cornerRadius: 12)) // Modern API usage
+                        .clipShape(.rect(cornerRadius: 12))
                 }
             }
             .padding(.horizontal, 18)
@@ -178,19 +205,20 @@ struct PromotionalCarousel: View {
     }
 }
 
+// MARK: - Updated Category Views
+
 struct CategoryGridSection: View {
+    let categories: [StoreCategory]
+    
     var body: some View {
         VStack(spacing: 16) {
             SectionHeader(title: "Categories", actionTitle: "View All") { }
             
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-                ForEach(mockCategoryImages) { category in
+                ForEach(categories) { category in
+                    // Assuming you will route this to a specific category view later
                     NavigationLink(value: category.id) {
-                        Image(category.imageName)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(height: 168)
-                            .clipShape(.rect(cornerRadius: 16))
+                        CategoryCardView(category: category)
                     }
                     .buttonStyle(.plain)
                 }
@@ -200,15 +228,68 @@ struct CategoryGridSection: View {
     }
 }
 
+struct CategoryCardView: View {
+    let category: StoreCategory
+    
+    private let gradientColors: [Color] = [
+        .clear,
+        Color(red: 0.05, green: 0.35, blue: 0.25).opacity(0.85) // Dark teal
+    ]
+    
+    var body: some View {
+        // 1. Establish the strict layout footprint FIRST
+        Color.clear
+            .frame(maxWidth: .infinity)
+            .frame(height: 168)
+            
+            // 2. Put the image in the background so its size is ignored by the grid layout
+            .background {
+                KFImage(URL(string: category.image))
+                    .placeholder {
+                        ZStack {
+                            Color.gray.opacity(0.1)
+                            ProgressView()
+                        }
+                    }
+                    .resizable()
+                    .scaledToFill()
+            }
+            
+            // 3. Layer the gradient and text over the fixed footprint
+            .overlay(alignment: .bottom) {
+                ZStack(alignment: .bottom) {
+                    LinearGradient(
+                        colors: gradientColors,
+                        startPoint: .center,
+                        endPoint: .bottom
+                    )
+                    
+                    Text(category.name)
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(.white)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(2)
+                        .padding(.horizontal, 12)
+                        .padding(.bottom, 16)
+                }
+            }
+            
+            // 4. Clip the final structured view
+            .clipShape(.rect(cornerRadius: 28))
+            .contentShape(.rect(cornerRadius: 28))
+    }
+}
+
 struct FeaturedProductsSection: View {
     var viewModel: HomeViewModel
+    let products: [HomeFeaturedProductDataEntity]
     
     var body: some View {
         VStack(spacing: 16) {
             SectionHeader(title: "Featured Products", actionTitle: "View All") { }
             
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-                ForEach(viewModel.featuredProducts) { product in
+                ForEach(products) { product in
                     NavigationLink(value: product) {
                         HomeProductCard(
                             product: product,
@@ -230,19 +311,14 @@ struct FeaturedProductsSection: View {
 
 struct ProductCatalogView: View {
     var viewModel: HomeViewModel
-    let categories: [Category]
+    let storeProducts: [HomeFeaturedProductDataEntity]
+    let categories: [Category] // This might be your local Category model, adjust if needed
     @Binding var selectedCategoryID: UUID?
     
     var body: some View {
         VStack(spacing: 0) {
-//            CategoryFilterRow(
-//                categories: categories,
-//                selectedCategoryID: $selectedCategoryID
-//            )
-//            .padding(.vertical, 14)
-            
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-                ForEach(viewModel.featuredProducts) { product in
+                ForEach(storeProducts) { product in
                     NavigationLink(value: product) {
                         HomeProductCard(
                             product: product,
@@ -258,6 +334,7 @@ struct ProductCatalogView: View {
                 }
             }
             .padding(.horizontal, 18)
+            .padding(.vertical, 16)
         }
     }
 }
@@ -295,13 +372,13 @@ struct ShopActionCard: View {
             
             if mode == .inStore {
                 Text("Shop in Store")
-                    .font(.custom("Poppins-SemiBold", size: 14))
+                    .font(.custom("Poppins-SemiBold", size: 14)) // Ensure font is added to Info.plist
                     .fontWeight(.semibold)
                     .foregroundStyle(tealGreen)
                 
                 Spacer()
                 
-                Image("homeIcon")
+                Image("homeIcon") // Ensure this is in Assets
                     .renderingMode(.template)
                     .resizable()
                     .scaledToFit()
@@ -322,7 +399,7 @@ struct ShopActionCard: View {
                 
                 Spacer()
                 
-                Image("homeCare")
+                Image("homeCare") // Ensure this is in Assets
                     .renderingMode(.template)
                     .resizable()
                     .scaledToFit()
@@ -350,7 +427,7 @@ enum ShopMode {
     case online
 }
 
-// MARK: - Subviews
+// MARK: - StoreTabBar Component
 
 struct StoreTabBar: View {
     @Binding var selectedTab: StoreTab

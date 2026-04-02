@@ -5,7 +5,7 @@
 //  Created by mohamed mahmoud sobhy badawy on 05/03/2026.
 //
 
-
+import Kingfisher
 
 import SwiftUI
 
@@ -87,27 +87,20 @@ private struct ProductInfoSection: View {
     @ViewBuilder
     private var brandRow: some View {
         HStack(spacing: 8) {
-            AsyncImage(url: URL(string: product.brandImage)) { phase in
-                if let image = phase.image {
-                    image
-                        .resizable()
-                        .scaledToFit()
-                } else if phase.error != nil {
-                    // Fallback if the image fails to load or URL is invalid
+            KFImage(URL(string: product.brandImage))
+                .resizable()
+                .placeholder {
+                    // This handles BOTH the loading state and the failure state
                     Image(systemName: "storefront")
                         .resizable()
                         .scaledToFit()
                         .foregroundStyle(.gray.opacity(0.5))
-                } else {
-                    // Loading state
-                    ProgressView()
-                        .scaleEffect(0.6)
                 }
-            }
-            .frame(width: 24, height: 24)
-            .padding(4.5)
-            .background(Color(red: 232/255, green: 239/255, blue: 243/255))
-            .clipShape(.circle)
+                .scaledToFit()
+                .frame(width: 24, height: 24)
+                .padding(4.5)
+                .background(Color(red: 232/255, green: 239/255, blue: 243/255))
+                .clipShape(.circle)
             
             Text(product.brand)
                 .font(.custom("Poppins-Regular", size: 14))
@@ -156,34 +149,32 @@ private struct ProductImageHeader: View {
     }
     
     var body: some View {
-        AsyncImage(url: URL(string: imageURL)) { image in
-            image
-                .resizable()
-                .scaledToFit()
-        } placeholder: {
-            Color.gray.opacity(0.1)
-        }
-        .frame(height: HomeProductCardMetrics.imageHeight)
-        .frame(maxWidth: .infinity)
-        .padding(.horizontal, 8)
-        .overlay(alignment: .topLeading) {
-            Button(action: onToggleFavorite) {
-                Image(systemName: isFavorite ? "heart.fill" : "heart")
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(.red.opacity(0.85))
-                    .frame(width: 24, height: 24)
-                    .contentShape(.rect)
-                    .padding(8)
+        KFImage(URL(string: imageURL))
+            .placeholder {
+                Color.gray.opacity(0.1)
             }
-            .buttonStyle(.plain)
-            .padding(8)
-        }
-        .overlay(alignment: .topTrailing) {
-            if isDiscountVisible {
-                DiscountRibbon(text: discount)
+            .resizable()
+            .scaledToFit()
+            .frame(height: HomeProductCardMetrics.imageHeight)
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 8)
+            .overlay(alignment: .topLeading) {
+                Button(action: onToggleFavorite) {
+                    Image(systemName: isFavorite ? "heart.fill" : "heart")
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundStyle(.red.opacity(0.85))
+                        .frame(width: 24, height: 24)
+                        .contentShape(.rect)
+                        .padding(8)
+                }
+                .buttonStyle(.plain)
+                .padding(8)
             }
-        }
-    }
+            .overlay(alignment: .topTrailing) {
+                if isDiscountVisible {
+                    DiscountRibbon(text: discount)
+                }
+            }    }
 }
 
 

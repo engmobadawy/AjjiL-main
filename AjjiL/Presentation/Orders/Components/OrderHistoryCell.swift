@@ -6,7 +6,7 @@
 //
 
 import SwiftUI
-
+import Kingfisher
 // MARK: - POD Configuration
 /// A Plain Old Data struct for fast view diffing.
 /// You can map your decoded JSON model to this struct in your ViewModel.
@@ -111,18 +111,16 @@ struct OrderHistoryCell: View {
                 .foregroundStyle(primaryGreen)
                 .underline()
             
-            AsyncImage(url: config.storeImageUrl) { phase in
-                if let image = phase.image {
-                    image
-                        .resizable()
-                        .scaledToFill()
-                } else {
+            KFImage(config.storeImageUrl)
+                .placeholder {
+                    // This handles both the loading and error states automatically
                     Circle()
                         .fill(Color.gray.opacity(0.2))
                 }
-            }
-            .frame(width: 20, height: 20)
-            .clipShape(.circle)
+                .resizable()
+                .scaledToFill()
+                .frame(width: 20, height: 20)
+                .clipShape(.circle)
         }
     }
     

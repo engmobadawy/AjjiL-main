@@ -9,10 +9,12 @@ import SwiftUI
 
 
 
-// MARK: - 2. Main Modal View
 struct BranchSelectionView: View {
     // 1. Accept the dynamically fetched branches from the parent view
     let branches: [BranchDataEntity]
+    
+    // 2. Accept the store name
+    let storeName: String
     
     // Internal view state
     @State private var selectedBranchID: Int? = nil
@@ -46,7 +48,8 @@ struct BranchSelectionView: View {
     @ViewBuilder
     private var headerSection: some View {
         VStack(spacing: 8) {
-            Text("EL-MAGED Branches")
+            // UPDATED: Dynamically inject the store name
+            Text("\(storeName) Branches")
                 .font(.custom("Poppins-SemiBold", size: 28))
                 .foregroundStyle(.brandGreen)
             
@@ -103,7 +106,7 @@ struct BranchSelectionView: View {
     }
 }
 
-// MARK: - 3. Extracted Row Subview
+// MARK: - Extracted Row Subview
 struct BranchRowView: View {
     let branch: BranchDataEntity
     let isSelected: Bool

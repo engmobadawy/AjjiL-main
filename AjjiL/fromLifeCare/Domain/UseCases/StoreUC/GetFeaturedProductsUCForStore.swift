@@ -8,14 +8,15 @@
 
 import Foundation
 
-class GetFeaturedProductsUC {
+class GetFeaturedProductsUCForStore {
     private let repo: StoreRepository
     
     init(repo: StoreRepository) {
         self.repo = repo
     }
     
-    func execute(storeId: Int, branchId: Int, skip: Int, take: Int) async throws -> ProductListResponse {
-        return try await repo.getFeaturedProducts(storeId: storeId, branchId: branchId, skip: skip, take: take)
+    // CHANGE: Set a default 'take' value greater than 0 (e.g., 20)
+    func execute(storeId: Int, branchId: Int, skip: Int? = 0, take: Int? = 20) async throws -> ProductListResponse {
+        return try await repo.GetFeaturedProductsUCForStore(storeId: storeId, branchId: branchId, skip: skip ?? 0, take: take ?? 20)
     }
 }

@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Kingfisher
 
 struct BannerCollectionView: View {
     let banners: [HomeBannerDataEntity]
@@ -28,7 +29,6 @@ struct BannerCollectionView: View {
                     // using that instead of \.offset for more stable identity.
                     ForEach(Array(banners.enumerated()), id: \.offset) { index, banner in
                         OnBoardingCard(banner: banner)
-                        
                             .tag(index)
                     }
                 }
@@ -40,7 +40,7 @@ struct BannerCollectionView: View {
                     guard banners.count > 1 else { return }
                     
                     while !Task.isCancelled {
-                        // Wait for 1 second
+                        // Wait for 2 seconds
                         try? await Task.sleep(for: .seconds(2))
                         
                         // Update the active page with animation
@@ -68,32 +68,24 @@ private struct OnBoardingCard: View {
     let banner: HomeBannerDataEntity
 
     var body: some View {
-        // FIXED: Using banner.image directly since it's a String
-        AsyncImage(url: URL(string: banner.image)) { phase in
-            switch phase {
-            case .empty:
+        // FIXED: Replaced AsyncImage with Kingfisher
+        KFImage(URL(string: banner.image))
+            .placeholder {
                 ProgressView()
-            case .success(let image):
-                image
-                    .resizable()
-                    .scaledToFill()
-            case .failure:
-                Image(systemName: "photo")
-                    .foregroundStyle(.gray)
-            @unknown default:
-                EmptyView()
             }
-        }
-        .frame(height: 160)
-        .frame(maxWidth: .infinity)
-        .clipped()
-        .clipShape(.rect(cornerRadius: 20))
-        .overlay {
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(.secondary.opacity(0.18), lineWidth: 1)
-        }
-        .contentShape(.rect(cornerRadius: 20))
-        .accessibilityLabel(Text("Banner image"))
+            .onFailureImage(UIImage(systemName: "photo")?.withTintColor(.systemGray, renderingMode: .alwaysOriginal))
+            .resizable()
+            .scaledToFill()
+            .frame(height: 160)
+            .frame(maxWidth: .infinity)
+            .clipped()
+            .clipShape(.rect(cornerRadius: 20))
+            .overlay {
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .stroke(.secondary.opacity(0.18), lineWidth: 1)
+            }
+            .contentShape(.rect(cornerRadius: 20))
+            .accessibilityLabel(Text("Banner image"))
     }
 }
 

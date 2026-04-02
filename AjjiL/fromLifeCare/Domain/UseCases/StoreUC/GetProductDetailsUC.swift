@@ -1,3 +1,11 @@
+//
+//  GetProductDetailsUC.swift
+//  AjjiLMB
+//
+//  Created by mohamed mahmoud sobhy badawy on 02/04/2026.
+//
+
+
 import Foundation
 
 class GetProductDetailsUC {
