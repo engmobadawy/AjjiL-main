@@ -1,0 +1,364 @@
+
+
+
+//MARK: - welcome
+"welcomeTitle" = "Welcome to Life Care!👋";
+"welcomeDescription" = "Discover the Convenience of Telehealth with the Ultimate All-in-One Medical App!";
+
+//MARK: - on boarding
+"onboardingTitle1" = "Your Health is in Safe Hands!";
+"onboardingTitle2" = "Book Appointments in Minutes";
+"onboardingTitle3" = "Communicate Seamlessly";
+"onboardingTitle4" = "All Your Medical Records in One Place";
+"onboarding1" = "Your go-to app for booking doctor appointments, online consultations, and trusted medical advice.";
+"onboarding2" = "Choose your preferred doctor and schedule your appointment effortlessly in just a few steps.";
+"onboarding3" = "Stay connected with your Doctors through secure chat and video calls.";
+"onboarding4" = "Keep track of your medical history and test results, all at your fingertips";
+"getStarted" = "Get Started";
+"Skip" = "Skip";
+"next" = "Next";
+"guestMode"=  "Guest Mode";
+//MARK: - textFields
+"username" = "User Name";
+"email" = "Email Address";
+"email_PH" = "Enter your email address...";
+"phone_number" = "Phone Number";
+"phone_number_PH" = "Phone number";
+"password" = "Password";
+"new_phone" = "Phone";
+"employee_id" = "Employee ID number at the company";
+"iban" = "IBAN Number";
+"upload_image" = "Employee ID Card Photo";
+"optional" = "( optional )";
+
+"password_PH" = "Password";
+"confirm_password" = "Confirm Password";
+"confirm_password_PH" = "Confirm password";
+"old_password" = "Old Password";
+"old_password_PH" = "Old password";
+"new_password" = "New password";
+"new_password_PH" = "New password";
+"confirm_new_password" = "Confirm new password";
+"confirm_new_password_PH" = "Confirm new password";
+"new_phone_PH" = "New Phone Number";
+"employee_id_PH" = "Enter your ID Number here...";
+"iban_PH" = "Enter your IBAN Number here...";
+"image_PH" = "Please upload your ID photo here...";
+"empty_email"="Email address is required";
+"empty_username" = "Username is required";
+"invalid_IBAN" = "Please enter a valid IBAN number";
+"empty_phone"="Phone number is required";
+"empty_employee_id"="Please enter your employee ID";
+"empty_national_id"="Please enter your national ID";
+"invalid_IBAN"="Please enter IBAN number";
+"empty_code"="Code is required";
+"empty_password"="Password is required";
+"empty_confirm_password"="Password confirmation is required";
+"empty_old_password"="Current password is required";
+"empty_new_password"="New password is required";
+"empty_is_agree_terms"="You must agree to the terms and conditions to register";
+
+
+"username_msg" = "Enter Valid Username";
+"email_msg" = "Enter Valid Email";
+"phone_msg" = "Enter Valid Phone Number";
+"password_msg" = "Enter Valid Password";
+"code_msg" = "Enter Valid Code";
+//MARK: - Sign in
+"login" = "Login";
+"sign_in" = "Sign In";
+"don't_have_acc" = "Don’t have an account?";
+"Wrong_login_credentials." = "Wrong login_credentials.";
+"forget_password" = "Forget Password?";
+"join_Socicty" = "Request to Join the Society Now";
+"accept_waiting_title" = "Waiting Acceptance";
+"approval_message" = "Your account is currently being reviewed for association membership. Upon approval, you can proceed directly to the app or [go to registration page](action).";
+"remember_me" = "Get Started by Creating Your Account!";
+"welcome_Text" = "Welcome Back! Log in to continue.";
+"change_phone_number_success_msg" = "change_phone_number_success_msg";
+
+//MARK: - Sign up
+"sign_up" = "Sign Up";
+"by_signing_up" = "I agree to all";
+"Wrong_login_credentials." = "بيانات تسجيل الدخول غير صحيحة";
+"send_request" = "Send Request";
+"privacy_policy" = "Privacy Policy";
+"terms_condition" = "Terms & Conditions";
+"signUp_subtitle" = "Get Started by Creating Your Account!";
+"already_member" = "Already a member?";
+
+
+//MARK: - forget password
+"forget_password" = "Forgot your password?";
+"reset_password" = "Reset Password";
+"forget_password_text" = "Enter your Phone Number then we will send you OTP  to reset new password.";
+"reset_your_password" = "Send";
+"code_sent_success_message" = "Code sent successfully";
+
+//MARK: - OTP
+"enter_otp" = "Verifying your account";
+"otp_text" = "We have just sent you 4 digit code via your number";
+"otp_text_second_line" = "sent to your phone number";
+"resend_otp" = "Resend Code";
+"verify" = "Verify";
+"browse_now" = "Browse Now";
+"success_verify" = "Verified Successfully";
+"expire_in"="Expire in";
+"resend_otp_question" = "Didn’t receive code?";
+"go_Login" = "Go to log in";
+"go_home" = "Continue to Home";
+"successfully_created" = "Your successfully create new account";
+"welcome_msg" = "Welcome to";
+"life_care" = "Life Care";
+"mr_number_message" = "Your MR Number:";
+"copied_successfully" = "Copied Successfully";
+"mr_number_notify" = "Please keep this number for future reference.";
+"change_phone_number_success_msg" = "Your phone number has been changed successfully.";
+
+//MARK: - New password
+"set_password" = "Set A New Password";
+"new_password_text" = "Please enter your new password.";
+"confirm_password_msg" = "Passwords do not match";
+"set" = "Reset";
+"successfully_done" = "Successfully Done";
+"congratulations" = "Congratulations!";
+"change_pass_success_msg" = "Successfully reset your Password";
+//MARK: - More
+"offers" = "Offers";
+"FAQ" = "FAQ";
+"about_us" = "About us";
+"privacy_policy" = "Privacy Policy ";
+"terms_condition" = "Terms & Conditions";
+"log_out" = "Log Out";
+"are_you_sure_logout?" = "Are You sure you want to Log Out?";
+"No questions yet" = "No questions yet";
+
+//MARK: - TabBar
+"home" ="Home";
+"markets" = "Markets";
+"offers" = "Offers";
+"profile" = "Profile";
+
+//MARK: - Specialties
+"Specialties" = "Specialties";
+"see_all" = "See All";
+"upcoming_Title" = "Upcoming Booking";
+"Services" = "Services";
+"hospital_branches" = "Hospital branches";
+"hospital_Specialties" = "Hospital Specialties";
+
+"Unavailable" = "Unavailable";
+"top_doctors" = "Top Doctors";
+
+//MARK: - Home
+"looking_for" = "Looking for";
+
+
+//MARK: - Hospital Details
+"hospital_details" = "Hospital Details";
+"read_more" = "Read more";
+"Biography" = "Biography";
+"hospital_address" = "Hospital Address";
+"fees_Information" = "Fees Information";
+"book_appointment" = "Book Appointment";
+
+
+//MARK: - Doctors View
+"doctor_details" = "Doctor Details";
+"education_certificates" = "Education Certificates";
+
+
+//MARK: - status Localization
+"Completed" = "Completed";
+"Cancelled" = "Cancelled";
+"Rejected" = "Rejected";
+"Pending" = "Pending";
+"In Progress" = "In Progress";
+"Accepted" = "Accepted";
+"home_visit" = "Home Visit";
+"clinic_visit" = "Clinic Visit";
+"video_call" = "Video Call";
+
+
+//MARK: - Appointments
+"appointment_empty_title" = "You don’t have an appointment yet";
+"appointment_empty_text"= "No appointments or notifications are currently scheduled.";
+"appointment_View_title" = "My Appointments";
+"upcoming_appointments_title" = "Upcoming";
+"history_appointments_title" = "History";
+
+//MARK: - Chatbot ai
+"Audio" = "Audio";
+"Document" = "Document";
+"Gallery" = "Gallery";
+"Camera" = "Camera";
+"medical_questions" = "Medical Questions";
+"health_tips" = "Health Tips";
+"book_appointment" = "Book Appointment";
+"find_services" = "Find Services";
+"title_question" = "What can I help with?";
+"ai_chatbot_page_title" = "Ai Chatbot";
+
+//MARK: - Appointment page
+"appointment_title_page" = "Appointment";
+"select_family_title" = "Select Family Member";
+"visit_type_title" = "Visit Type";
+"consultation_type_title" = "Consultation Type";
+"available_days_title" = "Available Days";
+"available_time_title" = "Available Time";
+"complaint_title" = "Complaint";
+"complaint_PH" = "Write Complaint";
+"total_footer_title" = "Total";
+"continue" = "Continue";
+"new_patient_visit_type" = "New Patient Visit";
+"follow-up_visit_type" = "Follow-Up Visit";
+"family_textField_PH" = "Select";
+"family_dropDown_add_button" = "+ Add Family Member";
+"home_address_title" = "Home Address";
+"add_address_btn" = "+ Add New Address";
+"selectFamilyError" = "Please select a family member";
+"back_home" =  "Continue to Home";
+"pending_process_title" = "Pending Process";
+
+//MARK: - payment page
+"payment_title" = "Payment";
+"use_insurance_text" = "Or use your insurance";
+"total" = "Total";
+"checkout" = "Checkout";
+"payment_method" = "Payment Method";
+"add_card" = "+ Add New Card";
+"Tabby" = "Tabby";
+"Tamara" = "Tamara";
+"Visa" = "Visa";
+"Mada" = "Mada";
+"Cash" = "Cash";
+"insurance_selection_title" = "Insurance Company";
+"insurance_selection_Btn" = "+ Add Insurance Company";
+"VAT" = "VAT";
+"Consultation" = "Consultation";
+"additional_discount" = "Additional Discount" ;
+"promo_code_title" = "Promo Code";
+"enter_promo_code" = "Enter promo code" ;
+"Apply" = "Apply";
+
+//MARK: - ADD Address view
+"confirm_my_location" = "Confirm My Location";
+"fetching_address" = "Fetching Address";
+"confirm_location" = "Confirm Location";
+"add_address" = "Add Address";
+"unable_fetch_address" = "Unable Fetch Address";
+"address" = "Address";
+"add_new_address" = "Add New Address";
+"country" = "Country";
+"government" = "Government";
+"city" = "City";
+"address_details" = "Address Details";
+"write_address" = "Write Address";
+"pick_my_location" = "Pick My Location";
+"success" = "success";
+"error" = "error";
+"country_error_Msg" = "Please choose a country";
+"government_error_Msg" = "Please choose a Government" ;
+"city_error_Msg" = "Please choose a City";
+"address_error_Msg" = "Please enter address details";
+"location_error_Msg" = "Please choose location on map";
+
+//MARK: - change password view
+"change_password_header_title" = "Change password";
+"success_msg_change_password" = "Your successfully change your Password";
+"change_password_btn" = "Change password";
+"change_password_lbl_title" = "Set A New Password";
+"change_password_lbl_subtitle" = "Write a new password to your account";
+"change_phone_header_title" = "";
+
+//MARK: - change phone view
+"change_phone_header_title" = "Change Phone";
+"change_phone_title" = "Change phone number";
+"change_phone_subtitle" = "Enter your Phone Number then we will send you OTP  to change phone number.";
+"change_phone_btn" = "Send";
+
+
+
+
+//MARK: - Login view
+"navigation_skip" = "Skip";
+"language_switch_title" = "عربي";
+"welcome_back_header" = "Welcome back";
+"welcome_subtext" = "Let's get you in to access all services";
+"Login" = "SIGN IN";
+"Don’t Have An Account?" = "Don’t Have An Account?";
+
+"CREATE AN ACCOUNT" = "CREATE AN ACCOUNT";
+
+/* Common & Auth */
+"done" = "Done";
+"save" = "Save";
+"sign_in" = "SIGN IN";
+"sign_up" = "SIGN UP";
+"verify" = "Verify...";
+"password" = "Password";
+"new_password" = "New Password";
+"confirm_password" = "Confirm Password";
+"username" = "Username";
+"email_placeholder" = "example@appssquare.com";
+"Phone Number" = "Phone Number";
+
+/* Forget Password View */
+"set_new_password_header" = "Set a new password";
+"set_new_password_subtext" = "Type your new password and confirm to remember it later.";
+
+/* Log In View */
+"welcome_back_header" = "Welcome Back!";
+"welcome_subtext" = "Log in to your account.";
+"forgot_password_question" = "Forgot Password?";
+"dont_have_account" = "Don’t Have An Account?";
+"create_an_account" = "CREATE AN ACCOUNT";
+"error" = "Error";
+"please_enter_phone_first" = "Please enter your phone number first.";
+"phone_number_required" = "Phone number is required";
+"password_required" = "Password is required";
+
+/* OTP View */
+"verification_code_header" = "Verification Code";
+"otp_sent_message" = "4 digit code has been sent to your phone number";
+"apply_code" = "Apply code";
+"didnt_receive_code" = "If you didn’t receive code!";
+"resend_it" = "\"Resend It\"";
+
+/* Sign Up View */
+"create_account_header" = "Create Your Account";
+"create_account_subtext" = "Type your data to access all services";
+
+/* Terms Agreement View */
+"already_have_account" = "Already Have An Account?";
+"agree_to_terms_accessibility" = "Agree to Terms";
+"by_tapping" = "By tapping ";
+"sign_up_quote" = "“Sign Up”";
+"you_agree_with" = " you agree with ";
+"terms_and_conditions" = "Terms & Conditions";
+
+
+"invalid_username_message" = "Please enter a valid username.";
+"invalid_email_message" = "Please enter a valid email address.";
+"invalid_phone_message" = "Please enter a valid phone number.";
+"invalid_code_message" = "Please enter a valid 4-digit verification code.";
+"invalid_password_message" = "Password must be at least 8 characters long.";
+"invalid_new_password_message" = "New password must be at least 8 characters long.";
+"invalid_old_password_message" = "Please enter your valid old password.";
+"password_same_as_old_message" = "The new password cannot be the same as the old password.";
+"password_mismatch_message" = "Passwords do not match. Please try again.";
+
+// In case you need the missing field messages you used in your ValidationHelper:
+"empty_username" = "Username is required.";
+"empty_email" = "Email is required.";
+"empty_phone" = "Phone number is required.";
+"empty_employee_id" = "Employee ID is required.";
+"empty_national_id" = "National ID is required.";
+"invalid_IBAN" = "Please enter a valid IBAN.";
+"empty_code" = "Verification code is required.";
+"empty_password" = "Password is required.";
+"empty_confirm_password" = "Confirm password is required.";
+"empty_old_password" = "Old password is required.";
+"empty_new_password" = "New password is required.";
+"empty_is_agree_terms" = "You must agree to the terms and conditions.";
+"Invalid Code" = "Invalid Code";

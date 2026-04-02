@@ -1,0 +1,368 @@
+/*
+ Localizable.strings
+ Secop
+
+ Created by M.Magdy on 7//5/25.
+ 
+*/
+
+//MARK: - textFields
+"username" = "اسم المستخدم";
+"email" = "عنوان البريد الإلكتروني";
+"email_PH" = "أدخل عنوان بريدك الإلكتروني...";
+"phone_number" = "رقم الهاتف";
+"phone_number_PH" = "أدخل رقم هاتفك...";
+"password" = "كلمة المرور";
+"employee_id" = "الرقم التعريفي كموظف بالشركة";
+"iban" = "رقم الـ IBAN";
+"upload_image" = "صورة البطاقة التعريفية كموظف بالشركة ";
+"optional" = "( اختياري )";
+
+"password_PH" = "أدخل كلمة المرور الخاصة بك...";
+"confirm_password" = "تأكيد كلمة المرور";
+"confirm_password_PH" = "أدخل تأكيد كلمة المرور الخاصة بك...";
+"old_password" = "كلمة المرور القديمة";
+"old_password_PH" = "أدخل كلمة المرور القديمة...";
+"new_password" = "كلمة المرور الجديدة";
+"new_password_PH" = "أدخل كلمة المرور الجديدة...";
+"confirm_new_password" = "تأكيد كلمة المرور الجديدة";
+"confirm_new_password_PH" = "تأكيد كلمة المرور الجديدة...";
+"new_phone_PH" = "أدخل رقم الهاتف الجديد...";
+"new_phone" = "الهاتف";
+"employee_id_PH" = "أدخل رقم ال ID الخاص بك هنا...";
+"iban_PH" = "أدخل رقم ال IBAN في البنك الخاص بك هنا ...";
+"image_PH" = "برجاء إدراج صورة ال ID الخاص بك هنا...";
+"empty_email"="برجاء إدخال البريد الإلكتروني";
+"empty_username" = "برجاء إدخال اسم المستخدم";
+"invalid_IBAN" = "برجاء إدخال رقم IBAN صالح";
+"empty_phone"="برجاء إدخال رقم الهاتف";
+"empty_employee_id"="برجاء إدخال رقم هوية الموظف";
+"empty_national_id"="برجاء إدخال الرقم القومي";
+"invalid_IBAN"="برجاء إدخال رقم IBAN";
+"empty_code"="برجاء إدخال الكود";
+"empty_password"="برجاء إدخال الرقم السري";
+"empty_confirm_password"="برجاء إدخال تأكيد الرقم السري";
+"empty_old_password"="برجاء إدخال الرقم السري القديم";
+"empty_new_password"="برجاءإدخال الرقم السري الجديد";
+"empty_is_agree_terms"="يجب الموافقة على الشروط والأحكام للتسجيل";
+
+
+
+"username" = "اسم المستخدم";
+"email" = "البريد الإلكتروني";
+"email_PH" = "أدخل عنوان بريدك الإلكتروني...";
+"phone_number" = "رقم الهاتف";
+"phone_number_PH" = "رقم الهاتف";
+"password" = "كلمة المرور";
+"new_phone" = "الهاتف";
+"employee_id" = "الرقم الوظيفي بالشركة";
+"iban" = "رقم الآيبان (IBAN)";
+"upload_image" = "صورة هوية الموظف";
+"optional" = "( اختياري )";
+
+"password_PH" = "كلمة المرور";
+"confirm_password" = "تأكيد كلمة المرور";
+"confirm_password_PH" = "تأكيد كلمة المرور";
+"old_password" = "كلمة المرور القديمة";
+"old_password_PH" = "كلمة المرور القديمة";
+"new_password" = "كلمة المرور الجديدة";
+"new_password_PH" = "كلمة المرور الجديدة";
+"confirm_new_password" = "تأكيد كلمة المرور الجديدة";
+"confirm_new_password_PH" = "تأكيد كلمة المرور الجديدة";
+"new_phone_PH" = "رقم الهاتف الجديد";
+"employee_id_PH" = "أدخل رقم هويتك هنا...";
+"iban_PH" = "أدخل رقم الآيبان هنا...";
+"image_PH" = "يرجى تحميل صورة هويتك هنا...";
+
+"empty_email" = "عنوان البريد الإلكتروني مطلوب";
+"empty_username" = "اسم المستخدم مطلوب";
+"invalid_IBAN" = "يرجى إدخال رقم آيبان (IBAN) صحيح";
+"empty_phone" = "رقم الهاتف مطلوب";
+"empty_employee_id" = "يرجى إدخال الرقم الوظيفي الخاص بك";
+"empty_national_id" = "يرجى إدخال رقم الهوية الوطنية";
+"invalid_IBAN" = "يرجى إدخال رقم الآيبان (IBAN)";
+"empty_code" = "الرمز مطلوب";
+"empty_password" = "كلمة المرور مطلوبة";
+"empty_confirm_password" = "تأكيد كلمة المرور مطلوب";
+"empty_old_password" = "كلمة المرور الحالية مطلوبة";
+"empty_new_password" = "كلمة المرور الجديدة مطلوبة";
+"empty_is_agree_terms" = "يجب الموافقة على الشروط والأحكام للتسجيل";
+
+"username_msg" = "أدخل اسم مستخدم صحيح";
+"email_msg" = "أدخل بريد إلكتروني صحيح";
+"phone_msg" = "أدخل رقم هاتف صحيح";
+"password_msg" = "أدخل كلمة مرور صحيحة";
+"code_msg" = "أدخل رمزاً صحيحاً";
+
+//MARK: - Sign in
+"sign_in" = "تسجيل الدخول";
+"sign_in_text" = "قم بتسجيل الدخول للوصول إلى حسابك";
+"don't_have_acc" = "ليس لديك حساب؟ ";
+"join_Socicty" = "أطلب الأنضمام الآن للجمعية";
+"accept_waiting_title" = "إنتظار التأكيد";
+"approval_message" = "جاري الآن مراجعة حسابك لأضافته للجمعية. في حين استلامك لرسالة الموافقة يمكنك الانتقال للتطبيق مباشرة أو يمكنك [الانتقال لصفحة التسجيل](action).";
+"remember_me" = "تذكر تسجيل الدخول";
+"welcome_Text" = "مرحبًا بعودتك! سجل الدخول للمتابعة.";
+
+//MARK: - Sign up
+"sign_up" = "تسجيل";
+"by_signing_up" = "أوافق علي جميع";
+"have_acc" = "هل لديك حساب؟";
+"Wrong_login_credentials." = "بيانات تسجيل الدخول غير صحيحة";
+"send_request" = "أرسال الطلب";
+"privacy_policy" = "سياسة الأستخدام";
+"terms_condition" = "الشروط والأحكام";
+"signUp_subtitle" = "ابدأ بإنشاء حسابك!";
+"already_member" = "عضو بالفعل؟";
+
+//MARK: - forget password
+"forget_password" = "نسيت كلمة المرور?";
+"reset_password" = "إنشاء كلمة مرور جديدة";
+"forget_password_text" = "أدخل رقم هاتفك ثم سنرسل لك OTP لإعادة تعيين كلمة المرور الجديدة.";
+"reset_your_password" = "إرسال";
+"code_sent_success_message" = "تم إرسال الرمز بنجاح";
+"expire_in"="ينتهي فى";
+
+
+//MARK: - OTP
+"enter_otp" = "التحقق من حسابك";
+"otp_text" = "تم إرسال رمز التحقق مكون من أربع ارقام الى الهاتف رقم";
+"otp_text_second_line" = "تم أرساله عبر الچوال";
+"resend_otp" = "إعادة إرسال الرمز";
+"verify" = "تأكيد";
+"browse_now" = "تصفح الآن";
+"success_verify" = "تم التحقق بنجاح";
+"resend_otp_question" = "لم يصلك الرمز؟";
+"go_Login" = "تسجيل الدخول";
+"go_home" = "الذهاب الى الرئيسية";
+
+//MARK: - New password
+"set_password" = "تعيين كلمة مرور جديدة";
+"new_password_text" = "برجاء أدخال كلمة المرور الجديدة";
+"confirm_password_msg" = "برجاء إدخال كلمة المرور الجديدة";
+"set" = "إعادة تعيين";
+"successfully_done" = "تم بنجاح";
+"congratulations" = "تهانينا!";
+"change_pass_success_msg" = "تم تغيير كلمة المرور بنجاح";
+//MARK: - More
+"offers" = "العروض";
+"FAQ" = "الأسئلة الشائعة";
+"about_us" = "معلومات عنا";
+"privacy_policy" = "سياسة الخصوصية";
+"terms_condition" = "الشروط والأحكام";
+"log_out" = "تسجيل الخروج";
+"log_me_out" = "تسجيل الخروج";
+"are_you_sure_logout?" = "هل أنت متأكد أنك تريد تسجيل الخروج؟";
+"No questions yet" = "لا توجد اسئلة";
+
+
+//MARK: - TabBar
+"home" ="الرئيسية";
+"markets" = "الأسواق";
+"offers" = "العروض";
+"profile" = "الشخصية";
+
+//MARK: - Specialties
+"Specialties" = "التخصصات";
+"see_all" = "كل التخصصات";
+"upcoming_Title" = "الحجوزات القادمة";
+"Services" = "الخدمات";
+"hospital_branches" = "فروع المستشفى";
+"hospital_Specialties" = "تخصصات المستشفى";
+"Unavailable" = "غير متاح";
+"top_doctors" = "أفضل الأطباء";
+
+//MARK: - Home
+
+"looking_for" = "تبحث عن";
+
+//MARK: - Hospital Details
+"hospital_details" = "تفاصيل المستشفى";
+"read_more" = "اقرأ المزيد";
+"Biography" = "السيرة الذاتية";
+"hospital_address" = "عنوان المستشفى";
+"fees_Information" = "معلومات الرسوم";
+"book_appointment" = "حجز موعد";
+
+//MARK: - Doctors View
+"doctor_details" = "تفاصيل الطبيب";
+"education_certificates" = "التعليم والشهادات";
+
+//MARK: - status Localization
+"Completed" = "مكتملة";
+"Cancelled" = "ملغاة";
+"Rejected" = "مرفوضة";
+"Pending" = "قيد الانتظار";
+"In Progress" = "قيد التنفيذ";
+"Accepted" = "مقبولة";
+"home_visit" = "زيارة منزلية";
+"clinic_visit" = "زيارة عيادة";
+"video_call" = "مكالمة فيديو";
+
+//MARK: - Appointments
+"appointment_empty_title" = "ليس لديك موعد حتى الآن";
+"appointment_empty_text" = "لا توجد مواعيد أو إشعارات مجدولة حالياً.";
+"appointment_View_title" = "مواعيدي";
+"upcoming_appointments_title" = "القادمة";
+"history_appointments_title" = "السجل";
+
+//MARK: - Chatbot ai
+"Audio" = "صوت";
+"Document" = "مستند";
+"Gallery" = "معرض الصور";
+"Camera" = "كاميرا";
+"medical_questions" = "أسئلة طبية";
+"health_tips" = "نصائح صحية";
+"book_appointment" = "حجز موعد";
+"find_services" = "البحث عن خدمات";
+"title_question" = "بماذا يمكنني مساعدتك؟";
+"ai_chatbot_page_title" = "مساعد الدردشة الذكي";
+
+//MARK: - payment page
+"payment_title" = "الدفع";
+"use_insurance_text" = "أو استخدم التأمين الخاص بك";
+"total" = "المجموع";
+"checkout" = "إتمام الطلب";
+"payment_method" = "طريقة الدفع";
+"add_card" = "+ إضافة بطاقة جديدة";
+"Tabby" = "تابي";
+"Tamara" = "تمارا";
+"Visa" = "فيزا";
+"Mada" = "مدى";
+"Cash" = "نقداً";
+"insurance_selection_title" = "شركة التأمين";
+"insurance_selection_Btn" = "+ إضافة شركة تأمين";
+"VAT" = "ضريبة القيمة المضافة";
+"Consultation" = "الاستشارة";
+"additional_discount" = "خصم إضافي";
+"promo_code_title" = "كود الخصم";
+"enter_promo_code" = "أدخل كود الخصم";
+"Apply" = "تطبيق";
+
+//MARK: - ADD Address view
+"confirm_my_location" = "تأكيد موقعي";
+"fetching_address" = "جاري جلب العنوان";
+"confirm_location" = "تأكيد الموقع";
+"add_address" = "إضافة عنوان";
+"unable_fetch_address" = "غير قادر على إيجاد العنوان";
+"address" = "العنوان";
+"add_new_address" = "إضافة عنوان جديد";
+"country" = "الدولة";
+"government" = "المحافظة";
+"city" = "المدينة";
+"address_details" = "تفاصيل العنوان";
+"write_address" = "اكتب العنوان";
+"pick_my_location" = "اختر موقعي";
+"success" = "نجح";
+"error" = "خطأ";
+"country_error_Msg" = "يرجى اختيار دولة";
+"government_error_Msg" = "يرجى اختيار محافظة";
+"city_error_Msg" = "يرجى اختيار مدينة";
+"address_error_Msg" = "يرجى إدخال تفاصيل العنوان";
+"location_error_Msg" = "يرجى اختيار موقع على الخريطة";
+
+
+
+//MARK: - change password view
+"change_password_header_title" = "تغيير كلمة المرور";
+"success_msg_change_password" = "تم تغيير كلمة المرور بنجاح";
+"change_password_btn" = "تغيير كلمة المرور";
+"change_password_lbl_title" = "قم بتعيين كلمة مرور جديدة";
+"change_password_lbl_subtitle" = "اكتب كلمة مرور جديدة لحسابك";
+
+//MARK: - change phone view
+"change_phone_header_title" = "تغيير رقم الهاتف";
+"change_phone_title" = "تغيير رقم الهاتف";
+"change_phone_subtitle" = "أدخل رقم هاتفك وسنرسل لك رمز التحقق (OTP) لتغيير الرقم.";
+"change_phone_btn" = "إرسال";
+
+
+
+
+//MARK: - Login view
+
+
+"navigation_skip" = "تخطي";
+"language_switch_title" = "English";
+"welcome_back_header" = "مرحبًا بعودتك";
+"welcome_subtext" = "لنُسجّل دخولك للوصول إلى جميع الخدمات";
+"Login" = "تسجيل الدخول";
+"Don’t Have An Account?" = "ليس لديك حساب؟";
+"CREATE AN ACCOUNT" = "إنشاء حساب";
+
+
+/* Common & Auth */
+"done" = "تم";
+"save" = "حفظ";
+"sign_in" = "تسجيل الدخول";
+"sign_up" = "إنشاء حساب";
+"verify" = "تحقق...";
+"password" = "كلمة المرور";
+"new_password" = "كلمة مرور جديدة";
+"confirm_password" = "تأكيد كلمة المرور";
+"username" = "اسم المستخدم";
+"email_placeholder" = "example@appssquare.com";
+"Phone Number" = "رقم الهاتف";
+
+"phone_number_required" = "رقم الهاتف مطلوب";
+"password_required" = "كلمة المرور مطلوبة";
+
+/* Forget Password View */
+"set_new_password_header" = "تعيين كلمة مرور جديدة";
+"set_new_password_subtext" = "أدخل كلمة المرور الجديدة وقم بتأكيدها لتذكرها لاحقًا.";
+
+/* Log In View */
+"welcome_back_header" = "مرحباً بعودتك!";
+"welcome_subtext" = "قم بتسجيل الدخول إلى حسابك.";
+"forgot_password_question" = "هل نسيت كلمة المرور؟";
+"dont_have_account" = "ليس لديك حساب؟";
+"create_an_account" = "إنشاء حساب جديد";
+"error" = "خطأ";
+"please_enter_phone_first" = "يرجى إدخال رقم هاتفك أولاً.";
+
+/* OTP View */
+"verification_code_header" = "رمز التحقق";
+"otp_sent_message" = "تم إرسال رمز مكون من 4 أرقام إلى رقم هاتفك";
+"apply_code" = "أدخل الرمز";
+"didnt_receive_code" = "إذا لم تستلم الرمز!";
+"resend_it" = "\"إعادة إرسال\"";
+
+/* Sign Up View */
+"create_account_header" = "إنشاء حسابك";
+"create_account_subtext" = "أدخل بياناتك للوصول إلى جميع الخدمات";
+
+/* Terms Agreement View */
+"already_have_account" = "هل لديك حساب بالفعل؟";
+"agree_to_terms_accessibility" = "الموافقة على الشروط";
+"by_tapping" = "بالنقر على ";
+"sign_up_quote" = "“إنشاء حساب”";
+"you_agree_with" = " فإنك توافق على ";
+"terms_and_conditions" = "الشروط والأحكام";
+
+
+
+"invalid_username_message" = "الرجاء إدخال اسم مستخدم صحيح.";
+"invalid_email_message" = "الرجاء إدخال بريد إلكتروني صحيح.";
+"invalid_phone_message" = "الرجاء إدخال رقم هاتف صحيح.";
+"invalid_code_message" = "الرجاء إدخال رمز تحقق صحيح مكون من ٤ أرقام.";
+"invalid_password_message" = "يجب أن تتكون كلمة المرور من ٨ أحرف على الأقل.";
+"invalid_new_password_message" = "يجب أن تتكون كلمة المرور الجديدة من ٨ أحرف على الأقل.";
+"invalid_old_password_message" = "الرجاء إدخال كلمة المرور القديمة الصحيحة.";
+"password_same_as_old_message" = "لا يمكن أن تكون كلمة المرور الجديدة مطابقة لكلمة المرور القديمة.";
+"password_mismatch_message" = "كلمتا المرور غير متطابقتين. الرجاء المحاولة مرة أخرى.";
+
+// In case you need the missing field messages you used in your ValidationHelper:
+"empty_username" = "اسم المستخدم مطلوب.";
+"empty_email" = "البريد الإلكتروني مطلوب.";
+"empty_phone" = "رقم الهاتف مطلوب.";
+"empty_employee_id" = "رقم الموظف مطلوب.";
+"empty_national_id" = "رقم الهوية الوطنية مطلوب.";
+"invalid_IBAN" = "الرجاء إدخال رقم آيبان (IBAN) صحيح.";
+"empty_code" = "رمز التحقق مطلوب.";
+"empty_password" = "كلمة المرور مطلوبة.";
+"empty_confirm_password" = "تأكيد كلمة المرور مطلوب.";
+"empty_old_password" = "كلمة المرور القديمة مطلوبة.";
+"empty_new_password" = "كلمة المرور الجديدة مطلوبة.";
+"empty_is_agree_terms" = "يجب الموافقة على الشروط والأحكام.";
+
+"Invalid Code" = "رمز غير صالح";
