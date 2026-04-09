@@ -14,6 +14,7 @@ import VisionKit
 @Observable
 @MainActor
 final class ScannerViewModel {
+   
     var manualInput: String = ""
     var scannedBarcode: String? = nil
     
@@ -30,12 +31,15 @@ final class ScannerViewModel {
 
 // MARK: - Main View
 struct ScannerMainView: View {
+    @Environment(\.dismiss) private var dismiss
     @State private var viewModel = ScannerViewModel()
     
     var body: some View {
         VStack(spacing: 0) {
             // Mocking the TopRow from your screenshot
-            TopRowView()
+            TopRowNotForHome(title: "Scan", showBackButton: true, kindOfTopRow: .justNotification , onBack: {
+                dismiss()
+            })
             
             ManualEntrySection(viewModel: viewModel)
                 .padding(.vertical, 24)
@@ -45,41 +49,41 @@ struct ScannerMainView: View {
         }
         .onTapGesture {
             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-        }
+        }.navigationBarBackButtonHidden(true)
     }
 }
 
-// MARK: - Subviews
-struct TopRowView: View {
-    var body: some View {
-        HStack {
-            Button(action: { /* dismiss */ }) {
-                Image(systemName: "arrow.left")
-                    .font(.title2.bold())
-                    .foregroundStyle(.black)
-            }
-            Text("Scan")
-                .font(.title2.bold())
-            
-            Spacer()
-            
-            Image(systemName: "bell.fill")
-                .padding(10)
-                .background(Color.white)
-                .clipShape(.circle)
-                .overlay(alignment: .topTrailing) {
-                    Circle()
-                        .fill(Color.orange)
-                        .frame(width: 10, height: 10)
-                        .offset(x: -2, y: 2)
-                }
-        }
-        .padding(.horizontal)
-        .padding(.top, 10)
-        .padding(.bottom, 20)
-        .background(Color(red: 0.85, green: 0.98, blue: 0.95)) // Light mint background
-    }
-}
+//// MARK: - Subviews
+//struct TopRowView: View {
+//    var body: some View {
+//        HStack {
+//            Button(action: { /* dismiss */ }) {
+//                Image(systemName: "arrow.left")
+//                    .font(.title2.bold())
+//                    .foregroundStyle(.black)
+//            }
+//            Text("Scan")
+//                .font(.title2.bold())
+//            
+//            Spacer()
+//            
+//            Image(systemName: "bell.fill")
+//                .padding(10)
+//                .background(Color.white)
+//                .clipShape(.circle)
+//                .overlay(alignment: .topTrailing) {
+//                    Circle()
+//                        .fill(Color.orange)
+//                        .frame(width: 10, height: 10)
+//                        .offset(x: -2, y: 2)
+//                }
+//        }
+//        .padding(.horizontal)
+//        .padding(.top, 10)
+//        .padding(.bottom, 20)
+//        .background(Color(red: 0.85, green: 0.98, blue: 0.95)) // Light mint background
+//    }
+//}
 
 struct ManualEntrySection: View {
     @Bindable var viewModel: ScannerViewModel

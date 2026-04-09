@@ -261,6 +261,11 @@ struct ProductItem: Codable, Identifiable {
         case isFavorite = "is_favorite"
     }
 }
+struct CategoryProductsResponse: Codable {
+    let status: Bool?
+    let message: String?
+    let data: [ProductItem]? // Data is an array here, not a wrapper!
+}
 
 extension ProductItem {
     func asFeaturedProductEntity() -> HomeFeaturedProductDataEntity {

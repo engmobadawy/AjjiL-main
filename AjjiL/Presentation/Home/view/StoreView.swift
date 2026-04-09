@@ -1,23 +1,28 @@
 import SwiftUI
 import Kingfisher
+
 struct StoreView: View {
     let storeName: String
     let storeId: Int
     
     @Environment(\.dismiss) private var dismiss
+    @State private var showAllCategories: Bool = false
     
     // Global HomeViewModel for shared state like favorites and branches
     var homeViewModel = DependencyContainer.HomeDependency.shared.homeVM
     
     // Local StoreViewModel managing the store's specific state
-    @State private var storeViewModel = StoreViewModel(
-        getStoreSlidersUC: GetStoreSlidersUC(repo: StoreRepositoryImp(networkService: NetworkService())),
-        getFeaturedProductsUCForStore: GetFeaturedProductsUCForStore(repo: StoreRepositoryImp(networkService: NetworkService())),
-        getHomeCategoriesUC: GetHomeCategoriesUC(repo: StoreRepositoryImp(networkService: NetworkService()))
-    )
+        @State private var storeViewModel = StoreViewModel(
+            getStoreSlidersUC: GetStoreSlidersUC(repo: StoreRepositoryImp(networkService: NetworkService())),
+            getFeaturedProductsUCForStore: GetFeaturedProductsUCForStore(repo: StoreRepositoryImp(networkService: NetworkService())),
+            getHomeCategoriesUC: GetHomeCategoriesUC(repo: StoreRepositoryImp(networkService: NetworkService())),
+            getStoreSubcategoriesUC: GetStoreSubcategoriesUC(repo: StoreRepositoryImp(networkService: NetworkService())),
+            getProductsByCategoryUC: GetProductsByCategoryUC(repo: StoreRepositoryImp(networkService: NetworkService())) // Added dependency
+        )
     
-    @State private var selectedTab: StoreTab = .store
-    @State private var selectedCategoryID: UUID?
+    @AppStorage("selectedTab") private var selectedTab: StoreTab = .store
+//    @State private var selectedTab: StoreTab = .store
+    @State private var selectedCategoryID: Int? // Fixed: Changed from UUID? to Int?
     @State private var search = ""
     
     // MARK: - AppStorage State
@@ -31,13 +36,6 @@ struct StoreView: View {
     @State private var showNotificationsView: Bool = false
     @State private var showCartView: Bool = false
     @State private var showBranchSelection: Bool = true
-    
-    let categories = [
-        Category(name: "All"),
-        Category(name: "Sneakers"),
-        Category(name: "Apparel"),
-        Category(name: "Accessories")
-    ]
     
     var body: some View {
         ZStack {
@@ -66,13 +64,16 @@ struct StoreView: View {
                                 storeProducts: storeViewModel.storeProducts,
                                 storeCategories: storeViewModel.storeCategories,
                                 search: $search,
-                                currentMode: currentMode
+                                currentMode: currentMode,
+                                onViewAllCategories: {
+                                    showAllCategories = true
+                                }
                             )
                         case .products, .offers:
                             ProductCatalogView(
                                 viewModel: homeViewModel,
                                 storeProducts: storeViewModel.storeProducts,
-                                categories: categories,
+                                subcategories: storeViewModel.storeSubcategories, // Passed real data here
                                 selectedCategoryID: $selectedCategoryID
                             )
                         }
@@ -87,6 +88,15 @@ struct StoreView: View {
             }
             .navigationDestination(isPresented: $showCartView) {
                 CartView() // Make sure this view exists in your project
+            }
+            .navigationDestination(isPresented: $showAllCategories) {
+                CategoriesView(
+                    storeId: storeId,
+                    viewModel: CategoriesViewModel(
+                        getHomeCategoriesUC: GetHomeCategoriesUC(repo: StoreRepositoryImp(networkService: NetworkService())),
+                        getStoreSubcategoriesUC: GetStoreSubcategoriesUC(repo: StoreRepositoryImp(networkService: NetworkService()))
+                    )
+                )
             }
             
             // MARK: - Branch Popup Overlay
@@ -107,17 +117,27 @@ struct StoreView: View {
             }
         }
         .task(id: storeId) {
-            // Determine branch ID (fallback to 1 if savedBranchID is 0 to avoid errors)
-            let branchIdToFetch = savedBranchID == 0 ? 1 : savedBranchID
-            
-            // Execute tasks concurrently for better performance
-            async let fetchBranches: () = homeViewModel.fetchBranches(storeId: storeId)
-            async let fetchSliders: () = storeViewModel.fetchStoreSliders(storeId: storeId)
-            async let fetchProducts: () = storeViewModel.fetchStoreProducts(storeId: storeId, branchId: branchIdToFetch)
-            async let fetchCategories: () = storeViewModel.fetchStoreCategories(storeId: storeId)
-            
-            _ = await (fetchBranches, fetchSliders, fetchProducts, fetchCategories)
-        }
+                    // Determine branch ID
+                    let branchIdToFetch = savedBranchID == 0 ? 1 : savedBranchID
+                    
+                    // Execute tasks concurrently for better performance
+                    async let fetchBranches: () = homeViewModel.fetchBranches(storeId: storeId)
+                    async let fetchSliders: () = storeViewModel.fetchStoreSliders(storeId: storeId)
+                    async let fetchProducts: () = storeViewModel.fetchProducts(storeId: storeId, branchId: branchIdToFetch, categoryId: selectedCategoryID)
+                    async let fetchCategories: () = storeViewModel.fetchStoreCategories(storeId: storeId)
+                    async let fetchSubcategories: () = storeViewModel.fetchStoreSubcategories(storeId: storeId)
+                    
+                    _ = await (fetchBranches, fetchSliders, fetchProducts, fetchCategories, fetchSubcategories)
+                }
+                // Watch for category selection changes
+                .onChange(of: selectedCategoryID) { oldValue, newValue in
+                    let branchIdToFetch = savedBranchID == 0 ? 1 : savedBranchID
+                    Task {
+                        // Clear out existing products for a cleaner UI transition if desired
+                        // storeViewModel.storeProducts = []
+                        await storeViewModel.fetchProducts(storeId: storeId, branchId: branchIdToFetch, categoryId: newValue)
+                    }
+                }
     }
 }
 
@@ -130,6 +150,7 @@ struct StoreContentView: View {
     let storeCategories: [StoreCategory]
     @Binding var search: String
     let currentMode: ShopMode
+    var onViewAllCategories: () -> Void
     
     private var isStoreEmpty: Bool {
         storeSliders.isEmpty && storeProducts.isEmpty && storeCategories.isEmpty
@@ -158,7 +179,7 @@ struct StoreContentView: View {
                     .padding(.bottom, 24)
                 
                 if !storeCategories.isEmpty {
-                    CategoryGridSection(categories: storeCategories)
+                    CategoryGridSection(categories: storeCategories, onViewAll: onViewAllCategories)
                         .padding(.bottom, 24)
                 }
                 
@@ -174,7 +195,7 @@ struct StoreContentView: View {
 struct EmptyStoreStateView: View {
     var body: some View {
         VStack(spacing: 0) {
-            Image("stillUpdated") // Ensure this image is in your Assets
+            Image("stillUpdated")
                 .resizable()
                 .scaledToFit()
                 .frame(width: 153, height: 171)
@@ -189,13 +210,11 @@ struct EmptyStoreStateView: View {
 }
 
 struct PromotionalCarousel: View {
-    // Assuming mockPromoImages is defined elsewhere in your project
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 12) {
-                // If you don't have mockPromoImages, replace with actual data
                 ForEach(0..<3, id: \.self) { _ in
-                    Color.gray.opacity(0.2) // Placeholder
+                    Color.gray.opacity(0.2)
                         .frame(width: 130, height: 148)
                         .clipShape(.rect(cornerRadius: 12))
                 }
@@ -209,14 +228,14 @@ struct PromotionalCarousel: View {
 
 struct CategoryGridSection: View {
     let categories: [StoreCategory]
+    var onViewAll: () -> Void
     
     var body: some View {
         VStack(spacing: 16) {
-            SectionHeader(title: "Categories", actionTitle: "View All") { }
+            SectionHeader(title: "Categories", actionTitle: "View All", action: onViewAll)
             
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
                 ForEach(categories) { category in
-                    // Assuming you will route this to a specific category view later
                     NavigationLink(value: category.id) {
                         CategoryCardView(category: category)
                     }
@@ -237,12 +256,9 @@ struct CategoryCardView: View {
     ]
     
     var body: some View {
-        // 1. Establish the strict layout footprint FIRST
         Color.clear
             .frame(maxWidth: .infinity)
             .frame(height: 168)
-            
-            // 2. Put the image in the background so its size is ignored by the grid layout
             .background {
                 KFImage(URL(string: category.image))
                     .placeholder {
@@ -254,8 +270,6 @@ struct CategoryCardView: View {
                     .resizable()
                     .scaledToFill()
             }
-            
-            // 3. Layer the gradient and text over the fixed footprint
             .overlay(alignment: .bottom) {
                 ZStack(alignment: .bottom) {
                     LinearGradient(
@@ -273,8 +287,6 @@ struct CategoryCardView: View {
                         .padding(.bottom, 16)
                 }
             }
-            
-            // 4. Clip the final structured view
             .clipShape(.rect(cornerRadius: 28))
             .contentShape(.rect(cornerRadius: 28))
     }
@@ -283,10 +295,11 @@ struct CategoryCardView: View {
 struct FeaturedProductsSection: View {
     var viewModel: HomeViewModel
     let products: [HomeFeaturedProductDataEntity]
+    @AppStorage("selectedTab") private var selectedTab: StoreTab = .store
     
     var body: some View {
         VStack(spacing: 16) {
-            SectionHeader(title: "Featured Products", actionTitle: "View All") { }
+            SectionHeader(title: "Featured Products", actionTitle: "View All") {selectedTab = .products}
             
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
                 ForEach(products) { product in
@@ -309,15 +322,26 @@ struct FeaturedProductsSection: View {
     }
 }
 
+// MARK: - Product Catalog & Filters
+
 struct ProductCatalogView: View {
     var viewModel: HomeViewModel
     let storeProducts: [HomeFeaturedProductDataEntity]
-    let categories: [Category] // This might be your local Category model, adjust if needed
-    @Binding var selectedCategoryID: UUID?
+    let subcategories: [StoreCategory]
+    @Binding var selectedCategoryID: Int?
     
     var body: some View {
         VStack(spacing: 0) {
+            // Reusable Filter Carousel
+            FilterCarouselView(
+                categories: subcategories,
+                selectedCategoryID: $selectedCategoryID
+            )
+            .padding(.top, 16)
+            .padding(.bottom, 8)
+            
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
+                // Optional: Filter logic could go here before the ForEach
                 ForEach(storeProducts) { product in
                     NavigationLink(value: product) {
                         HomeProductCard(
@@ -338,6 +362,71 @@ struct ProductCatalogView: View {
         }
     }
 }
+
+// MARK: - Reusable Filter Carousel Components
+
+struct FilterCarouselView: View {
+    let categories: [StoreCategory]
+    @Binding var selectedCategoryID: Int?
+    
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            LazyHStack(spacing: 12) {
+                // Fixed "All" Button
+                FilterChipView(
+                    title: "All",
+                    isSelected: selectedCategoryID == nil,
+                    fixedWidth: 81
+                ) {
+                    withAnimation(.snappy) {
+                        selectedCategoryID = nil
+                    }
+                }
+                
+                // Dynamic Categories
+                ForEach(categories) { category in
+                    FilterChipView(
+                        title: category.name,
+                        isSelected: selectedCategoryID == category.id,
+                        fixedWidth: nil
+                    ) {
+                        withAnimation(.snappy) {
+                            selectedCategoryID = category.id
+                        }
+                    }
+                }
+            }
+            .padding(.horizontal, 18)
+        }
+        .frame(height: 44)
+    }
+}
+
+struct FilterChipView: View {
+    let title: String
+    let isSelected: Bool
+    var fixedWidth: CGFloat? = nil
+    let action: () -> Void
+    
+    private let activeBg = Color(red: 0.95, green: 0.51, blue: 0.20)
+    private let inactiveBg = Color(red: 0.93, green: 0.95, blue: 0.96)
+    
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(.system(size: 16, weight: isSelected ? .semibold : .medium))
+                .foregroundStyle(isSelected ? .white : .gray)
+                .frame(width: fixedWidth)
+                .padding(.horizontal, fixedWidth == nil ? 19 : 0)
+                .frame(height: 44)
+                .background(isSelected ? activeBg : inactiveBg)
+                .clipShape(.rect(cornerRadius: 12))
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Miscellaneous Components
 
 struct SectionHeader: View {
     let title: String
@@ -372,13 +461,13 @@ struct ShopActionCard: View {
             
             if mode == .inStore {
                 Text("Shop in Store")
-                    .font(.custom("Poppins-SemiBold", size: 14)) // Ensure font is added to Info.plist
+                    .font(.custom("Poppins-SemiBold", size: 14))
                     .fontWeight(.semibold)
                     .foregroundStyle(tealGreen)
                 
                 Spacer()
                 
-                Image("homeIcon") // Ensure this is in Assets
+                Image("homeIcon")
                     .renderingMode(.template)
                     .resizable()
                     .scaledToFit()
@@ -399,7 +488,7 @@ struct ShopActionCard: View {
                 
                 Spacer()
                 
-                Image("homeCare") // Ensure this is in Assets
+                Image("homeCare")
                     .renderingMode(.template)
                     .resizable()
                     .scaledToFit()

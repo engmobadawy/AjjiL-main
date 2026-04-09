@@ -2,6 +2,13 @@ import Foundation
 import Combine
 
 class StoreRepositoryImp: StoreRepository {
+    
+    private let networkService: NetworkServiceProtocol
+    
+    init(networkService: NetworkServiceProtocol) {
+        self.networkService = networkService
+    }
+    
     func GetFeaturedProductsUCForStore(storeId: Int, branchId: Int, skip: Int, take: Int) async throws -> ProductListResponse {
         let publisher = networkService.fetchData(
             target: StoreNetwork.getFeaturedProducts(storeId: storeId, branchId: branchId, skip: skip, take: take),
@@ -15,14 +22,6 @@ class StoreRepositoryImp: StoreRepository {
         throw URLError(.badServerResponse)
     }
     
-    
-    private let networkService: NetworkServiceProtocol
-    
-    init(networkService: NetworkServiceProtocol) {
-        self.networkService = networkService
-    }
-    
-   
     func getHomeCategories(storeId: Int) async throws -> StoreCategoryResponse {
         let publisher = networkService.fetchData(
             target: StoreNetwork.getHomeCategories(storeId: storeId),
@@ -101,10 +100,12 @@ class StoreRepositoryImp: StoreRepository {
         throw URLError(.badServerResponse)
     }
     
-    func getProductsByCategory(storeId: Int, branchId: Int, categoryId: Int) async throws -> ProductListResponse {
+    // MARK: - CHANGED METHOD
+    func getProductsByCategory(storeId: Int, branchId: Int, categoryId: Int) async throws -> CategoryProductsResponse {
         let publisher = networkService.fetchData(
             target: StoreNetwork.getProductsByCategory(storeId: storeId, branchId: branchId, categoryId: categoryId),
-            responseClass: ProductListResponse.self
+            // CHANGED: Update the responseClass here so the network service decodes the right type
+            responseClass: CategoryProductsResponse.self
         )
         
         for try await modelDTO in publisher.values {

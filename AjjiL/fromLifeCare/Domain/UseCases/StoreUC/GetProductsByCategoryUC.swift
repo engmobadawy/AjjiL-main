@@ -1,11 +1,3 @@
-//
-//  GetProductsByCategoryUC.swift
-//  AjjiLMB
-//
-//  Created by mohamed mahmoud sobhy badawy on 02/04/2026.
-//
-
-
 import Foundation
 
 class GetProductsByCategoryUC {
@@ -15,7 +7,8 @@ class GetProductsByCategoryUC {
         self.repo = repo
     }
     
-    func execute(storeId: Int, branchId: Int, categoryId: Int) async throws -> ProductListResponse {
+    // CHANGED: Return type is now CategoryProductsResponse
+    func execute(storeId: Int, branchId: Int, categoryId: Int) async throws -> CategoryProductsResponse {
         return try await repo.getProductsByCategory(storeId: storeId, branchId: branchId, categoryId: categoryId)
     }
 }
