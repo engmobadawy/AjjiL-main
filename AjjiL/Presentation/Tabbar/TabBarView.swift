@@ -10,7 +10,7 @@ import SwiftUI
 
 struct TabBarView: View {
     @State private var selectedTab = 2 // Home is selected by default
-    
+    @State private var tabVisibility = TabBarVisibility()
     var body: some View {
         ZStack {
             // Content for selected tab
@@ -30,72 +30,72 @@ struct TabBarView: View {
                 ProfileView()
                     .tag(4)
             }
-            
-            // Custom Tab Bar
-            VStack {
-                Spacer()
-                
-                HStack(spacing: 0) {
-                    // Stores Tab
-                    TabBarButton(
-                        icon: "tabBarStores",
-                        title: "Stores",
-                        isSelected: selectedTab == 0
-                    ) {
-                        selectedTab = 0
-                    }
+            if !tabVisibility.isHidden {
+                // Custom Tab Bar
+                VStack {
+                    Spacer()
                     
-                    // Orders Tab
-                    TabBarButton(
-                        icon: "tabBarOrders",
-                        title: "Orders",
-                        isSelected: selectedTab == 1
-                    ) {
-                        selectedTab = 1
-                    }
-                    
-                    // Home Tab (Center - Prominent)
-                    Button(action: {
-                        selectedTab = 2
-                    }) {
-                        ZStack {
-                            Circle()
-                                .fill(Color(red: 0.0, green: 0.62, blue: 0.58))
-                                .frame(width: 70, height: 70)
-                            
-                            Image("tabBarHome")
-                                .font(.system(size: 28))
-                                .foregroundColor(.white)
+                    HStack(spacing: 0) {
+                        // Stores Tab
+                        TabBarButton(
+                            icon: "tabBarStores",
+                            title: "Stores",
+                            isSelected: selectedTab == 0
+                        ) {
+                            selectedTab = 0
+                        }
+                        
+                        // Orders Tab
+                        TabBarButton(
+                            icon: "tabBarOrders",
+                            title: "Orders",
+                            isSelected: selectedTab == 1
+                        ) {
+                            selectedTab = 1
+                        }
+                        
+                        // Home Tab (Center - Prominent)
+                        Button(action: {
+                            selectedTab = 2
+                        }) {
+                            ZStack {
+                                Circle()
+                                    .fill(Color(red: 0.0, green: 0.62, blue: 0.58))
+                                    .frame(width: 70, height: 70)
+                                
+                                Image("tabBarHome")
+                                    .font(.system(size: 28))
+                                    .foregroundColor(.white)
+                            }
+                        }
+                        .offset(y: -8)
+                        .frame(maxWidth: .infinity)
+                        
+                        // Favorites Tab
+                        TabBarButton(
+                            icon: "tabBarLove",
+                            title: "Favorites",
+                            isSelected: selectedTab == 3
+                        ) {
+                            selectedTab = 3
+                        }
+                        
+                        // Profile Tab
+                        TabBarButton(
+                            icon: "tabBarProfile",
+                            title: "Profile",
+                            isSelected: selectedTab == 4
+                        ) {
+                            selectedTab = 4
                         }
                     }
-                    .offset(y: -8)
-                    .frame(maxWidth: .infinity)
-                    
-                    // Favorites Tab
-                    TabBarButton(
-                        icon: "tabBarLove",
-                        title: "Favorites",
-                        isSelected: selectedTab == 3
-                    ) {
-                        selectedTab = 3
-                    }
-                    
-                    // Profile Tab
-                    TabBarButton(
-                        icon: "tabBarProfile",
-                        title: "Profile",
-                        isSelected: selectedTab == 4
-                    ) {
-                        selectedTab = 4
-                    }
-                }
-                .padding(.horizontal)
-                .padding(.bottom, 8)
-                .padding(.top, 12)
-                .background(Color.white)
-            }.ignoresSafeArea(.keyboard, edges: .bottom)
-
-        }
+                    .padding(.horizontal)
+                    .padding(.bottom, 8)
+                    .padding(.top, 12)
+                    .background(Color.white)
+                }.ignoresSafeArea(.keyboard, edges: .bottom)
+            }
+        }.environment(tabVisibility)
     }
 }
 
@@ -133,7 +133,11 @@ struct StoresView: View {
 
 
 
-
+@Observable
+@MainActor
+final class TabBarVisibility {
+    var isHidden: Bool = false
+}
 
 
 

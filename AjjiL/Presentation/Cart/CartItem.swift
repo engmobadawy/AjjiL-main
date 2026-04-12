@@ -1,9 +1,17 @@
+//
+//  CartItem.swift
+//  AjjiLMB
+//
+//  Created by mohamed mahmoud sobhy badawy on 09/04/2026.
+//
+
+
 import SwiftUI
 
 // MARK: - Model
 @Observable
 @MainActor
-final class CartItem: Identifiable {
+final class CartItemCartItemForCartView: Identifiable {
     let id: UUID
     let imageName: String
     let category: String
@@ -42,7 +50,7 @@ extension Color {
 
 // MARK: - Main Card View
 struct CartItemCardView: View {
-    let item: CartItem
+    let item: CartItemCartItemForCartView
     let onDelete: () -> Void
     
     var body: some View {
@@ -81,7 +89,7 @@ private struct CartItemImageView: View {
 }
 
 private struct CartItemDetailsView: View {
-    let item: CartItem
+    let item: CartItemCartItemForCartView
     let onDelete: () -> Void
     
     var body: some View {
@@ -115,7 +123,7 @@ private struct CartItemDetailsView: View {
 }
 
 private struct CartItemControlsView: View {
-    let item: CartItem
+    let item: CartItemCartItemForCartView
     let onDelete: () -> Void
     
     var body: some View {
@@ -156,4 +164,29 @@ private struct CartItemControlsView: View {
             }
         }
     }
+}
+
+
+
+
+#Preview {
+    VStack {
+        // Example of the card in a list context
+        CartItemCardView(
+            item: CartItemCartItemForCartView(
+                imageName: "car", // Replace with your actual asset name
+                category: "Detergent & Care",
+                title: "Liquid Laundry",
+                price: 102.9,
+                quantity: 2
+            ),
+            onDelete: {
+                print("Delete item triggered")
+            }
+        )
+        .padding()
+        
+        Spacer()
+    }
+    .background(Color(red: 245/255, green: 247/255, blue: 251/255)) // Light background to see the card border
 }

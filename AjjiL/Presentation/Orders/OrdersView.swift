@@ -26,16 +26,15 @@ private struct FilterTaskID: Equatable {
 struct OrdersView: View {
     @State private var selectedTab: OrdersTab = .currentOrders
     @State private var activeSheet: ActiveSheet?
+    @State private var selectedOrderId: Int?
     
     // State initialization for view models
     @State private var filterStore = OrderFilterViewModel()
-    @State private var viewModel: OrdersViewModel = {
-        let repo = OrdersRepositoryImp(networkService: NetworkService())
-        return OrdersViewModel(
-            getOrderHistoryUC: GetOrderHistoryUC(repo: repo),
-            getCurrentOrdersUC: GetCurrentOrdersUC(repo: repo)
-        )
-    }()
+    @State private var viewModel: OrdersViewModel
+
+    init(viewModel: OrdersViewModel) {
+        self.viewModel = viewModel
+    }
     
     // Computes the current state of filters and selected tab to drive the .task(id:) modifier
     private var currentTaskID: FilterTaskID {
@@ -47,7 +46,9 @@ struct OrdersView: View {
     }
     
     var body: some View {
+        NavigationStack{
         VStack(spacing: 0) {
+            
             TopRowNotForHome(
                 title: "My Orders",
                 showBackButton: false,
@@ -79,10 +80,10 @@ struct OrdersView: View {
                 if let dateToFetch = filterStore.appliedOrderDate {
                     dateString = dateToFetch.formatted(
                         .iso8601
-                        .year()
-                        .month()
-                        .day()
-                        .dateSeparator(.dash)
+                            .year()
+                            .month()
+                            .day()
+                            .dateSeparator(.dash)
                     )
                 }
                 
@@ -92,6 +93,12 @@ struct OrdersView: View {
                     await viewModel.fetchCurrentOrders(storeName: search, date: dateString)
                 }
             }
+        }.navigationDestination(item: $selectedOrderId) { id in
+            let repo = OrdersRepositoryImp(networkService: NetworkService())
+            let useCase = GetOrderDetailsUC(repo: repo)
+            let detailsViewModel = OrderDetailsViewModel(getOrderDetailsUC: useCase)
+            
+            OrderDetailsView(orderId: id, viewModel: detailsViewModel)
         }
         .sheet(item: $activeSheet) { sheet in
             switch sheet {
@@ -101,7 +108,8 @@ struct OrdersView: View {
                     .presentationDragIndicator(.hidden)
             }
         }
-    }
+        } .navigationBarBackButtonHidden(true)
+}
     
     // MARK: - Subviews
     
@@ -118,7 +126,7 @@ struct OrdersView: View {
                 ForEach(viewModel.currentOrders) { order in
                     OrderHistoryCell(
                         config: viewModel.mapToConfig(order),
-                        onViewOrder: { print("Tapped View Order for \(order.referenceNo)") },
+                        onViewOrder: { selectedOrderId = order.id },
                         onReturn: { print("Tapped Return for \(order.referenceNo)") }
                     )
                 }
@@ -149,7 +157,7 @@ struct OrdersView: View {
                 ForEach(viewModel.historyOrders) { order in
                     OrderHistoryCell(
                         config: viewModel.mapToConfig(order),
-                        onViewOrder: { print("Tapped View Order for \(order.referenceNo)") },
+                        onViewOrder: { selectedOrderId = order.id },
                         onReturn: { print("Tapped Return for \(order.referenceNo)") }
                     )
                 }

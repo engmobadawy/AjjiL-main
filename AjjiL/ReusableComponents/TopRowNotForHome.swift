@@ -113,7 +113,7 @@ struct TopRowNotForHome: View {
             case .rate:
                 ActionPillButton(
                     title: "Rate",
-                    iconName: "star",
+                    iconName: "star.fill",
                     isSystemImage: true,
                     backgroundColor: iconBackgroundColor,
                     action: { onRate?() }
