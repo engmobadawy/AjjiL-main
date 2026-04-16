@@ -1,3 +1,11 @@
+//
+//  VerifyPromoCodeUseCase.swift
+//  AjjiLMB
+//
+//  Created by mohamed mahmoud sobhy badawy on 16/04/2026.
+//
+
+
 import Foundation
 import Combine
 
@@ -21,5 +29,32 @@ class VerifyPromoCodeUseCase {
         }
         
         throw URLError(.badServerResponse)
+    }
+}
+
+
+
+
+import Foundation
+
+struct VerifyPromoCodeResponse: Codable {
+    let status: Bool?
+    let message: String?
+    let data: PromoCodeData?
+}
+
+struct PromoCodeData: Codable {
+    let id: Int?
+    let code: String?
+    let couponValue: Double?
+    let priceBefore: Double?
+    let priceAfter: Double?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case code
+        case couponValue = "coupon_value"
+        case priceBefore = "price_before"
+        case priceAfter = "price_after"
     }
 }

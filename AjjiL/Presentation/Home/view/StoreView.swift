@@ -1,5 +1,6 @@
 import SwiftUI
 import Kingfisher
+import Shimmer
 
 struct StoreView: View {
     let storeName: String
@@ -18,7 +19,6 @@ struct StoreView: View {
         getHomeCategoriesUC: GetHomeCategoriesUC(repo: StoreRepositoryImp(networkService: DependencyContainer.shared.networkService)),
         getStoreSubcategoriesUC: GetStoreSubcategoriesUC(repo: StoreRepositoryImp(networkService: DependencyContainer.shared.networkService)),
         getProductsByCategoryUC: GetProductsByCategoryUC(repo: StoreRepositoryImp(networkService: DependencyContainer.shared.networkService)),
-        // Injecting the new Favorite UseCases!
         addFavoriteProductUC: DependencyContainer.FavoritesDependency.shared.addFavoriteProductUC,
         removeFavoriteProductUC: DependencyContainer.FavoritesDependency.shared.removeFavoriteProductUC
     )
@@ -59,26 +59,26 @@ struct StoreView: View {
                 ScrollView {
                     VStack(spacing: 0) {
                         switch selectedTab {
-                                                case .store:
-                                                    StoreContentView(
-                                                        storeViewModel: storeViewModel,
-                                                        search: $search,
-                                                        currentMode: currentMode,
-                                                        onViewAllCategories: {
-                                                            showAllCategories = true
-                                                        }
-                                                    )
-                                                case .products:
-                                                    ProductCatalogView(
-                                                        storeViewModel: storeViewModel,
-                                                        selectedCategoryID: $selectedCategoryID
-                                                    )
-                                                case .offers:
-                                                    OffersContentView(
-                                                        storeViewModel: storeViewModel,
-                                                        selectedCategoryID: $selectedCategoryID
-                                                    )
-                                                }
+                        case .store:
+                            StoreContentView(
+                                storeViewModel: storeViewModel,
+                                search: $search,
+                                currentMode: currentMode,
+                                onViewAllCategories: {
+                                    showAllCategories = true
+                                }
+                            )
+                        case .products:
+                            ProductCatalogView(
+                                storeViewModel: storeViewModel,
+                                selectedCategoryID: $selectedCategoryID
+                            )
+                        case .offers:
+                            OffersContentView(
+                                storeViewModel: storeViewModel,
+                                selectedCategoryID: $selectedCategoryID
+                            )
+                        }
                     }
                 }
                 .scrollIndicators(.hidden)
@@ -89,18 +89,23 @@ struct StoreView: View {
                 HomeView()
             }
             .navigationDestination(isPresented: $showCartView) {
-                let branchIdToFetch = savedBranchID == 0 ? 1 : savedBranchID
-                let repo = CartRepositoryImp(networkService: DependencyContainer.shared.networkService)
-                
-                let cartViewModel = CartViewModel(
-                    getCartUC: GetCartUC(repo: repo),
-                    changeCartItemQuantityUC: ChangeCartItemQuantityUC(repo: repo),
-                    removeProductFromCartUC: RemoveProductFromCartUC(repo: repo)
-                )
-                
-                CartView(viewModel: cartViewModel, branchId: String(branchIdToFetch))
-            }
-            .navigationDestination(isPresented: $showAllCategories) {
+                            let branchIdToFetch = savedBranchID == 0 ? 1 : savedBranchID
+                            let repo = CartRepositoryImp(networkService: DependencyContainer.shared.networkService)
+                            
+                            let cartViewModel = CartViewModel(
+                                getCartUC: GetCartUC(repo: repo),
+                                changeCartItemQuantityUC: ChangeCartItemQuantityUC(repo: repo),
+                                removeProductFromCartUC: RemoveProductFromCartUC(repo: repo),
+                                verifyPromoCodeUC: VerifyPromoCodeUseCase(networkService: DependencyContainer.shared.networkService)
+                            )
+                            
+                            // NEW: Pass the storeName here
+                            CartView(
+                                viewModel: cartViewModel,
+                                branchId: String(branchIdToFetch),
+                                storeName: storeName
+                            )
+                        }            .navigationDestination(isPresented: $showAllCategories) {
                 CategoriesView(
                     storeId: storeId,
                     viewModel: CategoriesViewModel(
@@ -128,8 +133,8 @@ struct StoreView: View {
             }
         }
         .task(id: storeId) {
-            // FIX: Only fetch if data is empty so it doesn't overwrite your toggles with stale backend data when switching tabs!
             if storeViewModel.storeCategories.isEmpty {
+                storeViewModel.isLoading = true // 1. Set Initial Loading
                 let branchIdToFetch = savedBranchID == 0 ? 1 : savedBranchID
                 
                 async let fetchBranches: () = homeViewModel.fetchBranches(storeId: storeId)
@@ -139,12 +144,15 @@ struct StoreView: View {
                 async let fetchSubcategories: () = storeViewModel.fetchStoreSubcategories(storeId: storeId)
                 
                 _ = await (fetchBranches, fetchSliders, fetchProducts, fetchCategories, fetchSubcategories)
+                storeViewModel.isLoading = false // 2. Stop Loading
             }
         }
         .onChange(of: selectedCategoryID) { oldValue, newValue in
             let branchIdToFetch = savedBranchID == 0 ? 1 : savedBranchID
             Task {
+                storeViewModel.isFetchingProducts = true // 3. Set Filter Loading
                 await storeViewModel.fetchProducts(storeId: storeId, branchId: branchIdToFetch, categoryId: newValue)
+                storeViewModel.isFetchingProducts = false // 4. Stop Filter Loading
             }
         }
     }
@@ -163,7 +171,11 @@ struct StoreContentView: View {
     }
     
     var body: some View {
-        if isStoreEmpty {
+        // Toggle Shimmer layout
+        if storeViewModel.isLoading {
+            StoreContentSkeleton()
+                .shimmering()
+        } else if isStoreEmpty {
             EmptyStoreStateView()
         } else {
             VStack(spacing: 0) {
@@ -198,6 +210,119 @@ struct StoreContentView: View {
     }
 }
 
+// MARK: - Product Catalog & Filters
+
+struct ProductCatalogView: View {
+    var storeViewModel: StoreViewModel
+    @Binding var selectedCategoryID: Int?
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // Reusable Filter Carousel
+            FilterCarouselView(
+                categories: storeViewModel.storeSubcategories,
+                selectedCategoryID: $selectedCategoryID
+            )
+            .padding(.top, 16)
+            .padding(.bottom, 8)
+            
+            // Toggle Shimmer Layout
+            if storeViewModel.isLoading || storeViewModel.isFetchingProducts {
+                ProductGridSkeleton()
+                    .shimmering()
+            } else if storeViewModel.storeProducts.isEmpty {
+                EmptyProductsStateView()
+            } else {
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
+                    ForEach(storeViewModel.storeProducts) { product in
+                        NavigationLink(value: product) {
+                            HomeProductCard(
+                                product: product,
+                                isFavorite: product.isFavorite, // Directly reads local property
+                                onToggleFavorite: {
+                                    Task { await storeViewModel.toggleFavorite(for: product.id) }
+                                },
+                                onAddToCart: { },
+                                onScanToBuy: { }
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, 18)
+                .padding(.vertical, 16)
+            }
+        }
+    }
+}
+
+// MARK: - Skeleton Loading Views
+
+struct StoreContentSkeleton: View {
+    var body: some View {
+        VStack(spacing: 0) {
+            // Action Card
+            Rectangle().fill(.gray.opacity(0.3)).frame(height: 55)
+            
+            // Search Bar
+            Rectangle().fill(.gray.opacity(0.3)).frame(height: 44).clipShape(.rect(cornerRadius: 12))
+                .padding(.horizontal, 18).padding(.vertical, 14)
+            
+            // Banners
+            Rectangle().fill(.gray.opacity(0.3)).frame(height: 160).clipShape(.rect(cornerRadius: 12))
+                .padding(.horizontal, 18).padding(.bottom, 24)
+            
+            // Promotional Carousel
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    ForEach(0..<4, id: \.self) { _ in
+                        Rectangle().fill(.gray.opacity(0.3)).frame(width: 130, height: 148).clipShape(.rect(cornerRadius: 12))
+                    }
+                }
+                .padding(.horizontal, 18)
+            }
+            .padding(.bottom, 24)
+            .disabled(true)
+            
+            // Categories List
+            VStack(spacing: 16) {
+                HStack {
+                    Rectangle().fill(.gray.opacity(0.3)).frame(width: 120, height: 24)
+                    Spacer()
+                    Rectangle().fill(.gray.opacity(0.3)).frame(width: 60, height: 20)
+                }
+                .padding(.horizontal, 18)
+                
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
+                    ForEach(0..<4, id: \.self) { _ in
+                        Rectangle().fill(.gray.opacity(0.3)).frame(height: 168).clipShape(.rect(cornerRadius: 28))
+                    }
+                }
+                .padding(.horizontal, 18)
+            }
+        }
+        .padding(.bottom, 16)
+    }
+}
+
+struct ProductGridSkeleton: View {
+    var body: some View {
+        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
+            ForEach(0..<6, id: \.self) { _ in
+                Rectangle()
+                    .fill(.gray.opacity(0.3))
+                    .clipShape(.rect(cornerRadius: 16))
+                    .frame(height: 220)
+            }
+        }
+        .padding(.horizontal, 18)
+        .padding(.vertical, 16)
+    }
+}
+
+
+// MARK: - Additional States & Carousels
+
 struct EmptyStoreStateView: View {
     var body: some View {
         VStack(spacing: 0) {
@@ -225,8 +350,6 @@ struct PromotionalCarousel: View {
         }
     }
 }
-
-// MARK: - Updated Category Views
 
 struct CategoryGridSection: View {
     let categories: [StoreCategory]
@@ -267,7 +390,6 @@ struct CategoryCardView: View {
                         ZStack {
                             Color.gray.opacity(0.1)
                             Image("loadingAjjil")
-//                            ProgressView()
                         }
                     }
                     .resizable()
@@ -321,48 +443,6 @@ struct FeaturedProductsSection: View {
                 }
             }
             .padding(.horizontal, 18)
-        }
-    }
-}
-
-// MARK: - Product Catalog & Filters
-
-struct ProductCatalogView: View {
-    var storeViewModel: StoreViewModel
-    @Binding var selectedCategoryID: Int?
-    
-    var body: some View {
-        VStack(spacing: 0) {
-            // Reusable Filter Carousel
-            FilterCarouselView(
-                categories: storeViewModel.storeSubcategories,
-                selectedCategoryID: $selectedCategoryID
-            )
-            .padding(.top, 16)
-            .padding(.bottom, 8)
-            
-            if storeViewModel.storeProducts.isEmpty {
-                EmptyProductsStateView()
-            } else {
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-                    ForEach(storeViewModel.storeProducts) { product in
-                        NavigationLink(value: product) {
-                            HomeProductCard(
-                                product: product,
-                                isFavorite: product.isFavorite, // Directly reads local property
-                                onToggleFavorite: {
-                                    Task { await storeViewModel.toggleFavorite(for: product.id) }
-                                },
-                                onAddToCart: { },
-                                onScanToBuy: { }
-                            )
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .padding(.horizontal, 18)
-                .padding(.vertical, 16)
-            }
         }
     }
 }
@@ -560,9 +640,6 @@ struct StoreTabBar: View {
     }
 }
 
-
-
-
 struct OffersContentView: View {
     var storeViewModel: StoreViewModel
     @Binding var selectedCategoryID: Int?
@@ -581,8 +658,6 @@ struct OffersContentView: View {
     }
 }
 
-
-
 struct EmptyOffersStateView: View {
     var body: some View {
         VStack(spacing: 0) {
@@ -598,9 +673,6 @@ struct EmptyOffersStateView: View {
         .frame(maxWidth: .infinity)
     }
 }
-
-
-
 
 struct EmptyProductsStateView: View {
     var body: some View {

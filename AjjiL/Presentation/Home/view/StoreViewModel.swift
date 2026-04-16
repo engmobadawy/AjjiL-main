@@ -5,6 +5,10 @@ import Observation
 @Observable
 @MainActor
 class StoreViewModel {
+    // MARK: - Loading States
+    var isLoading: Bool = false
+    var isFetchingProducts: Bool = false
+    
     var storeSliders: [StoreSlider] = []
     var storeProducts: [HomeFeaturedProductDataEntity] = []
     var storeCategories: [StoreCategory] = []
@@ -16,7 +20,6 @@ class StoreViewModel {
     private let getStoreSubcategoriesUC: GetStoreSubcategoriesUC
     private let getProductsByCategoryUC: GetProductsByCategoryUC
     
-    // NEW: Inject Favorite UseCases
     private let addFavoriteProductUC: AddFavoriteProductUC
     private let removeFavoriteProductUC: RemoveFavoriteProductUC
     

@@ -24,6 +24,7 @@
 		451ED45D2F543F27009AC3EA /* Poppins-ExtraLight.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 451ED44A2F543F27009AC3EA /* Poppins-ExtraLight.ttf */; };
 		451ED6AB2F5860C6009AC3EA /* IQKeyboardManagerSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 451ED6AA2F5860C6009AC3EA /* IQKeyboardManagerSwift */; };
 		4580C6E92F7F0B05003BBEBE /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 4580C6E82F7F0B05003BBEBE /* Kingfisher */; };
+		45AFE61E2F90E84700380C1C /* Shimmer in Frameworks */ = {isa = PBXBuildFile; productRef = 45AFE61D2F90E84700380C1C /* Shimmer */; };
 		45D324022F4C721D00C34BF1 /* MOLH in Frameworks */ = {isa = PBXBuildFile; productRef = 45D324012F4C721D00C34BF1 /* MOLH */; };
 /* End PBXBuildFile section */
 
@@ -74,6 +75,7 @@
 				4514B9672F62E11D000C09AF /* FirebaseCore in Frameworks */,
 				4514B96B2F62E1C1000C09AF /* FirebaseAppDistribution-Beta in Frameworks */,
 				4514B9692F62E1B4000C09AF /* FirebaseAnalytics in Frameworks */,
+				45AFE61E2F90E84700380C1C /* Shimmer in Frameworks */,
 				451ED6AB2F5860C6009AC3EA /* IQKeyboardManagerSwift in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -159,6 +161,7 @@
 				4514B9682F62E1B4000C09AF /* FirebaseAnalytics */,
 				4514B96A2F62E1C1000C09AF /* FirebaseAppDistribution-Beta */,
 				4580C6E82F7F0B05003BBEBE /* Kingfisher */,
+				45AFE61D2F90E84700380C1C /* Shimmer */,
 			);
 			productName = AjjiL;
 			productReference = 45E1DEE42F39C78500F2A199 /* AjjiLMB.app */;
@@ -194,6 +197,7 @@
 				451ED6A92F5860C6009AC3EA /* XCRemoteSwiftPackageReference "IQKeyboardManager" */,
 				45F6D9482F62DE7A0027A6D7 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 				4580C6E72F7F0B05003BBEBE /* XCRemoteSwiftPackageReference "kingfisher" */,
+				45AFE61C2F90E84700380C1C /* XCRemoteSwiftPackageReference "swiftui-Shimmer" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 45E1DEE52F39C78500F2A199 /* Products */;
@@ -487,6 +491,14 @@
 				minimumVersion = 8.8.1;
 			};
 		};
+		45AFE61C2F90E84700380C1C /* XCRemoteSwiftPackageReference "swiftui-Shimmer" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/markiv/swiftui-Shimmer";
+			requirement = {
+				kind = exactVersion;
+				version = 1.5.1;
+			};
+		};
 		45D324002F4C721D00C34BF1 /* XCRemoteSwiftPackageReference "MOLH" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/MoathOthman/MOLH.git";
@@ -530,6 +542,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 4580C6E72F7F0B05003BBEBE /* XCRemoteSwiftPackageReference "kingfisher" */;
 			productName = Kingfisher;
+		};
+		45AFE61D2F90E84700380C1C /* Shimmer */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 45AFE61C2F90E84700380C1C /* XCRemoteSwiftPackageReference "swiftui-Shimmer" */;
+			productName = Shimmer;
 		};
 		45D324012F4C721D00C34BF1 /* MOLH */ = {
 			isa = XCSwiftPackageProductDependency;

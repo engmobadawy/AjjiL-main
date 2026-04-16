@@ -7,6 +7,7 @@
 
 import SwiftUI
 import UIKit
+import Shimmer // 1. Import Shimmer
 
 @MainActor
 @Observable
@@ -43,6 +44,7 @@ struct OrderDetailsView: View {
     @State private var viewModel: OrderDetailsViewModel
     
     @State private var goToRateServicesView: Bool = false
+    
     init(orderId: Int, viewModel: OrderDetailsViewModel) {
         self.orderId = orderId
         self._viewModel = State(initialValue: viewModel)
@@ -76,6 +78,11 @@ struct OrderDetailsView: View {
                         discount: order.discount,
                         totalPrice: order.grandTotal
                     ).padding(.bottom, 10)
+                } else if viewModel.isLoading {
+                    // 2. Show Footer Skeleton while loading
+                    OrderSummaryFooterSkeleton()
+                        .shimmering()
+                        .padding(.bottom, 10)
                 }
             }
         }
@@ -108,56 +115,50 @@ struct OrderDetailsView: View {
         }
     }
 
-    
-    
-    // MARK: - Subviews
     // MARK: - Subviews
 
-        @ViewBuilder
-        private var contentState: some View {
-            // 1. If we have the order, show it immediately.
-            if let order = viewModel.order {
-                VStack(spacing: 24) {
-                    OrderDetailsHeaderCard(
-                        referenceNo: order.referenceNo,
-                        totalAmount: order.priceIncludeVate,
-                        dateString: order.createdAt,
-                        storeName: order.store,
-                        storeImageUrl: URL(string: order.storeImage),
-                        rating: order.rate
-                    )
-                    
-                    productListSection(items: order.items, status: order.status)
-                }
-                .padding()
-                // Optional: If you ever add a "Pull to Refresh", this overlays
-                // a small spinner on top of the existing details so the screen doesn't flash.
-                .overlay {
-                    if viewModel.isLoading {
-                        ProgressView()
-                            .padding()
-                            .background(.ultraThinMaterial)
-                            .clipShape(.rect(cornerRadius: 8))
-                    }
-                }
+    @ViewBuilder
+    private var contentState: some View {
+        // 1. If we have the order, show it immediately.
+        if let order = viewModel.order {
+            VStack(spacing: 24) {
+                OrderDetailsHeaderCard(
+                    referenceNo: order.referenceNo,
+                    totalAmount: order.priceIncludeVate,
+                    dateString: order.createdAt,
+                    storeName: order.store,
+                    storeImageUrl: URL(string: order.storeImage),
+                    rating: order.rate
+                )
                 
-            // 2. If we hit an error, show the message.
-            } else if let error = viewModel.errorMessage {
-                Text(error)
-                    .foregroundStyle(.red)
-                    .multilineTextAlignment(.center)
-                    .padding()
-                    .containerRelativeFrame([.horizontal, .vertical])
-                    
-            // 3. Fallback: If there's no order and no error, we are either actively
-            // loading or waiting for the .task to start. Show the main spinner!
-            } else {
-                ProgressView()
-                    .controlSize(.large)
-                    .tint(.brandGreen)
-                    .containerRelativeFrame([.horizontal, .vertical])
+                productListSection(items: order.items, status: order.status)
             }
+            .padding()
+            // Optional: If you ever add a "Pull to Refresh", this overlays
+            // a small spinner on top of the existing details so the screen doesn't flash.
+            .overlay {
+                if viewModel.isLoading {
+                    ProgressView()
+                        .padding()
+                        .background(.ultraThinMaterial)
+                        .clipShape(.rect(cornerRadius: 8))
+                }
+            }
+            
+        // 2. If we hit an error, show the message.
+        } else if let error = viewModel.errorMessage {
+            Text(error)
+                .foregroundStyle(.red)
+                .multilineTextAlignment(.center)
+                .padding()
+                .containerRelativeFrame([.horizontal, .vertical])
+                
+        // 3. Fallback: Replaced ProgressView with Shimmer Skeleton!
+        } else {
+            OrderDetailsContentSkeleton()
+                .shimmering()
         }
+    }
     
     @ViewBuilder
     private func productListSection(items: [OrderItemEntity], status: String) -> some View {
@@ -193,6 +194,100 @@ struct OrderDetailsView: View {
         }
     }
 }
+
+// MARK: - Skeleton Views
+
+struct OrderDetailsContentSkeleton: View {
+    var body: some View {
+        VStack(spacing: 24) {
+            // Header Card Skeleton
+            VStack(alignment: .leading, spacing: 16) {
+                HStack {
+                    Rectangle().fill(.gray.opacity(0.3)).frame(width: 140, height: 24).clipShape(.rect(cornerRadius: 6))
+                    Spacer()
+                    Rectangle().fill(.gray.opacity(0.3)).frame(width: 80, height: 20).clipShape(.rect(cornerRadius: 6))
+                }
+                
+                HStack(spacing: 8) {
+                    Circle().fill(.gray.opacity(0.3)).frame(width: 16, height: 16)
+                    Rectangle().fill(.gray.opacity(0.3)).frame(width: 180, height: 16).clipShape(.rect(cornerRadius: 4))
+                }
+                
+                HStack(spacing: 8) {
+                    Circle().fill(.gray.opacity(0.3)).frame(width: 16, height: 16)
+                    Rectangle().fill(.gray.opacity(0.3)).frame(width: 60, height: 16).clipShape(.rect(cornerRadius: 4))
+                    Circle().fill(.gray.opacity(0.3)).frame(width: 22, height: 22)
+                    
+                    Spacer()
+                    
+                    Rectangle().fill(.gray.opacity(0.3)).frame(width: 40, height: 16).clipShape(.rect(cornerRadius: 4))
+                }
+            }
+            .padding()
+            .background(Color(uiColor: .systemBackground))
+            .clipShape(.rect(cornerRadius: 12))
+            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.gray.opacity(0.2), lineWidth: 1))
+            
+            // Product List Section Skeleton
+            VStack(alignment: .leading, spacing: 16) {
+                HStack {
+                    Rectangle().fill(.gray.opacity(0.3)).frame(width: 120, height: 24).clipShape(.rect(cornerRadius: 6))
+                    Spacer()
+                    Rectangle().fill(.gray.opacity(0.3)).frame(width: 80, height: 24).clipShape(.rect(cornerRadius: 4))
+                }
+                
+                LazyVStack(spacing: 12) {
+                    ForEach(0..<3, id: \.self) { _ in
+                        HStack(spacing: 16) {
+                            Rectangle().fill(.gray.opacity(0.3)).frame(width: 64, height: 64).clipShape(.rect(cornerRadius: 8))
+                            
+                            VStack(alignment: .leading, spacing: 8) {
+                                Rectangle().fill(.gray.opacity(0.3)).frame(width: 60, height: 12).clipShape(.rect(cornerRadius: 4))
+                                Rectangle().fill(.gray.opacity(0.3)).frame(width: 130, height: 18).clipShape(.rect(cornerRadius: 4))
+                                
+                                HStack {
+                                    Rectangle().fill(.gray.opacity(0.3)).frame(width: 80, height: 14).clipShape(.rect(cornerRadius: 4))
+                                    Spacer()
+                                    Rectangle().fill(.gray.opacity(0.3)).frame(width: 60, height: 16).clipShape(.rect(cornerRadius: 4))
+                                }
+                            }
+                        }
+                        .padding()
+                        .background(Color(uiColor: .systemBackground))
+                        .clipShape(.rect(cornerRadius: 12))
+                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.gray.opacity(0.2), lineWidth: 1))
+                    }
+                }
+            }
+        }
+        .padding()
+    }
+}
+
+struct OrderSummaryFooterSkeleton: View {
+    var body: some View {
+        VStack(spacing: 12) {
+            ForEach(0..<4, id: \.self) { _ in
+                HStack {
+                    Rectangle().fill(.gray.opacity(0.3)).frame(width: 140, height: 16).clipShape(.rect(cornerRadius: 4))
+                    Spacer()
+                    Rectangle().fill(.gray.opacity(0.3)).frame(width: 60, height: 16).clipShape(.rect(cornerRadius: 4))
+                }
+            }
+            
+            Divider().padding(.vertical, 4)
+            
+            HStack {
+                Rectangle().fill(.gray.opacity(0.3)).frame(width: 100, height: 22).clipShape(.rect(cornerRadius: 4))
+                Spacer()
+                Rectangle().fill(.gray.opacity(0.3)).frame(width: 80, height: 22).clipShape(.rect(cornerRadius: 4))
+            }
+        }
+        .padding()
+        .background(Color.brandGreen.opacity(0.1))
+    }
+}
+
 
 // MARK: - POD Subviews
 
@@ -423,12 +518,11 @@ struct PriceView: View {
 
 #Preview {
     // 1. Setup Mock Repository and Use Case
-    // This follows the architectural pattern of separating business logic.
     let mockRepo = OrdersRepositoryImp(networkService: NetworkService())
     let useCase = GetOrderDetailsUC(repo: mockRepo)
     let viewModel = OrderDetailsViewModel(getOrderDetailsUC: useCase)
     
-    // 2. Initialize View with the specific Order ID from your Postman output
+    // 2. Initialize View with the specific Order ID
     NavigationStack {
         OrderDetailsView(orderId: 229, viewModel: viewModel)
     }

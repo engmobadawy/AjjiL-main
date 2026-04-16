@@ -6,4 +6,6 @@ protocol CartRepository {
     func removeProduct(itemId: String) async throws -> SimpleActionModel 
     func addProductByBarcode(branchId: String, barcode: String, quantity: String) async throws -> CartModel
     func changeQuantity(itemId: String, quantity: String, branchId: String) async throws -> CartModel
+    
+    func verifyPromoCode(cartId: String, couponCode: String) async throws -> CartModel
 }

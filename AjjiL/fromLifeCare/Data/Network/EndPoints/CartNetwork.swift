@@ -6,6 +6,7 @@ enum CartNetwork {
     case removeProduct(itemId: String)
     case addProductByBarcode(branchId: String, barcode: String, quantity: String)
     case changeQuantity(itemId: String, quantity: String, branchId: String)
+    case verifyPromoCode(cartId: String, couponCode: String)
 }
 
 extension CartNetwork: TargetType {
@@ -25,21 +26,26 @@ extension CartNetwork: TargetType {
             return "cart/addProduct/barcode"
         case .changeQuantity:
             return "cart/changeQuantity"
+        case .verifyPromoCode(let cartId, let couponCode):
+                    return "verifyPromoCode/\(cartId)/\(couponCode)"
         }
     }
 
     var methods: HTTPMethod {
-        switch self {
-        case .getCart:
-            return .get
-        case .addProduct, .removeProduct, .addProductByBarcode, .changeQuantity:
-            return .post
+            switch self {
+            // 1. Move it here to the GET requests
+            case .getCart, .verifyPromoCode:
+                return .get
+                
+            // 2. Remove it from the POST requests
+            case .addProduct, .removeProduct, .addProductByBarcode, .changeQuantity:
+                return .post
+            }
         }
-    }
 
     var task: TaskRequest {
         switch self {
-        case .getCart:
+        case .getCart, .verifyPromoCode:
             return .requestPlain
             
         case .addProduct(let branchId, let productId, let quantity, let barcode):

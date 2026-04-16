@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Shimmer // 1. Import Shimmer
 
 struct FavoritesView: View {
     
@@ -47,8 +48,10 @@ struct FavoritesView: View {
                 ScrollView {
                     switch currentState {
                     case .loading:
-                        ProgressView()
-                            .padding(.top, 198)
+                        // 2. Replace ProgressView with the Shimmering Skeleton
+                        FavoritesGridSkeleton()
+                            .shimmering()
+                            .padding(.top, 16)
                             
                     case .empty:
                         VStack(alignment: .center, spacing: 28) {
@@ -85,20 +88,42 @@ struct FavoritesView: View {
                 }
                 .padding(.horizontal, 18)
                 .navigationDestination(for: FavoriteProductDataEntity.self) { product in
-                                    ProductDetailsView(
-                                        viewModel: ProductDetailsViewModel(
-                                            branchProductId: product.id,
-                                            getProductDetailsUC: DependencyContainer.FavoritesDependency.shared.getProductDetailsUC,
-                                            addFavoriteProductUC: DependencyContainer.FavoritesDependency.shared.addFavoriteProductUC,
-                                            removeFavoriteProductUC: DependencyContainer.FavoritesDependency.shared.removeFavoriteProductUC
-                                        )
-                                    )
-                                }
+                    ProductDetailsView(
+                        viewModel: ProductDetailsViewModel(
+                            branchProductId: product.id,
+                            getProductDetailsUC: DependencyContainer.FavoritesDependency.shared.getProductDetailsUC,
+                            addFavoriteProductUC: DependencyContainer.FavoritesDependency.shared.addFavoriteProductUC,
+                            removeFavoriteProductUC: DependencyContainer.FavoritesDependency.shared.removeFavoriteProductUC
+                        )
+                    )
+                }
             }
         }
         .navigationBarBackButtonHidden(true)
         .task {
             await viewModel.fetchFavorites()
+        }
+    }
+}
+
+// MARK: - Skeleton View
+
+/// 3. Dedicated Skeleton mimicking your 2-column Product Grid
+struct FavoritesGridSkeleton: View {
+    private let columns = [
+        GridItem(.flexible(), spacing: 16),
+        GridItem(.flexible(), spacing: 16)
+    ]
+    
+    var body: some View {
+        LazyVGrid(columns: columns, spacing: 16) {
+            ForEach(0..<6, id: \.self) { _ in
+                // A simple placeholder block representing the height of HomeProductCard
+                Rectangle()
+                    .fill(.gray.opacity(0.3))
+                    .frame(height: 220)
+                    .clipShape(.rect(cornerRadius: 16))
+            }
         }
     }
 }

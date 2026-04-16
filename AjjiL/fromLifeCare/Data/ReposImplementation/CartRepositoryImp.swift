@@ -91,4 +91,20 @@ class CartRepositoryImp: CartRepository {
         
         throw URLError(.badServerResponse)
     }
+    
+    
+    
+    // MARK: - Verify Promo Code
+        func verifyPromoCode(cartId: String, couponCode: String) async throws -> CartModel {
+            let publisher = networkService.fetchData(
+                target: CartNetwork.verifyPromoCode(cartId: cartId, couponCode: couponCode),
+                responseClass: CartModel.self
+            )
+            
+            for try await modelDTO in publisher.values {
+                return modelDTO
+            }
+            
+            throw URLError(.badServerResponse)
+        }
 }

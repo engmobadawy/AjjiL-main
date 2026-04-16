@@ -1,9 +1,11 @@
 import SwiftUI
+import Shimmer // 1. Import the library
 
 struct HomeView: View {
     @Environment(TabBarVisibility.self) private var tabVisibility
     
     @AppStorage("isStoreMode") private var isStoreMode: Bool = false
+    
     // MARK: - State
     @State private var viewModel = DependencyContainer.HomeDependency.shared.homeVM
     @State private var searchText: String = ""
@@ -16,67 +18,105 @@ struct HomeView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-            HomeTopRow()
-
+                HomeTopRow()
                 
-                // 2. Search & Shop Header (Spacing: Top 7, Bottom 12)
+                // 2. Search & Shop Header
                 searchAndToggleHeader
                 
                 // 3. Main Scrollable Content
                 ScrollView {
-                    VStack(spacing: 18) {
-                        BannerCollectionView(banners: viewModel.sliderCards)
-                        
-                        storesSection
-                        
-                        featuredProductsHeader
-                        
-                        featuredProductsGrid
+                    // Toggle between Skeleton and Actual Data
+                    if viewModel.isLoading {
+                        skeletonLayout
+                            .shimmering() // 2. Apply shimmer effect to the entire skeleton
+                    } else {
+                        VStack(spacing: 18) {
+                            BannerCollectionView(banners: viewModel.sliderCards)
+                            
+                            storesSection
+                            
+                            featuredProductsHeader
+                            
+                            featuredProductsGrid
+                        }
+                        .padding(.horizontal, 18)
+                        .padding(.vertical, 18)
                     }
-                    .padding(.horizontal, 18)
-                    .padding(.vertical, 18)
                 }
                 .scrollIndicators(.hidden)
             }
-           
             .background(.white)
             .navigationBarBackButtonHidden(true)
-            // Locate this block in HomeView.swift and replace it
-                        .navigationDestination(for: HomeFeaturedProductDataEntity.self) { product in
-                            ProductDetailsView(
-                                viewModel: ProductDetailsViewModel(
-                                    branchProductId: product.id,
-                                    getProductDetailsUC: DependencyContainer.FavoritesDependency.shared.getProductDetailsUC,
-                                    addFavoriteProductUC: DependencyContainer.FavoritesDependency.shared.addFavoriteProductUC,
-                                    removeFavoriteProductUC: DependencyContainer.FavoritesDependency.shared.removeFavoriteProductUC
-                                )
-                            )
-                        }
-            // Type-safe navigation mapping the store entity to the StoreView
+            .navigationDestination(for: HomeFeaturedProductDataEntity.self) { product in
+                ProductDetailsView(
+                    viewModel: ProductDetailsViewModel(
+                        branchProductId: product.id,
+                        getProductDetailsUC: DependencyContainer.FavoritesDependency.shared.getProductDetailsUC,
+                        addFavoriteProductUC: DependencyContainer.FavoritesDependency.shared.addFavoriteProductUC,
+                        removeFavoriteProductUC: DependencyContainer.FavoritesDependency.shared.removeFavoriteProductUC
+                    )
+                )
+            }
             .navigationDestination(for: HomeStoresDataEntity.self) { store in
-                StoreView(storeName: store.name, storeId: store.id,)
+                StoreView(storeName: store.name, storeId: store.id)
             }
             .navigationDestination(isPresented: $showAllStoresView) {
                 AllStoresView()
             }
-
             .navigationDestination(isPresented: $showNotificationsView) {
                 HomeView()
             }
             .navigationDestination(isPresented: $showScannerView) {
                 ScannerMainView()
             }
-          
-
-            // Type-safe navigation mapping the store entity to the StoreView
-            .navigationDestination(for: HomeStoresDataEntity.self) { store in
-                // Pass both the ID and the name
-                StoreView(storeName: store.name , storeId: store.id )
-            }
         }
         .task {
             await viewModel.fetchData()
         }
+    }
+
+    // MARK: - Skeleton Loading Layout
+    
+    /// 3. Provide mock shapes to represent your UI while data is fetching
+    private var skeletonLayout: some View {
+        VStack(spacing: 18) {
+            // Banner Skeleton
+            Rectangle()
+                .fill(.gray.opacity(0.3))
+                .clipShape(.rect(cornerRadius: 12))
+                .frame(height: 160)
+            
+            // Stores Section Skeleton
+            VStack(alignment: .leading, spacing: 12) {
+                storesHeader
+                
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(0..<4, id: \.self) { _ in
+                            Circle()
+                                .fill(.gray.opacity(0.3))
+                                .frame(width: 80, height: 80)
+                        }
+                    }
+                }
+                .disabled(true)
+            }
+            
+            featuredProductsHeader
+            
+            // Featured Products Grid Skeleton
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
+                ForEach(0..<4, id: \.self) { _ in
+                    Rectangle()
+                        .fill(.gray.opacity(0.3))
+                        .clipShape(.rect(cornerRadius: 16))
+                        .frame(height: 220)
+                }
+            }
+        }
+        .padding(.horizontal, 18)
+        .padding(.vertical, 18)
+        // .redacted(reason: .placeholder) // Optional: add if you use real Text() inside the skeleton
     }
 
     // MARK: - Extracted Header
@@ -125,7 +165,6 @@ struct HomeView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
                     ForEach(viewModel.homeStores) { store in
-                        // Pass the specific store entity down the navigation stack
                         NavigationLink(value: store) {
                             StorescardVeiw(imageURL: store.image)
                         }
