@@ -41,15 +41,17 @@ struct HomeView: View {
            
             .background(.white)
             .navigationBarBackButtonHidden(true)
-            .navigationDestination(for: HomeFeaturedProductDataEntity.self) { product in
-                ProductDetailsView(
-                    product: product,
-                    isFavorite: viewModel.favoriteProductIDs.contains(product.id),
-                    onToggleFavorite: {
-                        Task { await viewModel.toggleFavorite(for: product.id) }
-                    }
-                )
-            }
+            // Locate this block in HomeView.swift and replace it
+                        .navigationDestination(for: HomeFeaturedProductDataEntity.self) { product in
+                            ProductDetailsView(
+                                viewModel: ProductDetailsViewModel(
+                                    branchProductId: product.id,
+                                    getProductDetailsUC: DependencyContainer.FavoritesDependency.shared.getProductDetailsUC,
+                                    addFavoriteProductUC: DependencyContainer.FavoritesDependency.shared.addFavoriteProductUC,
+                                    removeFavoriteProductUC: DependencyContainer.FavoritesDependency.shared.removeFavoriteProductUC
+                                )
+                            )
+                        }
             // Type-safe navigation mapping the store entity to the StoreView
             .navigationDestination(for: HomeStoresDataEntity.self) { store in
                 StoreView(storeName: store.name, storeId: store.id,)

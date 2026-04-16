@@ -85,16 +85,15 @@ struct FavoritesView: View {
                 }
                 .padding(.horizontal, 18)
                 .navigationDestination(for: FavoriteProductDataEntity.self) { product in
-                    ProductDetailsView(
-                        product: product.asHomeProduct,
-                        isFavorite: viewModel.products.first(where: { $0.id == product.id })?.isFavorite ?? product.isFavorite,
-                        onToggleFavorite: {
-                            Task {
-                                await viewModel.toggleFavorite(for: product)
-                            }
-                        }
-                    )
-                }
+                                    ProductDetailsView(
+                                        viewModel: ProductDetailsViewModel(
+                                            branchProductId: product.id,
+                                            getProductDetailsUC: DependencyContainer.FavoritesDependency.shared.getProductDetailsUC,
+                                            addFavoriteProductUC: DependencyContainer.FavoritesDependency.shared.addFavoriteProductUC,
+                                            removeFavoriteProductUC: DependencyContainer.FavoritesDependency.shared.removeFavoriteProductUC
+                                        )
+                                    )
+                                }
             }
         }
         .navigationBarBackButtonHidden(true)

@@ -4,16 +4,11 @@ import Kingfisher
 struct ProductDetailsView: View {
     @Environment(\.dismiss) private var dismiss
     
-    // The view owns the ViewModel using @State, per modern @Observable guidelines
     @State private var viewModel: ProductDetailsViewModel
 
-    init(product: HomeFeaturedProductDataEntity, isFavorite: Bool, onToggleFavorite: @escaping () -> Void) {
-        // Initialize the State-wrapped ViewModel
-        self._viewModel = State(initialValue: ProductDetailsViewModel(
-            product: product,
-            isFavorite: isFavorite,
-            onToggleFavorite: onToggleFavorite
-        ))
+    // Accept the instantiated ViewModel from the router (HomeView)
+    init(viewModel: ProductDetailsViewModel) {
+        self._viewModel = State(initialValue: viewModel)
     }
 
     var body: some View {
@@ -25,37 +20,51 @@ struct ProductDetailsView: View {
                 onBack: { dismiss() }
             )
             
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    // We pass only the necessary properties to subviews to prevent over-invalidation
-                    ProductDetailsImageHeader(
-                        imageURL: viewModel.product.imageURL,
-                        discount: viewModel.product.discount,
-                        isFavorite: viewModel.isFavorite,
-                        onToggleFavorite: {
-                            withAnimation(.snappy) {
-                                viewModel.toggleFavorite()
+            if viewModel.isLoading && viewModel.productDetail == nil {
+                Spacer()
+                ProgressView()
+                    .scaleEffect(1.5)
+                    .tint(Color(red: 0.1, green: 0.7, blue: 0.5))
+                Spacer()
+            } else if let product = viewModel.productDetail {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 20) {
+                        ProductDetailsImageHeader(
+                            imageURL: product.images,
+                            discount: product.offerDiscount,
+                            isFavorite: product.isFavorite,
+                            onToggleFavorite: {
+                                Task { await viewModel.toggleFavorite() }
                             }
+                        )
+                        
+                        ProductDetailsInfoSection(product: product)
+                        
+                        ProductDetailsDescriptionSection(
+                                                    descriptionText: product.description
+                                                )
+                        
+                        ProductDetailsBarcodeSection(barcode: product.barcode)
+                        
+                        GreenButton(title: "Scan to buy") {
+                            viewModel.scanToBuy()
                         }
-                    )
-                    
-                    ProductDetailsInfoSection(product: viewModel.product)
-                    
-                    ProductDetailsDescriptionSection(points: viewModel.descriptionPoints)
-                    
-                    ProductDetailsBarcodeSection(barcode: viewModel.product.barcode)
-                    
-                    GreenButton(title: "Scan to buy") {
-                        viewModel.scanToBuy()
+                        .padding(.horizontal, 18)
                     }
-                    .padding(.horizontal, 18)
+                    .padding(.bottom, 40)
                 }
-                .padding(.bottom, 40)
+                .scrollIndicators(.hidden)
             }
-            .scrollIndicators(.hidden)
         }
         .navigationBarBackButtonHidden(true)
         .background(.white)
+        .task {
+                    // Check if data is nil before fetching to prevent overwriting
+                    // the local state when switching tabs!
+                    if viewModel.productDetail == nil {
+                        await viewModel.fetchProductDetails()
+                    }
+                }
     }
 }
 
@@ -144,11 +153,11 @@ private struct ThumbnailView: View {
 }
 
 private struct ProductDetailsInfoSection: View {
-    let product: HomeFeaturedProductDataEntity
+    let product: ProductDetailResponse // CHANGED to the endpoint's response model
     
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(product.category)
+            Text(product.categoryName)
                 .font(.custom("Poppins-Medium", size: 14))
                 .foregroundStyle(Color(red: 0.1, green: 0.7, blue: 0.5))
             
@@ -157,17 +166,14 @@ private struct ProductDetailsInfoSection: View {
                 .foregroundStyle(.black)
             
             HStack(spacing: 10) {
-                // 3. Updated Brand Image Icon
-                KFImage(URL(string: product.brandImage))
-                    .placeholder {
-                        Circle().fill(.gray.opacity(0.1))
-                    }
+                KFImage(URL(string: product.storeImage))
+                    .placeholder { Circle().fill(.gray.opacity(0.1)) }
                     .resizable()
                     .scaledToFit()
                     .frame(width: 28, height: 28)
                     .clipShape(.circle)
                 
-                Text(product.brand)
+                Text(product.storeName)
                     .font(.custom("Poppins-Regular", size: 16))
                     .foregroundStyle(.gray)
             }
@@ -175,16 +181,16 @@ private struct ProductDetailsInfoSection: View {
             
             HStack(alignment: .firstTextBaseline, spacing: 12) {
                 CurrencyAmount(
-                    amount: product.price,
+                    amount: product.finalPrice,
                     amountFont: .custom("Poppins-Bold", size: 28),
                     amountColor: .orange,
                     currencyAssetName: "OrangeVector",
                     isStrikethrough: false
                 )
                 
-                if product.originalPrice >= product.price {
+                if product.price > product.finalPrice {
                     CurrencyAmount(
-                        amount: product.originalPrice,
+                        amount: product.price,
                         amountFont: .custom("Poppins-Regular", size: 16),
                         amountColor: .gray,
                         currencyAssetName: "GrayVector",
@@ -198,7 +204,7 @@ private struct ProductDetailsInfoSection: View {
 }
 
 private struct ProductDetailsDescriptionSection: View {
-    let points: [String]
+    let descriptionText: String
     
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -206,18 +212,16 @@ private struct ProductDetailsDescriptionSection: View {
                 .font(.custom("Poppins-SemiBold", size: 18))
                 .foregroundStyle(.black)
             
-            ForEach(points, id: \.self) { point in
-                HStack(alignment: .top, spacing: 12) {
-                    Circle()
-                        .fill(Color(red: 0.2, green: 0.6, blue: 0.5))
-                        .frame(width: 14, height: 14)
-                        .padding(.top, 4)
-                    
-                    Text(point)
-                        .font(.custom("Poppins-Regular", size: 15))
-                        .foregroundStyle(.gray)
-                        .lineSpacing(4)
-                }
+            // Just use the API data. If it's empty, show a clean fallback.
+            if descriptionText.isEmpty {
+                Text("No description available.")
+                    .font(.custom("Poppins-Regular", size: 15))
+                    .foregroundStyle(.gray)
+            } else {
+                Text(descriptionText)
+                    .font(.custom("Poppins-Regular", size: 15))
+                    .foregroundStyle(.gray)
+                    .lineSpacing(4)
             }
         }
         .padding(.horizontal, 20)

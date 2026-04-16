@@ -168,7 +168,7 @@ struct ProductDetailResponse: Codable, Identifiable {
     let offerId: Int?
     let offerDiscount: String
     let barcode: String
-    let isFavorite: Bool
+    var isFavorite: Bool
     let allImages: [ProductImagePath]
     let description: String
     
