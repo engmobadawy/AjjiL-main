@@ -12,7 +12,8 @@ class RemoveProductFromCartUC {
         self.repo = repo
     }
     
-    func execute(itemId: String) async throws -> CartModel {
+    // Changed return type from CartModel to SimpleActionModel
+    func execute(itemId: String) async throws -> SimpleActionModel {
         return try await repo.removeProduct(itemId: itemId)
     }
 }

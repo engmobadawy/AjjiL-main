@@ -84,7 +84,8 @@ struct OrderDetailData: Codable {
     let grandTotal: String?
     let isReturnable: Bool?
     let isRated: Int?
-    let rate: String?
+//    let rate: String?
+    let rate: Int?
     let priceExcludeVate: String?
     let totalTax: String?
     let discount: String?
@@ -309,7 +310,7 @@ extension OrderDetailData {
             grandTotal: self.grandTotal ?? "0.00",
             isReturnable: self.isReturnable ?? false,
             isRated: (self.isRated ?? 0) == 1,
-            rate: self.rate ?? "",
+            rate: self.rate != nil ? "\(self.rate!)" : "0",
             priceExcludeVate: self.priceExcludeVate ?? "0.00",
             totalTax: self.totalTax ?? "0.00",
             discount: self.discount ?? "0.00",

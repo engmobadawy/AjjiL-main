@@ -24,6 +24,7 @@ private struct FilterTaskID: Equatable {
 // MARK: - Main View
 
 struct OrdersView: View {
+    @Environment(TabBarVisibility.self) private var tabVisibility
     @State private var selectedTab: OrdersTab = .currentOrders
     @State private var activeSheet: ActiveSheet?
     @State private var selectedOrderId: Int?
@@ -32,9 +33,32 @@ struct OrdersView: View {
     @State private var filterStore = OrderFilterViewModel()
     @State private var viewModel: OrdersViewModel
 
-    init(viewModel: OrdersViewModel) {
-        self.viewModel = viewModel
-    }
+//    init(viewModel: OrdersViewModel) {
+//        self.viewModel = viewModel
+//    }
+    
+    
+    // Remove this old init:
+        // init(viewModel: OrdersViewModel) {
+        //     self.viewModel = viewModel
+        // }
+        
+        // Add this new empty init:
+        init() {
+            // 1. Set up the dependencies
+            let repo = OrdersRepositoryImp(networkService: NetworkService())
+            let historyUC = GetOrderHistoryUC(repo: repo)
+            let currentUC = GetCurrentOrdersUC(repo: repo)
+            
+            // 2. Create the View Model
+            let vm = OrdersViewModel(
+                getOrderHistoryUC: historyUC,
+                getCurrentOrdersUC: currentUC
+            )
+            
+            // 3. Initialize the @State property wrapper
+            self._viewModel = State(initialValue: vm)
+        }
     
     // Computes the current state of filters and selected tab to drive the .task(id:) modifier
     private var currentTaskID: FilterTaskID {
@@ -108,7 +132,8 @@ struct OrdersView: View {
                     .presentationDragIndicator(.hidden)
             }
         }
-        } .navigationBarBackButtonHidden(true)
+        }         .navigationBarBackButtonHidden(true)
+        
 }
     
     // MARK: - Subviews

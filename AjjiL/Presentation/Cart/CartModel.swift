@@ -138,3 +138,26 @@ extension CartTotals {
         )
     }
 }
+
+
+
+
+
+// MARK: - Change Quantity Network DTO
+struct ChangeQuantityModel: Codable {
+    let id: Int?
+    let name: String?
+    let createdAt: String?
+    let maxTotalPrice: Double?
+    let itemsNumber: Int?
+    let cartProduct: [CartItem]? // Reusing your existing CartItem DTO!
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case name
+        case createdAt = "created_at"
+        case maxTotalPrice
+        case itemsNumber = "items_number"
+        case cartProduct = "cart_product"
+    }
+}

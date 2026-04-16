@@ -69,13 +69,16 @@ struct StoreView: View {
                                     showAllCategories = true
                                 }
                             )
-                        case .products, .offers:
+                        case .products:
                             ProductCatalogView(
                                 viewModel: homeViewModel,
                                 storeProducts: storeViewModel.storeProducts,
-                                subcategories: storeViewModel.storeSubcategories, // Passed real data here
+                                subcategories: storeViewModel.storeSubcategories,
                                 selectedCategoryID: $selectedCategoryID
                             )
+                            
+                        case .offers:
+                            EmptyView()
                         }
                     }
                 }
@@ -86,8 +89,19 @@ struct StoreView: View {
             .navigationDestination(isPresented: $showNotificationsView) {
                 HomeView()
             }
+          
+
             .navigationDestination(isPresented: $showCartView) {
-                CartView() // Make sure this view exists in your project
+                let branchIdToFetch = savedBranchID == 0 ? 1 : savedBranchID
+                let repo = CartRepositoryImp(networkService: NetworkService())
+                
+                let cartViewModel = CartViewModel(
+                    getCartUC: GetCartUC(repo: repo),
+                    changeCartItemQuantityUC: ChangeCartItemQuantityUC(repo: repo),
+                    removeProductFromCartUC: RemoveProductFromCartUC(repo: repo)
+                )
+                
+                CartView(viewModel: cartViewModel, branchId: String(branchIdToFetch))
             }
             .navigationDestination(isPresented: $showAllCategories) {
                 CategoriesView(
@@ -201,10 +215,7 @@ struct EmptyStoreStateView: View {
                 .frame(width: 153, height: 171)
                 .padding(.top, 135)
             
-            Text("Store is currently being updated.")
-                .font(.headline)
-                .foregroundStyle(.secondary)
-                .padding(.top, 16)
+          
         }
     }
 }

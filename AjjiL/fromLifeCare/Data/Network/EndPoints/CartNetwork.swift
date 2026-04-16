@@ -20,7 +20,7 @@ extension CartNetwork: TargetType {
         case .addProduct:
             return "cart/addProduct"
         case .removeProduct:
-            return "cart/removeProduct/"
+            return "cart/removeProduct"
         case .addProductByBarcode:
             return "cart/addProduct/barcode"
         case .changeQuantity:

@@ -2,6 +2,19 @@ import Foundation
 import Combine
 
 class CartRepositoryImp: CartRepository {
+    func removeProduct(itemId: String) async throws -> SimpleActionModel {
+        let publisher = networkService.fetchData(
+                    target: CartNetwork.removeProduct(itemId: itemId),
+                    responseClass: SimpleActionModel.self   // Changed from CartModel
+                )
+                
+                for try await modelDTO in publisher.values {
+                    return modelDTO
+                }
+                
+                throw URLError(.badServerResponse)
+    }
+    
     
     private let networkService: NetworkServiceProtocol
     
@@ -37,19 +50,19 @@ class CartRepositoryImp: CartRepository {
         throw URLError(.badServerResponse)
     }
     
-    // MARK: - Remove Product
-    func removeProduct(itemId: String) async throws -> CartModel {
-        let publisher = networkService.fetchData(
-            target: CartNetwork.removeProduct(itemId: itemId),
-            responseClass: CartModel.self
-        )
-        
-        for try await modelDTO in publisher.values {
-            return modelDTO
-        }
-        
-        throw URLError(.badServerResponse)
-    }
+//    // MARK: - Remove Product
+//    func removeProduct(itemId: String) async throws -> CartModel {
+//        let publisher = networkService.fetchData(
+//            target: CartNetwork.removeProduct(itemId: itemId),
+//            responseClass: CartModel.self
+//        )
+//        
+//        for try await modelDTO in publisher.values {
+//            return modelDTO
+//        }
+//        
+//        throw URLError(.badServerResponse)
+//    }
     
     // MARK: - Add Product by Barcode
     func addProductByBarcode(branchId: String, barcode: String, quantity: String) async throws -> CartModel {

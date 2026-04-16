@@ -303,3 +303,4 @@ private struct ProductDetailRibbon: View {
             .offset(x: 38, y: 12)
     }
 }
+

@@ -78,15 +78,27 @@ struct OrderDetailsView: View {
                     ).padding(.bottom, 10)
                 }
             }
-        }.onAppear {
+        }
+        .onAppear {
             // Hide the custom tab bar when entering this screen
             tabVisibility.isHidden = true
         }
         .onDisappear {
             // Show it again when navigating back
             tabVisibility.isHidden = false
-        }.navigationDestination(isPresented: $goToRateServicesView) {
-            RateServicesView(viewModel: <#RateServicesViewModel#>, onSuccessDoubleDismiss: <#() -> Void#>)
+        }
+        .navigationDestination(isPresented: $goToRateServicesView) {
+            // 1. Initialize your dependencies (matching your project's pattern)
+            let repo = OrdersRepositoryImp(networkService: NetworkService())
+            let useCase = ReviewOrderUC(repo: repo)
+            let rateViewModel = RateServicesViewModel(orderId: orderId, reviewOrderUC: useCase)
+            
+            // 2. Return the RateServicesView
+            RateServicesView(viewModel: rateViewModel) {
+                // onSuccessDoubleDismiss closure
+                // This dismisses the OrderDetailsView, returning the user to the OrdersView
+                dismiss()
+            }
         }
         .toolbar(.hidden, for: .tabBar)
         .navigationBarBackButtonHidden(true)
@@ -96,37 +108,56 @@ struct OrderDetailsView: View {
         }
     }
 
+    
+    
+    // MARK: - Subviews
     // MARK: - Subviews
 
-    @ViewBuilder
-    private var contentState: some View {
-        if viewModel.isLoading {
-            ProgressView()
-                .controlSize(.large)
-                .tint(.brandGreen)
-                .containerRelativeFrame([.horizontal, .vertical])
-        } else if let order = viewModel.order {
-            VStack(spacing: 24) {
-                OrderDetailsHeaderCard(
-                    referenceNo: order.referenceNo,
-                    totalAmount: order.priceIncludeVate,
-                    dateString: order.createdAt,
-                    storeName: order.store,
-                    storeImageUrl: URL(string: order.storeImage),
-                    rating: order.rate
-                )
-                
-                productListSection(items: order.items, status: order.status)
-            }
-            .padding()
-        } else if let error = viewModel.errorMessage {
-            Text(error)
-                .foregroundStyle(.red)
-                .multilineTextAlignment(.center)
+        @ViewBuilder
+        private var contentState: some View {
+            // 1. If we have the order, show it immediately.
+            if let order = viewModel.order {
+                VStack(spacing: 24) {
+                    OrderDetailsHeaderCard(
+                        referenceNo: order.referenceNo,
+                        totalAmount: order.priceIncludeVate,
+                        dateString: order.createdAt,
+                        storeName: order.store,
+                        storeImageUrl: URL(string: order.storeImage),
+                        rating: order.rate
+                    )
+                    
+                    productListSection(items: order.items, status: order.status)
+                }
                 .padding()
-                .containerRelativeFrame([.horizontal, .vertical])
+                // Optional: If you ever add a "Pull to Refresh", this overlays
+                // a small spinner on top of the existing details so the screen doesn't flash.
+                .overlay {
+                    if viewModel.isLoading {
+                        ProgressView()
+                            .padding()
+                            .background(.ultraThinMaterial)
+                            .clipShape(.rect(cornerRadius: 8))
+                    }
+                }
+                
+            // 2. If we hit an error, show the message.
+            } else if let error = viewModel.errorMessage {
+                Text(error)
+                    .foregroundStyle(.red)
+                    .multilineTextAlignment(.center)
+                    .padding()
+                    .containerRelativeFrame([.horizontal, .vertical])
+                    
+            // 3. Fallback: If there's no order and no error, we are either actively
+            // loading or waiting for the .task to start. Show the main spinner!
+            } else {
+                ProgressView()
+                    .controlSize(.large)
+                    .tint(.brandGreen)
+                    .containerRelativeFrame([.horizontal, .vertical])
+            }
         }
-    }
     
     @ViewBuilder
     private func productListSection(items: [OrderItemEntity], status: String) -> some View {

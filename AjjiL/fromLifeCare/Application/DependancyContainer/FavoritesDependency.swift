@@ -30,6 +30,9 @@ extension DependencyContainer {
             repo: favoritesRepo
         )
         
+        lazy var getProductDetailsUC = GetProductDetailsUC(repo: StoreRepositoryImp(networkService: DependencyContainer.shared.networkService))
+        
+        
         // MARK: - ViewModels
         @MainActor // Ensures ViewModel is initialized on the main thread for SwiftUI
         private(set) lazy var favoritesVM: FavoritesViewModel = FavoritesViewModel(

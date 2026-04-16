@@ -60,14 +60,15 @@ final class RateServicesViewModel {
 // MARK: - Main View
 
 struct RateServicesView: View {
-    @State private var viewModel: RateServicesViewModel
+    // Inject @Observable classes needing bindings via @Bindable, rather than @State
+    @Bindable var viewModel: RateServicesViewModel
     @Environment(\.dismiss) private var dismiss
     
     // Closure to tell the parent view to dismiss itself
     var onSuccessDoubleDismiss: () -> Void
 
     init(viewModel: RateServicesViewModel, onSuccessDoubleDismiss: @escaping () -> Void) {
-        _viewModel = State(wrappedValue: viewModel)
+        self.viewModel = viewModel
         self.onSuccessDoubleDismiss = onSuccessDoubleDismiss
     }
 
@@ -75,7 +76,7 @@ struct RateServicesView: View {
         ZStack {
             // Main Content
             VStack(spacing: 0) {
-                // Assuming TopRowNotForHome is defined elsewhere in your project
+                // Assuming TopRowNotForHome is defined elsewhere
                 TopRowNotForHome(
                     title: "Rate Us",
                     showBackButton: true,
@@ -88,18 +89,18 @@ struct RateServicesView: View {
                         Image("RateUs")
                             .resizable()
                             .scaledToFit()
-                            .frame(maxHeight: 280)
+                            .frame(maxHeight: 248)
                             .padding(.top, 16)
 
                         VStack(spacing: 12) {
                             Text("Rate Our Services")
                                 .font(.title)
                                 .fontWeight(.bold)
-                                .foregroundStyle(Color(red: 0.18, green: 0.49, blue: 0.36))
+                                .foregroundStyle(Color(red: 0.18, green: 0.49, blue: 0.36)) // Modern API
 
                             Text("Your Evaluation will referred to all the products you ordered in this order.")
                                 .font(.custom("Poppins-Regular", size: 16))
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(.secondary) // Modern API
                                 .multilineTextAlignment(.center)
                                 .padding(.horizontal, 24)
                         }
@@ -107,23 +108,36 @@ struct RateServicesView: View {
                         InteractiveRatingBox(rating: $viewModel.rating)
                             .padding(.horizontal, 24)
                         
-                       
-
-                       
-                        
-                        
-                    GreenButton(title: "Submit", action: {
-                        Task {
-                            await viewModel.submitReview()
+                        // Native Button with Loading State
+                        Button(action: {
+                            Task {
+                                await viewModel.submitReview()
+                            }
+                        }) {
+                            HStack(spacing: 8) {
+                                if viewModel.isSubmitting {
+                                    ProgressView()
+                                        .tint(.white)
+                                }
+                                Text(viewModel.isSubmitting ? "Submitting..." : "Submit")
+                                    .font(.headline)
+                            }
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(Color(red: 0.18, green: 0.49, blue: 0.36))
+                            .clipShape(.rect(cornerRadius: 12)) // Modern API
                         }
-                    }) .disabled(viewModel.isSubmitting)
+                        .disabled(viewModel.isSubmitting)
+                        .opacity(viewModel.isSubmitting ? 0.8 : 1.0)
+                        .padding(.horizontal, 24)
                     }
                 }
             }
             // Add a slight blur to the background when popup is active
             .blur(radius: viewModel.showSuccessPopup ? 3 : 0)
             
-            // The Success Popup Overlay
+            // The Success Popup Overlay is now active
             if viewModel.showSuccessPopup {
                 Color.black.opacity(0.4)
                     .ignoresSafeArea()
@@ -137,9 +151,10 @@ struct RateServicesView: View {
                 .zIndex(1) // Ensure it stays on top of the navigation bar
             }
         }
-        .navigationBarHidden(true)
-        // Standard alert only used for API errors now
-        .alert("Error", isPresented: $viewModel.showErrorAlert) {
+        // Utilizing modern tool bar modifiers to hide the navigation bar
+        .toolbar(.hidden, for: .navigationBar)
+        // Ensure errors from the ViewModel are presented to the user
+        .alert("Submission Failed", isPresented: $viewModel.showErrorAlert) {
             Button("OK", role: .cancel) { }
         } message: {
             Text(viewModel.errorMessage)
@@ -154,6 +169,7 @@ struct InteractiveRatingBox: View {
 
     var body: some View {
         HStack(spacing: 16) {
+            // Stable identity via \.self since it's a static range
             ForEach(1...5, id: \.self) { index in
                 Button {
                     rating = index
@@ -203,7 +219,7 @@ struct EvaluationSuccessPopup: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
                     .background(Color(red: 0.30, green: 0.60, blue: 0.51))
-                    .clipShape(.rect(cornerRadius: 12))
+                    .clipShape(.rect(cornerRadius: 12)) // Modern API
             }
             .buttonStyle(.plain)
             .padding(.horizontal, 24)
@@ -211,13 +227,8 @@ struct EvaluationSuccessPopup: View {
         }
         .frame(maxWidth: .infinity)
         .background(.white)
-        .clipShape(.rect(cornerRadius: 24))
+        .clipShape(.rect(cornerRadius: 24)) // Modern API
         .shadow(color: .black.opacity(0.15), radius: 20, x: 0, y: 10)
         .padding(32)
     }
 }
-
-
-
-
-

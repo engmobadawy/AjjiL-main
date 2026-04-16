@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct HomeView: View {
+    @Environment(TabBarVisibility.self) private var tabVisibility
     
     @AppStorage("isStoreMode") private var isStoreMode: Bool = false
     // MARK: - State
@@ -16,9 +17,7 @@ struct HomeView: View {
         NavigationStack {
             VStack(spacing: 0) {
             HomeTopRow()
-//                HomeTopRow(onNotificationTap: {
-//                    showNotificationsView = true
-//                })
+
                 
                 // 2. Search & Shop Header (Spacing: Top 7, Bottom 12)
                 searchAndToggleHeader
@@ -39,6 +38,7 @@ struct HomeView: View {
                 }
                 .scrollIndicators(.hidden)
             }
+           
             .background(.white)
             .navigationBarBackButtonHidden(true)
             .navigationDestination(for: HomeFeaturedProductDataEntity.self) { product in
@@ -57,15 +57,7 @@ struct HomeView: View {
             .navigationDestination(isPresented: $showAllStoresView) {
                 AllStoresView()
             }
-//            .navigationDestination(isPresented: $showFeaturedProductsView) {
-//                FeaturedProductsView(viewModel: viewModel, categories: [
-//                    Category(name: "Work"),
-//                    Category(name: "Personal"),
-//                    Category(name: "Fitness"),
-//                    Category(name: "Finance"),
-//                    Category(name: "Education")
-//                ])
-//            }
+
             .navigationDestination(isPresented: $showNotificationsView) {
                 HomeView()
             }
