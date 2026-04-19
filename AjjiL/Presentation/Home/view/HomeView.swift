@@ -5,7 +5,7 @@ struct HomeView: View {
     @Environment(TabBarVisibility.self) private var tabVisibility
     
     @AppStorage("isStoreMode") private var isStoreMode: Bool = false
-    
+    @AppStorage("savedBranchID") private var savedBranchID: Int = 0
     // MARK: - State
     @State private var viewModel = DependencyContainer.HomeDependency.shared.homeVM
     @State private var searchText: String = ""
@@ -145,7 +145,10 @@ struct HomeView: View {
                         onToggleFavorite: {
                             Task { await viewModel.toggleFavorite(for: product.id) }
                         },
-                        onAddToCart: { print("Added \(product.name) to cart") },
+                        onAddToCart: { print("Added \(product.name) to cart")
+                            let branchId = savedBranchID == 0 ? 1 : savedBranchID
+                            Task { await viewModel.addToCart(product: product, branchId: branchId) }
+                        },
                         onScanToBuy: { print("Scanning \(product.name)")
                             showScannerView = true
                         }

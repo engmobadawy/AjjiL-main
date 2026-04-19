@@ -27,6 +27,8 @@ class HomeViewModel {
     private let removeFavoriteProductUC: RemoveFavoriteProductUC // NEW
     private let getBranchesUC: GetBranchesUC
     
+    private let addProductByBarcodeToCartUC: AddProductByBarcodeToCartUC
+    
     init(
         getHomeDataUC: GetHomeDataUC,
         getHomeBannersUC: GetHomeBannersUC,
@@ -34,7 +36,8 @@ class HomeViewModel {
         getFeaturedProductsUC: GetFeaturedProductsUC,
         addFavoriteProductUC: AddFavoriteProductUC,
         removeFavoriteProductUC: RemoveFavoriteProductUC ,
-        getBranchesUC: GetBranchesUC
+        getBranchesUC: GetBranchesUC,
+        addProductByBarcodeToCartUC: AddProductByBarcodeToCartUC
     ) {
         self.getHomeDataUC = getHomeDataUC
         self.getHomeBannersUC = getHomeBannersUC
@@ -43,6 +46,8 @@ class HomeViewModel {
         self.addFavoriteProductUC = addFavoriteProductUC
         self.removeFavoriteProductUC = removeFavoriteProductUC
         self.getBranchesUC = getBranchesUC
+        self.addProductByBarcodeToCartUC = addProductByBarcodeToCartUC
+            
     }
     
     func fetchData(branchId: Int? = 1) async {
@@ -132,4 +137,30 @@ class HomeViewModel {
             
             isLoading = false
         }
+    
+    
+    
+    // 3. Add the Cart execution function
+        func addToCart(product: HomeFeaturedProductDataEntity, branchId: Int) async {
+            let branchIdString = String(branchId)
+            // Use barcode if available, otherwise fallback to the product ID
+            let barcodeString = product.barcode.isEmpty ? String(product.id) : product.barcode
+            let defaultQuantity = "1"
+            
+            do {
+                _ = try await addProductByBarcodeToCartUC.execute(
+                    branchId: branchIdString,
+                    barcode: barcodeString,
+                    quantity: defaultQuantity
+                )
+                // Show Success Toast
+                toast = FancyToast(type: .success, title: "Success", message: "\(product.name) added to cart")
+            } catch {
+                // Show Error Toast
+                errorMessage = error.localizedDescription
+                toast = FancyToast(type: .error, title: "Error", message: errorMessage ?? "Failed to add to cart")
+            }
+        }
+    
+    
 }

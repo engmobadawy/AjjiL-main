@@ -1,12 +1,16 @@
 import SwiftUI
 import Kingfisher
+import Shimmer
 
 struct ProductDetailsView: View {
     @Environment(\.dismiss) private var dismiss
     
+    // 1. Add the AppStorage variables
+    @AppStorage("isStoreMode") private var isStoreMode: Bool = false
+    @AppStorage("savedBranchID") private var savedBranchID: Int = 0
+    
     @State private var viewModel: ProductDetailsViewModel
 
-    // Accept the instantiated ViewModel from the router (HomeView)
     init(viewModel: ProductDetailsViewModel) {
         self._viewModel = State(initialValue: viewModel)
     }
@@ -21,11 +25,13 @@ struct ProductDetailsView: View {
             )
             
             if viewModel.isLoading && viewModel.productDetail == nil {
-                Spacer()
-                ProgressView()
-                    .scaleEffect(1.5)
-                    .tint(Color(red: 0.1, green: 0.7, blue: 0.5))
-                Spacer()
+                ScrollView {
+                    ProductDetailsSkeletonView()
+                        .shimmering()
+                }
+                .scrollIndicators(.hidden)
+                .disabled(true)
+                
             } else if let product = viewModel.productDetail {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 20) {
@@ -41,13 +47,22 @@ struct ProductDetailsView: View {
                         ProductDetailsInfoSection(product: product)
                         
                         ProductDetailsDescriptionSection(
-                                                    descriptionText: product.description
-                                                )
+                            descriptionText: product.description
+                        )
                         
                         ProductDetailsBarcodeSection(barcode: product.barcode)
                         
-                        GreenButton(title: "Scan to buy") {
-                            viewModel.scanToBuy()
+                        // 2. Conditionally render the button text and action
+                        GreenButton(title: isStoreMode ? "Scan to buy" : "Add to Cart") {
+                            if isStoreMode {
+                                    viewModel.scanToBuy()
+                                                    }
+                            else {
+                                let branchId = savedBranchID == 0 ? 1 : savedBranchID
+                                Task {
+                                    await viewModel.addToCart(branchId: branchId)
+                                }
+                            }
                         }
                         .padding(.horizontal, 18)
                     }
@@ -59,12 +74,88 @@ struct ProductDetailsView: View {
         .navigationBarBackButtonHidden(true)
         .background(.white)
         .task {
-                    // Check if data is nil before fetching to prevent overwriting
-                    // the local state when switching tabs!
-                    if viewModel.productDetail == nil {
-                        await viewModel.fetchProductDetails()
-                    }
+            if viewModel.productDetail == nil {
+                await viewModel.fetchProductDetails()
+            }
+        }
+    }
+}
+
+// MARK: - Skeleton View
+
+/// 3. Dedicated Skeleton mimicking your Product Details layout
+struct ProductDetailsSkeletonView: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            // Header Image Skeleton
+            VStack(spacing: 16) {
+                Rectangle()
+                    .fill(.gray.opacity(0.3))
+                    .frame(height: 250) // Matches the main image height
+                
+                HStack {
+                    // Thumbnail Skeleton
+                    Rectangle()
+                        .fill(.gray.opacity(0.3))
+                        .frame(width: 56, height: 56)
+                        .clipShape(.rect(cornerRadius: 12))
+                        .padding(.leading, 8)
+                    Spacer()
                 }
+                .padding(.bottom, 8)
+            }
+            .frame(height: 321) // Matches your ProductDetailsImageHeader exact height
+
+            // Info Section Skeleton
+            VStack(alignment: .leading, spacing: 10) {
+                // Category
+                Rectangle().fill(.gray.opacity(0.3)).frame(width: 80, height: 16).clipShape(.rect(cornerRadius: 4))
+                // Title
+                Rectangle().fill(.gray.opacity(0.3)).frame(width: 220, height: 28).clipShape(.rect(cornerRadius: 6))
+                
+                // Store Info
+                HStack(spacing: 10) {
+                    Circle().fill(.gray.opacity(0.3)).frame(width: 28, height: 28)
+                    Rectangle().fill(.gray.opacity(0.3)).frame(width: 100, height: 16).clipShape(.rect(cornerRadius: 4))
+                }
+                .padding(.bottom, 6)
+                
+                // Prices
+                HStack(alignment: .firstTextBaseline, spacing: 12) {
+                    Rectangle().fill(.gray.opacity(0.3)).frame(width: 120, height: 32).clipShape(.rect(cornerRadius: 6))
+                    Rectangle().fill(.gray.opacity(0.3)).frame(width: 60, height: 20).clipShape(.rect(cornerRadius: 4))
+                }
+            }
+            .padding(.horizontal, 20)
+            
+            // Description Section Skeleton
+            VStack(alignment: .leading, spacing: 14) {
+                Rectangle().fill(.gray.opacity(0.3)).frame(width: 120, height: 20).clipShape(.rect(cornerRadius: 4))
+                
+                VStack(alignment: .leading, spacing: 8) {
+                    Rectangle().fill(.gray.opacity(0.3)).frame(height: 14).clipShape(.rect(cornerRadius: 4))
+                    Rectangle().fill(.gray.opacity(0.3)).frame(height: 14).clipShape(.rect(cornerRadius: 4))
+                    Rectangle().fill(.gray.opacity(0.3)).frame(width: 250, height: 14).clipShape(.rect(cornerRadius: 4))
+                }
+            }
+            .padding(.horizontal, 20)
+            
+            // Barcode Section Skeleton
+            Rectangle()
+                .fill(.gray.opacity(0.3))
+                .frame(height: 117)
+                .clipShape(.rect(cornerRadius: 16))
+                .padding(.horizontal, 20)
+                .padding(.top, 20)
+            
+            // Scan to Buy Button Skeleton
+            Rectangle()
+                .fill(.gray.opacity(0.3))
+                .frame(height: 55)
+                .clipShape(.rect(cornerRadius: 12))
+                .padding(.horizontal, 18)
+        }
+        .padding(.bottom, 40)
     }
 }
 
@@ -307,4 +398,3 @@ private struct ProductDetailRibbon: View {
             .offset(x: 38, y: 12)
     }
 }
-

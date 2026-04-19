@@ -13,6 +13,8 @@ extension DependencyContainer {
         // Repositories
         private(set) lazy var homeRepo: HomeRepository = HomeRepositoryImp(networkService: DependencyContainer.shared.networkService)
         
+        private(set) lazy var cartRepo: CartRepository = CartRepositoryImp(networkService: DependencyContainer.shared.networkService)
+        
         // Home UseCases
         private(set) lazy var getHomeDataUC: GetHomeDataUC = GetHomeDataUC(repo: homeRepo)
         private(set) lazy var getHomeBannersUC: GetHomeBannersUC = GetHomeBannersUC(repo: homeRepo)
@@ -21,7 +23,7 @@ extension DependencyContainer {
         
         // NEW: Instantiate the GetBranches UseCase
         private(set) lazy var getBranchesUC: GetBranchesUC = GetBranchesUC(repo: homeRepo)
-        
+        private(set) lazy var addProductByBarcodeToCartUC: AddProductByBarcodeToCartUC = AddProductByBarcodeToCartUC(repo: cartRepo)
         // HomeViewModel
         @MainActor
         private(set) lazy var homeVM: HomeViewModel = HomeViewModel(
@@ -33,7 +35,10 @@ extension DependencyContainer {
             removeFavoriteProductUC: DependencyContainer.FavoritesDependency.shared.removeFavoriteProductUC,
             
             // NEW: Pass the UseCase into the ViewModel
-            getBranchesUC: getBranchesUC
+            getBranchesUC: getBranchesUC,
+            
+            // 3. Pass the missing argument here
+            addProductByBarcodeToCartUC: addProductByBarcodeToCartUC
         )
     }
 }

@@ -20,7 +20,8 @@ struct StoreView: View {
         getStoreSubcategoriesUC: GetStoreSubcategoriesUC(repo: StoreRepositoryImp(networkService: DependencyContainer.shared.networkService)),
         getProductsByCategoryUC: GetProductsByCategoryUC(repo: StoreRepositoryImp(networkService: DependencyContainer.shared.networkService)),
         addFavoriteProductUC: DependencyContainer.FavoritesDependency.shared.addFavoriteProductUC,
-        removeFavoriteProductUC: DependencyContainer.FavoritesDependency.shared.removeFavoriteProductUC
+        removeFavoriteProductUC: DependencyContainer.FavoritesDependency.shared.removeFavoriteProductUC,
+        addProductByBarcodeToCartUC: AddProductByBarcodeToCartUC(repo: CartRepositoryImp(networkService: DependencyContainer.shared.networkService))
     )
     
     @AppStorage("selectedTab") private var selectedTab: StoreTab = .store
@@ -89,23 +90,32 @@ struct StoreView: View {
                 HomeView()
             }
             .navigationDestination(isPresented: $showCartView) {
-                            let branchIdToFetch = savedBranchID == 0 ? 1 : savedBranchID
-                            let repo = CartRepositoryImp(networkService: DependencyContainer.shared.networkService)
-                            
-                            let cartViewModel = CartViewModel(
-                                getCartUC: GetCartUC(repo: repo),
-                                changeCartItemQuantityUC: ChangeCartItemQuantityUC(repo: repo),
-                                removeProductFromCartUC: RemoveProductFromCartUC(repo: repo),
-                                verifyPromoCodeUC: VerifyPromoCodeUseCase(networkService: DependencyContainer.shared.networkService)
-                            )
-                            
-                            // NEW: Pass the storeName here
-                            CartView(
-                                viewModel: cartViewModel,
-                                branchId: String(branchIdToFetch),
-                                storeName: storeName
-                            )
-                        }            .navigationDestination(isPresented: $showAllCategories) {
+                let branchIdToFetch = savedBranchID == 0 ? 1 : savedBranchID
+                
+                // 1. Initialize the required repositories
+                let cartRepo = CartRepositoryImp(networkService: DependencyContainer.shared.networkService)
+                let ordersRepo = OrdersRepositoryImp(networkService: DependencyContainer.shared.networkService) // Added OrdersRepo
+                
+                // 2. Inject all Use Cases into the ViewModel
+                let cartViewModel = CartViewModel(
+                    getCartUC: GetCartUC(repo: cartRepo),
+                    changeCartItemQuantityUC: ChangeCartItemQuantityUC(repo: cartRepo),
+                    removeProductFromCartUC: RemoveProductFromCartUC(repo: cartRepo),
+                    verifyPromoCodeUC: VerifyPromoCodeUseCase(networkService: DependencyContainer.shared.networkService),
+                    submitOrderUC: SubmitOrderUC(repo: ordersRepo) // <--- Added missing argument
+                )
+                
+                // 3. Pass the newly required storeId parameter
+                CartView(
+                    viewModel: cartViewModel,
+                    branchId: String(branchIdToFetch),
+                    storeName: storeName,
+                    storeId: String(storeId) // <--- Added missing argument
+                )
+            }                
+            
+            
+            .navigationDestination(isPresented: $showAllCategories) {
                 CategoriesView(
                     storeId: storeId,
                     viewModel: CategoriesViewModel(
@@ -215,6 +225,7 @@ struct StoreContentView: View {
 struct ProductCatalogView: View {
     var storeViewModel: StoreViewModel
     @Binding var selectedCategoryID: Int?
+    @AppStorage("savedBranchID") private var savedBranchID: Int = 0
     
     var body: some View {
         VStack(spacing: 0) {
@@ -242,7 +253,11 @@ struct ProductCatalogView: View {
                                 onToggleFavorite: {
                                     Task { await storeViewModel.toggleFavorite(for: product.id) }
                                 },
-                                onAddToCart: { },
+                                onAddToCart: {
+                                    let branchId = savedBranchID == 0 ? 1 : savedBranchID
+                                                                        Task { await storeViewModel.addToCart(product: product, branchId: branchId) }
+                                    
+                                },
                                 onScanToBuy: { }
                             )
                         }
@@ -421,6 +436,7 @@ struct FeaturedProductsSection: View {
     var storeViewModel: StoreViewModel
     let products: [HomeFeaturedProductDataEntity]
     @AppStorage("selectedTab") private var selectedTab: StoreTab = .store
+    @AppStorage("savedBranchID") private var savedBranchID: Int = 0
     
     var body: some View {
         VStack(spacing: 16) {
@@ -435,7 +451,11 @@ struct FeaturedProductsSection: View {
                             onToggleFavorite: {
                                 Task { await storeViewModel.toggleFavorite(for: product.id) }
                             },
-                            onAddToCart: { },
+                            onAddToCart: {
+                                let branchId = savedBranchID == 0 ? 1 : savedBranchID
+                                                                Task { await storeViewModel.addToCart(product: product, branchId: branchId) }
+                                
+                            },
                             onScanToBuy: { }
                         )
                     }

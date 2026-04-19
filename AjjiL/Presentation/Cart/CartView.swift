@@ -15,7 +15,8 @@ final class CartViewModel {
     private let getCartUC: GetCartUC
     private let changeCartItemQuantityUC: ChangeCartItemQuantityUC
     private let removeProductFromCartUC: RemoveProductFromCartUC
-    private let verifyPromoCodeUC: VerifyPromoCodeUseCase // NEW
+    private let verifyPromoCodeUC: VerifyPromoCodeUseCase
+    private let submitOrderUC: SubmitOrderUC // NEW
    
     private(set) var isLoading = false
     private(set) var cart: CartEntity? = nil
@@ -25,6 +26,10 @@ final class CartViewModel {
     private(set) var promoData: PromoCodeData? = nil
     private(set) var promoError: String? = nil
     private(set) var isApplyingPromo = false
+    private(set) var appliedCouponCode: String? = nil // Tracks the successfully applied code
+    
+    // MARK: - Checkout State
+    var paymentDestination: PaymentDestination? = nil // NEW
     
     // Debounce storage
     private var debounceTasks: [String: Task<Void, Never>] = [:]
@@ -33,12 +38,14 @@ final class CartViewModel {
         getCartUC: GetCartUC,
         changeCartItemQuantityUC: ChangeCartItemQuantityUC,
         removeProductFromCartUC: RemoveProductFromCartUC,
-        verifyPromoCodeUC: VerifyPromoCodeUseCase // NEW
+        verifyPromoCodeUC: VerifyPromoCodeUseCase,
+        submitOrderUC: SubmitOrderUC // NEW
     ) {
         self.getCartUC = getCartUC
         self.changeCartItemQuantityUC = changeCartItemQuantityUC
         self.removeProductFromCartUC = removeProductFromCartUC
         self.verifyPromoCodeUC = verifyPromoCodeUC
+        self.submitOrderUC = submitOrderUC
     }
     
     // MARK: - Fetch
@@ -81,6 +88,47 @@ final class CartViewModel {
         isApplyingPromo = false
     }
     
+    
+    
+    // MARK: - Checkout / Confirm Payment
+        func confirmPayment(cartId: String, storeId: String, branchId: String, paymentMethod: String) async {
+            print("\n🚀 [CartViewModel] Starting confirmPayment...")
+            print("📦 Parameters -> cartId: \(cartId), storeId: \(storeId), branchId: \(branchId), paymentMethod: \(paymentMethod), coupon: \(appliedCouponCode ?? "None")")
+            
+            isLoading = true
+            errorMessage = nil
+            
+            do {
+                let response = try await submitOrderUC.execute(
+                    cartId: cartId,
+                    storeId: storeId,
+                    branchId: branchId,
+                    paymentMethod: paymentMethod,
+                    couponCode: appliedCouponCode
+                )
+                
+                print("✅ [CartViewModel] confirmPayment API Response Status: \(response.status)")
+                
+                // Assuming response contains paymentLink property directly mapped to domain entity
+                if response.status, let url = URL(string: response.paymentLink), !response.paymentLink.isEmpty {
+                    print("🔗 [CartViewModel] Payment Link received! Opening WebView for: \(url)")
+                    self.paymentDestination = PaymentDestination(url: url)
+                } else {
+                    let msg = response.message
+                    print("⚠️ [CartViewModel] confirmPayment Failed or Missing URL: \(msg)")
+                    self.errorMessage = msg
+                }
+            } catch {
+                print("❌ [CartViewModel] confirmPayment Network/Decoding Error: \(error.localizedDescription)")
+                self.errorMessage = error.localizedDescription
+            }
+            
+            isLoading = false
+        }
+    
+    
+    
+    
     // MARK: - Remove Promo Code
     func removePromo() {
         promoData = nil
@@ -104,7 +152,7 @@ final class CartViewModel {
         // Create a new debounced task
         let task = Task { [weak self] in
             // Wait 1 second – if another tap comes before that, this task is cancelled
-            try? await Task.sleep(nanoseconds: 1_000_000_000)
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
             
             // Check cancellation again after sleep
             guard !Task.isCancelled else { return }
@@ -174,12 +222,14 @@ struct CartView: View {
     
     let branchId: String
     let storeName: String
+    let storeId: String
     
-    init(viewModel: CartViewModel, branchId: String, storeName: String) {
-        self._viewModel = State(initialValue: viewModel)
-        self.branchId = branchId
-        self.storeName = storeName
-    }
+    init(viewModel: CartViewModel, branchId: String, storeName: String, storeId: String) {
+            self._viewModel = State(initialValue: viewModel)
+            self.branchId = branchId
+            self.storeName = storeName
+            self.storeId = storeId
+        }
     
     var body: some View {
         VStack(spacing: 0) {
@@ -216,6 +266,9 @@ struct CartView: View {
         .task(id: branchId) {
             await viewModel.fetchCart(branchId: branchId)
         }
+        .sheet(item: $viewModel.paymentDestination) { destination in
+                    PaymentGatewaySheet(destination: destination)
+                }
     }
     
     // MARK: - View States
@@ -253,105 +306,118 @@ struct CartView: View {
     }
     
     @ViewBuilder
-    private func populatedCartView(cart: CartEntity) -> some View {
-        ScrollView {
-            // Swap between Products and Payment Method
-            if !isCheckoutPhase {
-                LazyVStack(spacing: 16) {
-                    ForEach(cart.items) { item in
-                        CartItemCardView(
-                            item: item,
-                            onIncrement: { Task { await viewModel.incrementQuantity(for: item, branchId: branchId) } },
-                            onDecrement: { Task { await viewModel.decrementQuantity(for: item, branchId: branchId) } },
-                            onDelete: { Task { await viewModel.deleteItem(item, branchId: branchId) } }
-                        )
-                    }
-                }
-                .padding()
-                .transition(.move(edge: .leading).combined(with: .opacity))
-                
-            } else {
-                // Payment Selection Component
-                VStack(alignment: .leading, spacing: 16) {
-                    Text("Checkout Now")
-                        .font(.custom("Poppins-Bold", size: 20))
-                        .foregroundStyle(Color.titleDark)
-                    
-                    Text("Select The Suitable Payment Method For You")
-                        .font(.custom("Poppins-Regular", size: 16))
-                        .foregroundStyle(.secondary)
-                    
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 16) {
-                            ForEach(PaymentMethod.allCases, id: \.self) { method in
-                                PaymentMethodCell(
-                                    method: method,
-                                    isSelected: selectedPaymentMethod == method,
-                                    action: {
-                                        withAnimation(.snappy) {
-                                            selectedPaymentMethod = method
-                                        }
-                                    }
+        private func populatedCartView(cart: CartEntity) -> some View {
+            // 1. Wrap everything in a VStack so the ScrollView and Footer don't overlap
+            VStack(spacing: 0) {
+                ScrollView {
+                    // Swap between Products and Payment Method
+                    if !isCheckoutPhase {
+                        LazyVStack(spacing: 16) {
+                            ForEach(cart.items) { item in
+                                CartItemCardView(
+                                    item: item,
+                                    onIncrement: { Task { await viewModel.incrementQuantity(for: item, branchId: branchId) } },
+                                    onDecrement: { Task { await viewModel.decrementQuantity(for: item, branchId: branchId) } },
+                                    onDelete: { Task { await viewModel.deleteItem(item, branchId: branchId) } }
                                 )
                             }
                         }
-                        .padding(.vertical, 8)
-                        .padding(.horizontal, 2)
-                    }
-                }
-                .padding()
-                .transition(.move(edge: .trailing).combined(with: .opacity))
-            }
-        }
-        .animation(.snappy, value: isCheckoutPhase)
-        .scrollIndicators(.hidden)
-        .scrollDismissesKeyboard(.interactively)
-        .overlay {
-            if viewModel.isLoading {
-                ProgressView()
-                    .padding()
-                    .background(.ultraThinMaterial)
-                    .clipShape(.rect(cornerRadius: 8))
-            }
-        }
-        .safeAreaInset(edge: .bottom) {
-            VStack(spacing: 0) {
-                CartSummaryFooter2(
-                    totals: cart.totals,
-                    promoData: viewModel.promoData,
-                    promoError: viewModel.promoError,
-                    isApplyingPromo: viewModel.isApplyingPromo,
-                    isKeyboardOpen: $isKeyboardOpen,
-                    onApplyCoupon: { code in
-                        Task { await viewModel.applyPromo(cartId: "\(cart.cartId)", code: code) }
-                    },
-                    onRemoveCoupon: { viewModel.removePromo() }
-                )
-                
-                if !isKeyboardOpen {
-                    GreenButton(title: isCheckoutPhase ? "Confirm Payment" : "Checkout") {
-                        if isCheckoutPhase {
-                            // TODO: Final Confirm Payment Action (API Call)
-                            print("Processing with \(selectedPaymentMethod?.rawValue ?? "")")
-                        } else {
-                            // Move to payment phase
-                            withAnimation(.snappy) {
-                                isCheckoutPhase = true
+                        .padding()
+                        .transition(.move(edge: .leading).combined(with: .opacity))
+                        
+                    } else {
+                        // Payment Selection Component
+                        VStack(alignment: .leading, spacing: 16) {
+                            Text("Checkout Now")
+                                .font(.custom("Poppins-Bold", size: 20))
+                                .foregroundStyle(Color.titleDark)
+                            
+                            Text("Select The Suitable Payment Method For You")
+                                .font(.custom("Poppins-Regular", size: 16))
+                                .foregroundStyle(.secondary)
+                            
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 16) {
+                                    ForEach(PaymentMethod.allCases, id: \.self) { method in
+                                        PaymentMethodCell(
+                                            method: method,
+                                            isSelected: selectedPaymentMethod == method,
+                                            action: {
+                                                withAnimation(.snappy) {
+                                                    selectedPaymentMethod = method
+                                                }
+                                            }
+                                        )
+                                    }
+                                }
+                                .padding(.vertical, 8)
+                                .padding(.horizontal, 2)
                             }
                         }
+                        .padding()
+                        .scrollClipDisabled()
+                        .transition(.move(edge: .trailing).combined(with: .opacity))
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 16)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-                    // Disable if they are on the payment screen but haven't selected a method yet
-                    .disabled(isCheckoutPhase && selectedPaymentMethod == nil)
-                    .opacity((isCheckoutPhase && selectedPaymentMethod == nil) ? 0.5 : 1.0)
                 }
+                .animation(.snappy, value: isCheckoutPhase)
+                .scrollIndicators(.hidden)
+                .scrollDismissesKeyboard(.interactively)
+                .overlay {
+                    if viewModel.isLoading {
+                        ProgressView()
+                            .padding()
+                            .background(.ultraThinMaterial)
+                            .clipShape(.rect(cornerRadius: 8))
+                    }
+                }
+                
+                // 2. The footer is now a sibling to the ScrollView, guaranteed to stay below it
+                VStack(spacing: 0) {
+                    CartSummaryFooter2(
+                        totals: cart.totals,
+                        promoData: viewModel.promoData,
+                        promoError: viewModel.promoError,
+                        isApplyingPromo: viewModel.isApplyingPromo,
+                        isKeyboardOpen: $isKeyboardOpen,
+                        onApplyCoupon: { code in
+                            Task { await viewModel.applyPromo(cartId: "\(cart.cartId)", code: code) }
+                        },
+                        onRemoveCoupon: { viewModel.removePromo() }
+                    )
+                    
+                    if !isKeyboardOpen {
+                        GreenButton(title: isCheckoutPhase ? "Confirm Payment" : "Checkout") {
+                            if isCheckoutPhase {
+                                guard let selectedMethod = selectedPaymentMethod else { return }
+                                print("🟢 [CartView] Confirm Payment button tapped! Selected Method: \(selectedMethod.rawValue)")
+                                
+                                Task {
+                                    await viewModel.confirmPayment(
+                                        cartId: "\(cart.cartId)",
+                                        storeId: storeId,
+                                        branchId: branchId,
+                                        paymentMethod: selectedMethod.apiId // Pass mapped ID
+                                    )
+                                }
+                            } else {
+                                withAnimation(.snappy) {
+                                    isCheckoutPhase = true
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 16)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                        .disabled(isCheckoutPhase && selectedPaymentMethod == nil)
+                        .opacity((isCheckoutPhase && selectedPaymentMethod == nil) ? 0.5 : 1.0)
+                    }
+                }
+                // Optional solid background to prevent parent view colors bleeding through
+//                .background(Color(uiColor: .systemBackground))
+                .background(Color.brandGreen.opacity(0.1).ignoresSafeArea(edges: .bottom))
+                .animation(.snappy, value: isKeyboardOpen)
             }
-            .background(Color.brandGreen.opacity(0.1).ignoresSafeArea(edges: .bottom))
-            .animation(.snappy, value: isKeyboardOpen)
         }
-    }
 }
 
 // MARK: - Skeleton Loading Views
@@ -757,6 +823,16 @@ enum PaymentMethod: String, CaseIterable {
     case visa = "visaImage"
     case mada = "madaImage"
     case applePay = "applePayImage"
+    
+    // Maps the visual selection to the backend API required ID.
+    // Replace "1", "2", "3" with your actual backend payment method IDs.
+    var apiId: String {
+        switch self {
+        case .visa: return "2"
+        case .mada: return "3"
+        case .applePay: return "1"
+        }
+    }
 }
 
 struct PaymentMethodCell: View {
@@ -764,11 +840,14 @@ struct PaymentMethodCell: View {
     let isSelected: Bool
     let action: () -> Void
     
-    // Original brand color for the unselected border: rgba(3, 184, 158, 1)
+    // Brand color for selected border: rgba(3, 184, 158, 1)
     private let primaryBrand = Color(red: 3/255, green: 184/255, blue: 158/255)
     
-    // New selected color for background and border: rgba(222, 255, 252, 1)
-    private let selectedBrand = Color(red: 222/255, green: 255/255, blue: 252/255)
+    // Background color when selected: rgba(222, 255, 252, 1)
+    private let selectedBackground = Color(red: 222/255, green: 255/255, blue: 252/255)
+    
+    // Border color when not selected: rgba(119, 119, 119, 0.25)
+    private let unselectedBorder = Color(red: 119/255, green: 119/255, blue: 119/255, opacity: 0.25)
     
     var body: some View {
         Button(action: action) {
@@ -776,17 +855,65 @@ struct PaymentMethodCell: View {
                 .resizable()
                 .scaledToFit()
                 .padding(16)
+                // Consider replacing hard-coded constants with relative layout constraints if this cell needs to scale across devices
                 .frame(width: 127, height: 79)
-                // 1. Update the background color when selected
-                .background(isSelected ? selectedBrand : .clear)
+                .background(isSelected ? selectedBackground : .clear)
                 .clipShape(.rect(cornerRadius: 12))
                 .overlay {
                     RoundedRectangle(cornerRadius: 12)
-                        // 2. Update the border color when selected, default to primaryBrand when not
-                        .stroke(isSelected ? selectedBrand : primaryBrand, lineWidth: 1)
+                        .stroke(isSelected ? primaryBrand : unselectedBorder, lineWidth: 1)
                 }
                 .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
         }
         .buttonStyle(.plain)
+    }
+}
+
+
+
+
+
+
+
+import WebKit
+
+// Navigation trigger model
+//struct PaymentDestination: Identifiable {
+//    let id = UUID()
+//    let url: URL
+//}
+
+// Reusable WKWebView Wrapper
+struct WebView: UIViewRepresentable {
+    let url: URL
+
+    func makeUIView(context: Context) -> WKWebView {
+        return WKWebView()
+    }
+
+    func updateUIView(_ uiView: WKWebView, context: Context) {
+        let request = URLRequest(url: url)
+        uiView.load(request)
+    }
+}
+
+// The Sheet presented over the Cart
+struct PaymentGatewaySheet: View {
+    @Environment(\.dismiss) private var dismiss
+    let destination: PaymentDestination
+    
+    var body: some View {
+        NavigationStack {
+            WebView(url: destination.url)
+                .navigationTitle("Secure Payment")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") {
+                            dismiss()
+                        }
+                    }
+                }
+        }
     }
 }

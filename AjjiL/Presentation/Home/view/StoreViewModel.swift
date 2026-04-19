@@ -23,6 +23,8 @@ class StoreViewModel {
     private let addFavoriteProductUC: AddFavoriteProductUC
     private let removeFavoriteProductUC: RemoveFavoriteProductUC
     
+    private let addProductByBarcodeToCartUC: AddProductByBarcodeToCartUC
+    
     init(
         getStoreSlidersUC: GetStoreSlidersUC,
         getFeaturedProductsUCForStore: GetFeaturedProductsUCForStore,
@@ -30,7 +32,8 @@ class StoreViewModel {
         getStoreSubcategoriesUC: GetStoreSubcategoriesUC,
         getProductsByCategoryUC: GetProductsByCategoryUC,
         addFavoriteProductUC: AddFavoriteProductUC,
-        removeFavoriteProductUC: RemoveFavoriteProductUC
+        removeFavoriteProductUC: RemoveFavoriteProductUC,
+        addProductByBarcodeToCartUC: AddProductByBarcodeToCartUC
     ) {
         self.getStoreSlidersUC = getStoreSlidersUC
         self.getFeaturedProductsUCForStore = getFeaturedProductsUCForStore
@@ -39,6 +42,7 @@ class StoreViewModel {
         self.getProductsByCategoryUC = getProductsByCategoryUC
         self.addFavoriteProductUC = addFavoriteProductUC
         self.removeFavoriteProductUC = removeFavoriteProductUC
+        self.addProductByBarcodeToCartUC = addProductByBarcodeToCartUC
         
         // Listen for global favorite changes (e.g., from ProductDetailsView)
         NotificationCenter.default.addObserver(
@@ -141,4 +145,24 @@ class StoreViewModel {
             self.storeSubcategories = response.data
         } catch { }
     }
+    
+    func addToCart(product: HomeFeaturedProductDataEntity, branchId: Int) async {
+            let branchIdString = String(branchId)
+            
+            // Note: Assuming `barcode` exists on your model. If not, use `String(product.id)`.
+            let barcodeString = product.barcode /*?? String(product.id)*/
+            let defaultQuantity = "1"
+            
+            do {
+                _ = try await addProductByBarcodeToCartUC.execute(
+                    branchId: branchIdString,
+                    barcode: barcodeString,
+                    quantity: defaultQuantity
+                )
+                print("✅ Successfully added \(product.name) to cart.")
+                // Broadcast a notification here if you need to update a global cart badge
+            } catch {
+                print("❌ Failed to add product to cart: \(error)")
+            }
+        }
 }

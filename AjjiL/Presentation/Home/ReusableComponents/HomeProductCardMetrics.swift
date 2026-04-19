@@ -193,7 +193,8 @@ private struct ProductActionRow: View {
     var body: some View {
         Button {
             isStoreMode ? onAddToCart() : onScanToBuy()
-        } label: {
+        }
+        label: {
             // Animate the spacing so the text slides smoothly into the center
             HStack(spacing: isStoreMode ? 8 : 0) {
                 
@@ -217,6 +218,7 @@ private struct ProductActionRow: View {
                 in: .rect(cornerRadius: HomeProductCardMetrics.actionButtonCornerRadius)
             )
         }
+        .buttonStyle(.borderless)
         // Attach a spring animation tied directly to the AppStorage value
         .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isStoreMode)
         .padding(.horizontal, HomeProductCardMetrics.contentHPadding)
