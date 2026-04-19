@@ -1,13 +1,12 @@
 //
-//  Branch.swift
+//  BranchSelectionView.swift
 //  AjjiLMB
 //
 //  Created by mohamed mahmoud sobhy badawy on 25/03/2026.
 //
 
 import SwiftUI
-
-
+import Shimmer // 1. Import Shimmer
 
 struct BranchSelectionView: View {
     // 1. Accept the dynamically fetched branches from the parent view
@@ -65,8 +64,10 @@ struct BranchSelectionView: View {
         ScrollView {
             VStack(spacing: 12) {
                 if branches.isEmpty {
-                    ProgressView()
-                        .padding(.top, 20)
+                    // 2. Replace ProgressView with Skeleton + Shimmer
+                    BranchListSkeleton()
+                        .shimmering()
+                        .padding(.top, 4)
                 } else {
                     ForEach(branches) { branch in
                         BranchRowView(
@@ -103,6 +104,55 @@ struct BranchSelectionView: View {
             }
         }
         .padding(.top, 4)
+    }
+}
+
+// MARK: - Skeleton View
+
+/// 3. Dedicated Skeleton mimicking the BranchRowView
+struct BranchListSkeleton: View {
+    var body: some View {
+        VStack(spacing: 12) {
+            ForEach(0..<3, id: \.self) { _ in
+                VStack(alignment: .leading, spacing: 8) {
+                    // Title placeholder
+                    Rectangle()
+                        .fill(.gray.opacity(0.3))
+                        .frame(width: 120, height: 14)
+                        .clipShape(.rect(cornerRadius: 4))
+                    
+                    HStack(alignment: .top, spacing: 8) {
+                        // Map Icon placeholder
+                        Circle()
+                            .fill(.gray.opacity(0.3))
+                            .frame(width: 20, height: 20)
+                        
+                        VStack(alignment: .leading, spacing: 6) {
+                            // Address placeholder
+                            Rectangle()
+                                .fill(.gray.opacity(0.3))
+                                .frame(width: 180, height: 14)
+                                .clipShape(.rect(cornerRadius: 4))
+                            
+                            // "View on map" placeholder
+                            Rectangle()
+                                .fill(.gray.opacity(0.3))
+                                .frame(width: 80, height: 12)
+                                .clipShape(.rect(cornerRadius: 4))
+                        }
+                    }
+                    .padding(.top, 2)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(16)
+                .background(Color(uiColor: .systemBackground))
+                .clipShape(.rect(cornerRadius: 12))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                }
+            }
+        }
     }
 }
 
@@ -149,5 +199,3 @@ struct BranchRowView: View {
         .buttonStyle(.plain)
     }
 }
-
-

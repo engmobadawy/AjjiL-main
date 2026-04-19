@@ -82,10 +82,10 @@ final class CartViewModel {
     }
     
     // MARK: - Remove Promo Code
-        func removePromo() {
-            promoData = nil
-            promoError = nil
-        }
+    func removePromo() {
+        promoData = nil
+        promoError = nil
+    }
     
     // MARK: - Debounced Quantity Changes
     
@@ -145,7 +145,7 @@ final class CartViewModel {
         }
     }
     
-    // MARK: - Delete Item (unchanged, but you can also debounce if needed)
+    // MARK: - Delete Item
     func deleteItem(_ item: CartItemEntity, branchId: String) async {
         isLoading = true
         do {
@@ -167,13 +167,18 @@ struct CartView: View {
     @Environment(\.dismiss) private var dismiss
     
     @State private var viewModel: CartViewModel
+    
+    // NEW: State for checkout flow
+    @State private var isCheckoutPhase: Bool = false
+    @State private var selectedPaymentMethod: PaymentMethod? = nil
+    
     let branchId: String
     let storeName: String
     
     init(viewModel: CartViewModel, branchId: String, storeName: String) {
         self._viewModel = State(initialValue: viewModel)
         self.branchId = branchId
-        self.storeName = storeName // NEW: Initialize it
+        self.storeName = storeName
     }
     
     var body: some View {
@@ -182,7 +187,16 @@ struct CartView: View {
                 title: "\(storeName) - Cart",
                 showBackButton: true,
                 kindOfTopRow: .justNotification,
-                onBack: { dismiss() }
+                onBack: {
+                    // Intercept back button if in payment phase
+                    if isCheckoutPhase {
+                        withAnimation(.snappy) {
+                            isCheckoutPhase = false
+                        }
+                    } else {
+                        dismiss()
+                    }
+                }
             )
             
             contentState
@@ -221,7 +235,6 @@ struct CartView: View {
                 .padding()
                 .containerRelativeFrame([.horizontal, .vertical])
         } else {
-            // 2. Replace ProgressView with Shimmering Skeleton
             CartSkeletonView()
         }
     }
@@ -242,34 +255,58 @@ struct CartView: View {
     @ViewBuilder
     private func populatedCartView(cart: CartEntity) -> some View {
         ScrollView {
-            LazyVStack(spacing: 16) {
-                ForEach(cart.items) { item in
-                    CartItemCardView(
-                        item: item,
-                        onIncrement: {
-                            Task {
-                                await viewModel.incrementQuantity(for: item, branchId: branchId)
-                            }
-                        },
-                        onDecrement: {
-                            Task {
-                                await viewModel.decrementQuantity(for: item, branchId: branchId)
-                            }
-                        },
-                        onDelete: {
-                            Task {
-                                await viewModel.deleteItem(item, branchId: branchId)
+            // Swap between Products and Payment Method
+            if !isCheckoutPhase {
+                LazyVStack(spacing: 16) {
+                    ForEach(cart.items) { item in
+                        CartItemCardView(
+                            item: item,
+                            onIncrement: { Task { await viewModel.incrementQuantity(for: item, branchId: branchId) } },
+                            onDecrement: { Task { await viewModel.decrementQuantity(for: item, branchId: branchId) } },
+                            onDelete: { Task { await viewModel.deleteItem(item, branchId: branchId) } }
+                        )
+                    }
+                }
+                .padding()
+                .transition(.move(edge: .leading).combined(with: .opacity))
+                
+            } else {
+                // Payment Selection Component
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("Checkout Now")
+                        .font(.custom("Poppins-Bold", size: 20))
+                        .foregroundStyle(Color.titleDark)
+                    
+                    Text("Select The Suitable Payment Method For You")
+                        .font(.custom("Poppins-Regular", size: 16))
+                        .foregroundStyle(.secondary)
+                    
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 16) {
+                            ForEach(PaymentMethod.allCases, id: \.self) { method in
+                                PaymentMethodCell(
+                                    method: method,
+                                    isSelected: selectedPaymentMethod == method,
+                                    action: {
+                                        withAnimation(.snappy) {
+                                            selectedPaymentMethod = method
+                                        }
+                                    }
+                                )
                             }
                         }
-                    )
+                        .padding(.vertical, 8)
+                        .padding(.horizontal, 2)
+                    }
                 }
+                .padding()
+                .transition(.move(edge: .trailing).combined(with: .opacity))
             }
-            .padding()
         }
+        .animation(.snappy, value: isCheckoutPhase)
         .scrollIndicators(.hidden)
         .scrollDismissesKeyboard(.interactively)
         .overlay {
-            // This will show a spinner right over the items while updating quantity/deleting
             if viewModel.isLoading {
                 ProgressView()
                     .padding()
@@ -284,35 +321,43 @@ struct CartView: View {
                     promoData: viewModel.promoData,
                     promoError: viewModel.promoError,
                     isApplyingPromo: viewModel.isApplyingPromo,
-                    isKeyboardOpen: $isKeyboardOpen, // NEW: pass it to footer
+                    isKeyboardOpen: $isKeyboardOpen,
                     onApplyCoupon: { code in
                         Task { await viewModel.applyPromo(cartId: "\(cart.cartId)", code: code) }
                     },
                     onRemoveCoupon: { viewModel.removePromo() }
                 )
                 
-                // NEW: hide checkout button smoothly when keyboard is open
                 if !isKeyboardOpen {
-                    GreenButton(title: "Checkout") {
-                        // TODO: Checkout Action
+                    GreenButton(title: isCheckoutPhase ? "Confirm Payment" : "Checkout") {
+                        if isCheckoutPhase {
+                            // TODO: Final Confirm Payment Action (API Call)
+                            print("Processing with \(selectedPaymentMethod?.rawValue ?? "")")
+                        } else {
+                            // Move to payment phase
+                            withAnimation(.snappy) {
+                                isCheckoutPhase = true
+                            }
+                        }
                     }
                     .padding(.horizontal, 16)
                     .padding(.bottom, 16)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
+                    // Disable if they are on the payment screen but haven't selected a method yet
+                    .disabled(isCheckoutPhase && selectedPaymentMethod == nil)
+                    .opacity((isCheckoutPhase && selectedPaymentMethod == nil) ? 0.5 : 1.0)
                 }
             }
             .background(Color.brandGreen.opacity(0.1).ignoresSafeArea(edges: .bottom))
-            .animation(.snappy, value: isKeyboardOpen) // smooth animation
+            .animation(.snappy, value: isKeyboardOpen)
         }
     }
 }
 
 // MARK: - Skeleton Loading Views
-/// 3. Skeleton mimicking the Cart Items and Footer
 struct CartSkeletonView: View {
     var body: some View {
         VStack(spacing: 0) {
-            // Items List Skeleton
             ScrollView {
                 LazyVStack(spacing: 16) {
                     ForEach(0..<4, id: \.self) { _ in
@@ -324,20 +369,18 @@ struct CartSkeletonView: View {
             .scrollIndicators(.hidden)
             .disabled(true)
             
-            // Footer Skeleton attached to bottom
             CartFooterSkeleton()
         }
-        .shimmering() // Applies effect to the entire layout
+        .shimmering()
     }
 }
 
 struct CartItemSkeletonCell: View {
     var body: some View {
         HStack(spacing: 0) {
-            // Image Placeholder area
             Rectangle()
                 .fill(.gray.opacity(0.3))
-                .frame(width: 106, height: 86) // Approximate image bounds
+                .frame(width: 106, height: 86)
                 .clipShape(.rect(cornerRadius: 8))
                 .padding(16)
                 .frame(width: 138, height: 118)
@@ -345,7 +388,6 @@ struct CartItemSkeletonCell: View {
                     Rectangle().frame(width: 1).foregroundStyle(Color.cardBorder)
                 }
             
-            // Details Placeholder
             VStack(alignment: .leading, spacing: 8) {
                 Rectangle().fill(.gray.opacity(0.3)).frame(width: 60, height: 12).clipShape(.rect(cornerRadius: 4))
                 Rectangle().fill(.gray.opacity(0.3)).frame(width: 120, height: 16).clipShape(.rect(cornerRadius: 4))
@@ -354,9 +396,9 @@ struct CartItemSkeletonCell: View {
                 Spacer(minLength: 0)
                 
                 HStack {
-                    Rectangle().fill(.gray.opacity(0.3)).frame(width: 100, height: 36).clipShape(.rect(cornerRadius: 8)) // Stepper placeholder
+                    Rectangle().fill(.gray.opacity(0.3)).frame(width: 100, height: 36).clipShape(.rect(cornerRadius: 8))
                     Spacer()
-                    Rectangle().fill(.gray.opacity(0.3)).frame(width: 24, height: 24).clipShape(.rect(cornerRadius: 4)) // Trash placeholder
+                    Rectangle().fill(.gray.opacity(0.3)).frame(width: 24, height: 24).clipShape(.rect(cornerRadius: 4))
                 }
             }
             .padding(.vertical, 12)
@@ -375,13 +417,11 @@ struct CartItemSkeletonCell: View {
 struct CartFooterSkeleton: View {
     var body: some View {
         VStack(spacing: 16) {
-            // Promo Field Placeholder
             Rectangle()
                 .fill(.gray.opacity(0.3))
                 .frame(height: 50)
                 .clipShape(.rect(cornerRadius: 12))
             
-            // Totals Rows
             VStack(spacing: 12) {
                 ForEach(0..<4, id: \.self) { _ in
                     HStack {
@@ -394,14 +434,12 @@ struct CartFooterSkeleton: View {
             
             Divider().padding(.vertical, 4)
             
-            // Final Total
             HStack {
                 Rectangle().fill(.gray.opacity(0.3)).frame(width: 100, height: 20).clipShape(.rect(cornerRadius: 4))
                 Spacer()
                 Rectangle().fill(.gray.opacity(0.3)).frame(width: 80, height: 20).clipShape(.rect(cornerRadius: 4))
             }
             
-            // Checkout Button Placeholder
             Rectangle()
                 .fill(.gray.opacity(0.3))
                 .frame(height: 50)
@@ -522,7 +560,6 @@ private struct CartItemControlsView: View {
     
     var body: some View {
         HStack {
-            // Custom Stepper
             HStack(spacing: 16) {
                 Button(action: onDecrement) {
                     Image(systemName: "minus")
@@ -549,7 +586,6 @@ private struct CartItemControlsView: View {
             
             Spacer()
             
-            // Trash Button
             Button(action: onDelete) {
                 Image("redTrash")
                     .resizable()
@@ -581,7 +617,6 @@ struct CartSummaryFooter: View {
                 
                 Spacer()
                 
-                // Reusing your custom PriceView component from the OrderDetails UI
                 PriceView(value: "\(totals.total)", font: .title3, weight: .bold)
             }
         }
@@ -614,7 +649,6 @@ struct CartSummaryFooter2: View {
     let promoError: String?
     let isApplyingPromo: Bool
     
-    // NEW: receive the focus state
     var isKeyboardOpen: FocusState<Bool>.Binding
     
     let onApplyCoupon: (String) -> Void
@@ -622,7 +656,6 @@ struct CartSummaryFooter2: View {
     
     @State private var couponCode: String = ""
     
-    // A computed property to clean up our conditional logic
     private var isButtonActive: Bool {
         promoData != nil || !couponCode.isEmpty
     }
@@ -649,11 +682,9 @@ struct CartSummaryFooter2: View {
                     }
                     .disabled((couponCode.isEmpty && promoData == nil) || isApplyingPromo)
                     .font(.subheadline.weight(.medium))
-                    // UPDATED: Use white if typing or applied, otherwise gray
                     .foregroundStyle(isButtonActive ? .white : .gray)
                     .padding(.horizontal, 24)
                     .padding(.vertical, 12)
-                    // UPDATED: Use orange if typing or applied, otherwise gray
                     .background(isButtonActive ? Color.priceOrange : Color(uiColor: .systemGray5))
                     .clipShape(.rect(cornerRadius: 10))
                     .padding(4)
@@ -717,5 +748,45 @@ struct CartSummaryFooter2: View {
             
             PriceView(value: value, font: .subheadline, weight: .bold, color: valueColor, isDiscount: isDiscount)
         }
+    }
+}
+
+// MARK: - Payment Method Models & Views
+
+enum PaymentMethod: String, CaseIterable {
+    case visa = "visaImage"
+    case mada = "madaImage"
+    case applePay = "applePayImage"
+}
+
+struct PaymentMethodCell: View {
+    let method: PaymentMethod
+    let isSelected: Bool
+    let action: () -> Void
+    
+    // Original brand color for the unselected border: rgba(3, 184, 158, 1)
+    private let primaryBrand = Color(red: 3/255, green: 184/255, blue: 158/255)
+    
+    // New selected color for background and border: rgba(222, 255, 252, 1)
+    private let selectedBrand = Color(red: 222/255, green: 255/255, blue: 252/255)
+    
+    var body: some View {
+        Button(action: action) {
+            Image(method.rawValue)
+                .resizable()
+                .scaledToFit()
+                .padding(16)
+                .frame(width: 127, height: 79)
+                // 1. Update the background color when selected
+                .background(isSelected ? selectedBrand : .clear)
+                .clipShape(.rect(cornerRadius: 12))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 12)
+                        // 2. Update the border color when selected, default to primaryBrand when not
+                        .stroke(isSelected ? selectedBrand : primaryBrand, lineWidth: 1)
+                }
+                .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
+        }
+        .buttonStyle(.plain)
     }
 }

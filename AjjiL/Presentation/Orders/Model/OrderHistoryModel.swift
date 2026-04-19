@@ -158,21 +158,21 @@ struct QRCodeData: Codable {
 }
 
 // MARK: Submit Order
-struct SubmitOrderModel: Codable {
-    let status: Bool?
-    let message: String?
-    let data: SubmitOrderData?
-}
-
-struct SubmitOrderData: Codable {
-    let orderId: Int?
-    let paymentLink: String?
-    
-    enum CodingKeys: String, CodingKey {
-        case orderId = "order_id"
-        case paymentLink = "payment_link"
-    }
-}
+//struct SubmitOrderModel: Codable {
+//    let status: Bool?
+//    let message: String?
+//    let data: SubmitOrderData?
+//}
+//
+//struct SubmitOrderData: Codable {
+//    let orderId: Int?
+//    let paymentLink: String?
+//    
+//    enum CodingKeys: String, CodingKey {
+//        case orderId = "order_id"
+//        case paymentLink = "payment_link"
+//    }
+//}
 
 // MARK: - ==========================================
 // MARK: - 2. DOMAIN ENTITIES (Clean UI Models)
@@ -243,12 +243,12 @@ struct QRCodeEntity: Hashable {
     var qrCodeUrl: String
 }
 
-struct SubmitOrderEntity: Hashable {
-    var status: Bool
-    var message: String
-    var orderId: Int
-    var paymentLink: String
-}
+//struct SubmitOrderEntity: Hashable {
+//    var status: Bool
+//    var message: String
+//    var orderId: Int
+//    var paymentLink: String
+//}
 
 // MARK: - ==========================================
 // MARK: - 3. MAPPERS (The Bridge)
@@ -367,13 +367,13 @@ extension QRCodeData {
 }
 
 // MARK: Submit Order Mappers
-extension SubmitOrderModel {
-    func map() -> SubmitOrderEntity {
-        return SubmitOrderEntity(
-            status: self.status ?? false,
-            message: self.message ?? "Unknown error occurred",
-            orderId: self.data?.orderId ?? 0,
-            paymentLink: self.data?.paymentLink ?? ""
-        )
-    }
-}
+//extension SubmitOrderModel {
+//    func map() -> SubmitOrderEntity {
+//        return SubmitOrderEntity(
+//            status: self.status ?? false,
+//            message: self.message ?? "Unknown error occurred",
+//            orderId: self.data?.orderId ?? 0,
+//            paymentLink: self.data?.paymentLink ?? ""
+//        )
+//    }
+//}
