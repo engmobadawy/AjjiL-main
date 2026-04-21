@@ -9,6 +9,8 @@ import SwiftUI
 import Shimmer // 1. Import Shimmer
 
 struct FavoritesView: View {
+    // 👈 1. Add branch ID AppStorage to know where to add the cart item
+        @AppStorage("savedBranchID") private var savedBranchID: Int = 0
     
     // Automatically injected from your Dependency Container
     @State private var viewModel: FavoritesViewModel = DependencyContainer.FavoritesDependency.shared.favoritesVM
@@ -78,7 +80,13 @@ struct FavoritesView: View {
                                                 await viewModel.toggleFavorite(for: product)
                                             }
                                         },
-                                        onAddToCart: { },
+                                        onAddToCart: {
+                                            // 👈 2. Call addToCart using asHomeProduct
+                                            let branchId = savedBranchID == 0 ? 1 : savedBranchID
+                                            Task {
+                                                await viewModel.addToCart(product: product.asHomeProduct, branchId: branchId)
+                                            }
+                                        },
                                         onScanToBuy: { showScannerView = true }
                                     )
                                 }
@@ -95,7 +103,10 @@ struct FavoritesView: View {
                             branchProductId: product.id,
                             getProductDetailsUC: DependencyContainer.FavoritesDependency.shared.getProductDetailsUC,
                             addFavoriteProductUC: DependencyContainer.FavoritesDependency.shared.addFavoriteProductUC,
-                            removeFavoriteProductUC: DependencyContainer.FavoritesDependency.shared.removeFavoriteProductUC
+                            removeFavoriteProductUC: DependencyContainer.FavoritesDependency.shared.removeFavoriteProductUC,
+                            addProductByBarcodeToCartUC: AddProductByBarcodeToCartUC(
+                                                    repo: CartRepositoryImp(networkService: DependencyContainer.shared.networkService)
+                                                )
                         )
                     )
                 }
@@ -108,6 +119,7 @@ struct FavoritesView: View {
         .task {
             await viewModel.fetchFavorites()
         }
+        .toastView(toast: $viewModel.toast)
     }
 }
 

@@ -15,19 +15,20 @@ final class ProductDetailsViewModel {
     private let getProductDetailsUC: GetProductDetailsUC
     private let addFavoriteProductUC: AddFavoriteProductUC
     private let removeFavoriteProductUC: RemoveFavoriteProductUC
-    
-    // REMOVED the descriptionPoints array from here
+    private let addProductByBarcodeToCartUC: AddProductByBarcodeToCartUC // 👈 Add this
     
     init(
         branchProductId: Int,
         getProductDetailsUC: GetProductDetailsUC,
         addFavoriteProductUC: AddFavoriteProductUC,
-        removeFavoriteProductUC: RemoveFavoriteProductUC
+        removeFavoriteProductUC: RemoveFavoriteProductUC,
+        addProductByBarcodeToCartUC: AddProductByBarcodeToCartUC // 👈 Add this
     ) {
         self.branchProductId = branchProductId
         self.getProductDetailsUC = getProductDetailsUC
         self.addFavoriteProductUC = addFavoriteProductUC
         self.removeFavoriteProductUC = removeFavoriteProductUC
+        self.addProductByBarcodeToCartUC = addProductByBarcodeToCartUC // 👈 Initialize it
     }
     
     func fetchProductDetails() async {
@@ -96,8 +97,26 @@ final class ProductDetailsViewModel {
    
     
     @MainActor
-    func addToCart(branchId: Int) async {
-        guard let product = productDetail else { return }
-        // Call your cart use case or repository here using the branchId and product
-    }
+        func addToCart(branchId: Int) async {
+            guard let product = productDetail else { return }
+            
+            let branchIdString = String(branchId)
+            // Use barcode if available, fallback to productBranchId
+            let barcodeString = product.barcode.isEmpty ? String(product.productBranchId) : product.barcode
+            let defaultQuantity = "1"
+            
+            // Execute network call, ignore errors
+            _ = try? await addProductByBarcodeToCartUC.execute(
+                branchId: branchIdString,
+                barcode: barcodeString,
+                quantity: defaultQuantity
+            )
+            
+            // Always show the exact success toast requested
+            toast = FancyToast(
+                type: .success,
+                title: "Success",
+                message: "added to the cart successfully"
+            )
+        }
 }

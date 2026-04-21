@@ -4,7 +4,6 @@
 //
 //  Created by mohamed mahmoud sobhy badawy on 08/03/2026.
 //
-
 import SwiftUI
 import Observation
 
@@ -14,20 +13,24 @@ final class FavoritesViewModel {
     private let getFavoriteProductsUC: GetFavoriteProductsUC
     private let addFavoriteProductUC: AddFavoriteProductUC
     private let removeFavoriteProductUC: RemoveFavoriteProductUC
+    private let addProductByBarcodeToCartUC: AddProductByBarcodeToCartUC // 👈 1. Add UseCase
         
     var products: [FavoriteProductDataEntity] = []
     var isLoading = false
     var errorMessage: String?
+    var toast: FancyToast? // 👈 2. Add Toast state
   
     // MARK: - Initialization
     init(
         getFavoriteProductsUC: GetFavoriteProductsUC,
         addFavoriteProductUC: AddFavoriteProductUC,
-        removeFavoriteProductUC: RemoveFavoriteProductUC
+        removeFavoriteProductUC: RemoveFavoriteProductUC,
+        addProductByBarcodeToCartUC: AddProductByBarcodeToCartUC // 👈 3. Add to init
     ) {
         self.getFavoriteProductsUC = getFavoriteProductsUC
         self.addFavoriteProductUC = addFavoriteProductUC
         self.removeFavoriteProductUC = removeFavoriteProductUC
+        self.addProductByBarcodeToCartUC = addProductByBarcodeToCartUC
     }
     
     // MARK: - Data Fetching
@@ -121,5 +124,25 @@ final class FavoritesViewModel {
         }
     }
     
+    func addToCart(product: HomeFeaturedProductDataEntity, branchId: Int) async {
+            let branchIdString = String(branchId)
+            // Use barcode if available, otherwise fallback to the product ID
+            let barcodeString = product.barcode.isEmpty ? String(product.id) : product.barcode
+            let defaultQuantity = "1"
+            
+            // Execute the network call but ignore any errors using try?
+            _ = try? await addProductByBarcodeToCartUC.execute(
+                branchId: branchIdString,
+                barcode: barcodeString,
+                quantity: defaultQuantity
+            )
+            
+            // Always show the exact success toast requested
+            toast = FancyToast(
+                type: .success,
+                title: "Success",
+                message: "added to the cart successfully"
+            )
+        }
     
 }

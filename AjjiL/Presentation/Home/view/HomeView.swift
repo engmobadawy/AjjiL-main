@@ -53,7 +53,10 @@ struct HomeView: View {
                         branchProductId: product.id,
                         getProductDetailsUC: DependencyContainer.FavoritesDependency.shared.getProductDetailsUC,
                         addFavoriteProductUC: DependencyContainer.FavoritesDependency.shared.addFavoriteProductUC,
-                        removeFavoriteProductUC: DependencyContainer.FavoritesDependency.shared.removeFavoriteProductUC
+                        removeFavoriteProductUC: DependencyContainer.FavoritesDependency.shared.removeFavoriteProductUC,
+                        addProductByBarcodeToCartUC: AddProductByBarcodeToCartUC(
+                                                repo: CartRepositoryImp(networkService: DependencyContainer.shared.networkService)
+                                            )
                     )
                 )
             }

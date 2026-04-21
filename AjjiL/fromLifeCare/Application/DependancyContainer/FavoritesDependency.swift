@@ -38,7 +38,10 @@ extension DependencyContainer {
         private(set) lazy var favoritesVM: FavoritesViewModel = FavoritesViewModel(
             getFavoriteProductsUC: getFavoriteProductsUC,
             addFavoriteProductUC: addFavoriteProductUC,
-            removeFavoriteProductUC: removeFavoriteProductUC 
-        )
-    }
+            removeFavoriteProductUC: removeFavoriteProductUC, addProductByBarcodeToCartUC: AddProductByBarcodeToCartUC(
+                repo: CartRepositoryImp(networkService: DependencyContainer.shared.networkService)
+            )
+            
+    )
+}
 }

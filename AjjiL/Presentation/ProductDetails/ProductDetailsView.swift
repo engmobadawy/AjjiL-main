@@ -126,6 +126,7 @@ struct ProductDetailsView: View {
                 await viewModel.fetchProductDetails()
             }
         }
+        .toastView(toast: Bindable(viewModel).toast)
     }
 }
 
