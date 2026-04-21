@@ -8,6 +8,7 @@ struct StoreView: View {
     
     @Environment(\.dismiss) private var dismiss
     @State private var showAllCategories: Bool = false
+    @State private var showScannerView: Bool = false
     
     // Global HomeViewModel for shared state like favorites and branches
     var homeViewModel = DependencyContainer.HomeDependency.shared.homeVM
@@ -68,11 +69,18 @@ struct StoreView: View {
                                 onViewAllCategories: {
                                     showAllCategories = true
                                 }
+                                ,
+                                onScanToBuy: {                  // 👈 Add this
+                                            showScannerView = true
+                                        }
                             )
                         case .products:
                             ProductCatalogView(
                                 storeViewModel: storeViewModel,
-                                selectedCategoryID: $selectedCategoryID
+                                selectedCategoryID: $selectedCategoryID,
+                                onScanToBuy: {                  // 👈 Add this
+                                            showScannerView = true
+                                        }
                             )
                         case .offers:
                             OffersContentView(
@@ -88,6 +96,9 @@ struct StoreView: View {
             .background(Color(white: 0.98).ignoresSafeArea())
             .navigationDestination(isPresented: $showNotificationsView) {
                 HomeView()
+            }
+            .navigationDestination(isPresented: $showScannerView) {
+                ScannerMainView()
             }
             .navigationDestination(isPresented: $showCartView) {
                 let branchIdToFetch = savedBranchID == 0 ? 1 : savedBranchID
@@ -165,6 +176,7 @@ struct StoreView: View {
                 storeViewModel.isFetchingProducts = false // 4. Stop Filter Loading
             }
         }
+        .toastView(toast: $storeViewModel.toast)
     }
 }
 
@@ -175,6 +187,7 @@ struct StoreContentView: View {
     @Binding var search: String
     let currentMode: ShopMode
     var onViewAllCategories: () -> Void
+    var onScanToBuy: () -> Void
     
     private var isStoreEmpty: Bool {
         storeViewModel.storeSliders.isEmpty && storeViewModel.storeProducts.isEmpty && storeViewModel.storeCategories.isEmpty
@@ -212,7 +225,7 @@ struct StoreContentView: View {
                 }
                 
                 if !storeViewModel.storeProducts.isEmpty {
-                    FeaturedProductsSection(storeViewModel: storeViewModel, products: storeViewModel.storeProducts)
+                    FeaturedProductsSection(storeViewModel: storeViewModel, products: storeViewModel.storeProducts,onScanToBuy: onScanToBuy)
                 }
             }
             .padding(.bottom, 16)
@@ -225,6 +238,7 @@ struct StoreContentView: View {
 struct ProductCatalogView: View {
     var storeViewModel: StoreViewModel
     @Binding var selectedCategoryID: Int?
+    var onScanToBuy: () -> Void
     @AppStorage("savedBranchID") private var savedBranchID: Int = 0
     
     var body: some View {
@@ -258,7 +272,7 @@ struct ProductCatalogView: View {
                                                                         Task { await storeViewModel.addToCart(product: product, branchId: branchId) }
                                     
                                 },
-                                onScanToBuy: { }
+                                onScanToBuy: onScanToBuy
                             )
                         }
                         .buttonStyle(.plain)
@@ -435,6 +449,7 @@ struct CategoryCardView: View {
 struct FeaturedProductsSection: View {
     var storeViewModel: StoreViewModel
     let products: [HomeFeaturedProductDataEntity]
+    var onScanToBuy: () -> Void
     @AppStorage("selectedTab") private var selectedTab: StoreTab = .store
     @AppStorage("savedBranchID") private var savedBranchID: Int = 0
     
@@ -456,7 +471,7 @@ struct FeaturedProductsSection: View {
                                                                 Task { await storeViewModel.addToCart(product: product, branchId: branchId) }
                                 
                             },
-                            onScanToBuy: { }
+                            onScanToBuy: onScanToBuy
                         )
                     }
                     .buttonStyle(.plain)

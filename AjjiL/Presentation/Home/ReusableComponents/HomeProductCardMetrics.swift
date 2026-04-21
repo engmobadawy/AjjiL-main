@@ -180,46 +180,42 @@ private struct ProductImageHeader: View {
 
 
 private struct ProductActionRow: View {
-    // Read the toggle state directly from UserDefaults
     @AppStorage("isStoreMode") private var isStoreMode: Bool = false
     
     let onScanToBuy: () -> Void
     let onAddToCart: () -> Void
     
-    // Brand colors extracted from your existing code
     private let darkGreen = Color(red: 0, green: 0.59, blue: 0.51)
     private let lightGreen = Color(red: 0.79, green: 0.93, blue: 0.85)
     
     var body: some View {
         Button {
-            isStoreMode ? onAddToCart() : onScanToBuy()
-        }
-        label: {
-            // Animate the spacing so the text slides smoothly into the center
-            HStack(spacing: isStoreMode ? 8 : 0) {
+            // FIX: Align logic with Details View
+            isStoreMode ? onScanToBuy() : onAddToCart()
+        } label: {
+            HStack(spacing: !isStoreMode ? 8 : 0) {
                 
-                // Use modifiers instead of an 'if' block to maintain view identity
                 Image(systemName: "cart.badge.plus")
                     .font(.system(size: 16, weight: .semibold))
-                    .frame(width: isStoreMode ? nil : 0)
-                    .opacity(isStoreMode ? 1 : 0)
+                    .frame(width: !isStoreMode ? nil : 0) // Show when NOT in store mode
+                    .opacity(!isStoreMode ? 1 : 0)
                     .clipped()
                 
-                Text(isStoreMode ? "Add to cart" : "Scan to buy")
+                // FIX: Align text logic
+                Text(isStoreMode ? "Scan to buy" : "Add to cart")
                     .font(.custom("Poppins-SemiBold", size: 14))
-                    // Modern API to smoothly crossfade the text value change
                     .contentTransition(.opacity)
             }
             .frame(maxWidth: .infinity)
             .frame(height: HomeProductCardMetrics.actionButtonHeight)
-            .foregroundStyle(isStoreMode ? .white : darkGreen)
+            // Match styles to the corrected states
+            .foregroundStyle(isStoreMode ? darkGreen : .white)
             .background(
-                isStoreMode ? darkGreen : lightGreen,
+                isStoreMode ? lightGreen : darkGreen,
                 in: .rect(cornerRadius: HomeProductCardMetrics.actionButtonCornerRadius)
             )
         }
         .buttonStyle(.borderless)
-        // Attach a spring animation tied directly to the AppStorage value
         .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isStoreMode)
         .padding(.horizontal, HomeProductCardMetrics.contentHPadding)
         .padding(.bottom, HomeProductCardMetrics.contentBottomPadding)

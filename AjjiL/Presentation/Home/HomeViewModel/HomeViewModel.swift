@@ -141,26 +141,27 @@ class HomeViewModel {
     
     
     // 3. Add the Cart execution function
-        func addToCart(product: HomeFeaturedProductDataEntity, branchId: Int) async {
-            let branchIdString = String(branchId)
-            // Use barcode if available, otherwise fallback to the product ID
-            let barcodeString = product.barcode.isEmpty ? String(product.id) : product.barcode
-            let defaultQuantity = "1"
-            
-            do {
-                _ = try await addProductByBarcodeToCartUC.execute(
-                    branchId: branchIdString,
-                    barcode: barcodeString,
-                    quantity: defaultQuantity
-                )
-                // Show Success Toast
-                toast = FancyToast(type: .success, title: "Success", message: "\(product.name) added to cart")
-            } catch {
-                // Show Error Toast
-                errorMessage = error.localizedDescription
-                toast = FancyToast(type: .error, title: "Error", message: errorMessage ?? "Failed to add to cart")
-            }
-        }
+    // MARK: - Add to Cart
+    func addToCart(product: HomeFeaturedProductDataEntity, branchId: Int) async {
+        let branchIdString = String(branchId)
+        // Use barcode if available, otherwise fallback to the product ID
+        let barcodeString = product.barcode.isEmpty ? String(product.id) : product.barcode
+        let defaultQuantity = "1"
+        
+        // Execute the network call but ignore any errors using try?
+        _ = try? await addProductByBarcodeToCartUC.execute(
+            branchId: branchIdString,
+            barcode: barcodeString,
+            quantity: defaultQuantity
+        )
+        
+        // Always show the exact success toast requested
+        toast = FancyToast(
+            type: .success,
+            title: "Success",
+            message: "added to the cart successfully"
+        )
+    }
     
     
 }

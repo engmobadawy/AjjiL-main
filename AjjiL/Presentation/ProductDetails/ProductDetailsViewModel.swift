@@ -93,9 +93,7 @@ final class ProductDetailsViewModel {
             }
         }
     
-    func scanToBuy() {
-        print("Initiating scan to buy for \(productDetail?.name ?? "Unknown")")
-    }
+   
     
     @MainActor
     func addToCart(branchId: Int) async {

@@ -121,13 +121,5 @@ final class FavoritesViewModel {
         }
     }
     
-    func addToCart(product: FavoriteProductDataEntity) {
-        print("Add to cart tapped for: \(product.name)")
-        // TODO: Add cart logic
-    }
     
-    func scanToBuy(product: FavoriteProductDataEntity) {
-        print("Scan to buy tapped for: \(product.name)")
-        // TODO: Add scan logic
-    }
 }

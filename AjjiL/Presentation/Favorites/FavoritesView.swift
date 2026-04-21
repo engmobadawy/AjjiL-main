@@ -13,6 +13,8 @@ struct FavoritesView: View {
     // Automatically injected from your Dependency Container
     @State private var viewModel: FavoritesViewModel = DependencyContainer.FavoritesDependency.shared.favoritesVM
     
+    @State private var showScannerView: Bool = false
+    
     private enum ViewState {
         case loading
         case empty
@@ -76,8 +78,8 @@ struct FavoritesView: View {
                                                 await viewModel.toggleFavorite(for: product)
                                             }
                                         },
-                                        onAddToCart: { viewModel.addToCart(product: product) },
-                                        onScanToBuy: { viewModel.scanToBuy(product: product) }
+                                        onAddToCart: { },
+                                        onScanToBuy: { showScannerView = true }
                                     )
                                 }
                                 .buttonStyle(.plain) // Prevents the whole card from styling as a default button
@@ -97,6 +99,9 @@ struct FavoritesView: View {
                         )
                     )
                 }
+                .navigationDestination(isPresented: $showScannerView) {
+                                    ScannerMainView()
+                                }
             }
         }
         .navigationBarBackButtonHidden(true)

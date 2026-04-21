@@ -73,6 +73,9 @@ struct HomeView: View {
         .task {
             await viewModel.fetchData()
         }
+        
+        .toastView(toast: $viewModel.toast)
+            
     }
 
     // MARK: - Skeleton Loading Layout
@@ -145,10 +148,13 @@ struct HomeView: View {
                         onToggleFavorite: {
                             Task { await viewModel.toggleFavorite(for: product.id) }
                         },
-                        onAddToCart: { print("Added \(product.name) to cart")
-                            let branchId = savedBranchID == 0 ? 1 : savedBranchID
-                            Task { await viewModel.addToCart(product: product, branchId: branchId) }
-                        },
+                        onAddToCart: {
+                                                // Cleaned up print statements
+                                                let branchId = savedBranchID == 0 ? 1 : savedBranchID
+                                                Task {
+                                                    await viewModel.addToCart(product: product, branchId: branchId)
+                                                }
+                                            },
                         onScanToBuy: { print("Scanning \(product.name)")
                             showScannerView = true
                         }

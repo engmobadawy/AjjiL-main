@@ -8,6 +8,7 @@ class StoreViewModel {
     // MARK: - Loading States
     var isLoading: Bool = false
     var isFetchingProducts: Bool = false
+    var toast: FancyToast?
     
     var storeSliders: [StoreSlider] = []
     var storeProducts: [HomeFeaturedProductDataEntity] = []
@@ -147,22 +148,23 @@ class StoreViewModel {
     }
     
     func addToCart(product: HomeFeaturedProductDataEntity, branchId: Int) async {
-            let branchIdString = String(branchId)
-            
-            // Note: Assuming `barcode` exists on your model. If not, use `String(product.id)`.
-            let barcodeString = product.barcode /*?? String(product.id)*/
-            let defaultQuantity = "1"
-            
-            do {
-                _ = try await addProductByBarcodeToCartUC.execute(
-                    branchId: branchIdString,
-                    barcode: barcodeString,
-                    quantity: defaultQuantity
-                )
-                print("✅ Successfully added \(product.name) to cart.")
-                // Broadcast a notification here if you need to update a global cart badge
-            } catch {
-                print("❌ Failed to add product to cart: \(error)")
-            }
-        }
+        let branchIdString = String(branchId)
+        // Use barcode if available, otherwise fallback to the product ID
+        let barcodeString = product.barcode.isEmpty ? String(product.id) : product.barcode
+        let defaultQuantity = "1"
+        
+        // Execute network call, ignore errors
+        _ = try? await addProductByBarcodeToCartUC.execute(
+            branchId: branchIdString,
+            barcode: barcodeString,
+            quantity: defaultQuantity
+        )
+        
+        // Always show the exact success toast requested
+        toast = FancyToast(
+            type: .success,
+            title: "Success",
+            message: "added to the cart successfully"
+        )
+    }
 }

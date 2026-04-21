@@ -4,16 +4,18 @@ import Shimmer
 
 struct ProductDetailsView: View {
     @Environment(\.dismiss) private var dismiss
+    @State private var showScannerView: Bool = false
+    
     
     // 1. Add the AppStorage variables
     @AppStorage("isStoreMode") private var isStoreMode: Bool = false
     @AppStorage("savedBranchID") private var savedBranchID: Int = 0
     
-    @State private var viewModel: ProductDetailsViewModel
+      let viewModel: ProductDetailsViewModel
 
-    init(viewModel: ProductDetailsViewModel) {
-        self._viewModel = State(initialValue: viewModel)
-    }
+//    init(viewModel: ProductDetailsViewModel) {
+//        self._viewModel = State(initialValue: viewModel)
+//    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -53,23 +55,69 @@ struct ProductDetailsView: View {
                         ProductDetailsBarcodeSection(barcode: product.barcode)
                         
                         // 2. Conditionally render the button text and action
-                        GreenButton(title: isStoreMode ? "Scan to buy" : "Add to Cart") {
+//                        GreenButton(title: isStoreMode ? "Scan to buy" : "Add to Cart") {
+//                            if isStoreMode {
+//                                    viewModel.scanToBuy()
+//                                                    }
+//                            else {
+//                                let branchId = savedBranchID == 0 ? 1 : savedBranchID
+//                                Task {
+//                                    await viewModel.addToCart(branchId: branchId)
+//                                }
+//                            }
+//                        }
+//                        .padding(.horizontal, 18)
+                        
+                        
+                        // Replace the GreenButton block with this:
+
+                        Button {
                             if isStoreMode {
-                                    viewModel.scanToBuy()
-                                                    }
-                            else {
+                                
+                                
+                                showScannerView = true
+                            } else {
                                 let branchId = savedBranchID == 0 ? 1 : savedBranchID
                                 Task {
                                     await viewModel.addToCart(branchId: branchId)
                                 }
                             }
+                        } label: {
+                            HStack(spacing: !isStoreMode ? 8 : 0) {
+                                // Cart Icon
+                                Image(systemName: "cart.badge.plus")
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .frame(width: !isStoreMode ? nil : 0)
+                                    .opacity(!isStoreMode ? 1 : 0)
+                                    .clipped()
+                                
+                                // Button Text
+                                Text(isStoreMode ? "Scan to buy" : "Add to cart")
+                                    .font(.custom("Poppins-SemiBold", size: 16))
+                                    .contentTransition(.opacity)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 55) // Taller for the Details view
+                            // Dark green text when in store mode, white when adding to cart
+                            .foregroundStyle(isStoreMode ? Color(red: 0, green: 0.59, blue: 0.51) : .white)
+                            .background(
+                                // Light green background in store mode, dark green when adding to cart
+                                isStoreMode ? Color(red: 0.79, green: 0.93, blue: 0.85) : Color(red: 0, green: 0.59, blue: 0.51),
+                                in: .rect(cornerRadius: 12)
+                            )
                         }
+                        .buttonStyle(.borderless)
+                        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isStoreMode)
                         .padding(.horizontal, 18)
+                        
                     }
                     .padding(.bottom, 40)
                 }
                 .scrollIndicators(.hidden)
             }
+        }
+        .navigationDestination(isPresented: $showScannerView) {
+            ScannerMainView()
         }
         .navigationBarBackButtonHidden(true)
         .background(.white)

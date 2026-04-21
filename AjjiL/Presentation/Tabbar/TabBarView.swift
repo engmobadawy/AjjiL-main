@@ -38,7 +38,7 @@ struct TabBarView: View {
                     HStack(spacing: 0) {
                         // Stores Tab
                         TabBarButton(
-                            icon: "tabBarStores",
+                            icon: "tabBarStoresGray",
                             title: "Stores",
                             isSelected: selectedTab == 0
                         ) {
