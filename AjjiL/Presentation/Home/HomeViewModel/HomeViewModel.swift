@@ -12,7 +12,7 @@ class HomeViewModel {
     var homeStores: [HomeStoresDataEntity] = []
     var featuredProducts: [HomeFeaturedProductDataEntity] = []
     
-    var favoriteProductIDs: Set<Int> = [] // Track individual favorites by ID
+//    var favoriteProductIDs: Set<Int> = [] // Track individual favorites by ID
     var branches: [BranchDataEntity] = []
     
     var isLoading: Bool = false
@@ -47,82 +47,78 @@ class HomeViewModel {
         self.removeFavoriteProductUC = removeFavoriteProductUC
         self.getBranchesUC = getBranchesUC
         self.addProductByBarcodeToCartUC = addProductByBarcodeToCartUC
+        
+       
+           
             
     }
     
     func fetchData(branchId: Int? = 1) async {
-        isLoading = true
-        errorMessage = nil
-        
-        // Use try? to safely capture successes and nil out failures
-        async let bannersResult = try? getHomeBannersUC.execute()
-        async let storesResult = try? getHomeStoresUC.execute()
-        async let productsResult = try? getFeaturedProductsUC.execute()
-        
-        // Await the results without a throwing try
-        let (banners, stores, products) = await (bannersResult, storesResult, productsResult)
-        
-        sliderCards = banners ?? []
-        homeStores = stores ?? []
-        featuredProducts = products ?? []
-        
-        // Load the initial favorites from the backend response
-        if let products = products {
-            favoriteProductIDs = Set(products.filter { $0.isFavorite }.map { $0.id })
+            isLoading = true
+            errorMessage = nil
+            
+            async let bannersResult = try? getHomeBannersUC.execute()
+            async let storesResult = try? getHomeStoresUC.execute()
+            async let productsResult = try? getFeaturedProductsUC.execute()
+            
+            let (banners, stores, products) = await (bannersResult, storesResult, productsResult)
+            
+            sliderCards = banners ?? []
+            homeStores = stores ?? []
+            featuredProducts = products ?? []
+            
+            // 👉 NEW: Sync fetched favorites to the Source of Truth
+            if let products = products {
+                for product in products {
+                    FavoritesManager.shared.setFavorite(product.id, isFavorite: product.isFavorite)
+                }
+            }
+            
+            if banners == nil && stores == nil && products == nil {
+                errorMessage = "Failed to load home data."
+                toast = FancyToast(type: .error, title: "Error", message: errorMessage ?? "")
+            }
+            isLoading = false
         }
-        
-        if banners == nil && stores == nil && products == nil {
-            errorMessage = "Failed to load home data."
-            toast = FancyToast(type: .error, title: "Error", message: errorMessage ?? "")
-        }
-        
-        isLoading = false
-    }
     
     // MARK: - ASYNC TOGGLE
     func toggleFavorite(for productID: Int) async {
-        let isCurrentlyFavorite = favoriteProductIDs.contains(productID)
-        
-        // 1. Optimistic UI Update: Toggle it locally first
-        if isCurrentlyFavorite {
-            favoriteProductIDs.remove(productID)
-        } else {
-            favoriteProductIDs.insert(productID)
-        }
-        
-        // 2. Call backend
-        do {
-            let branchProductIDString = String(productID)
-            let response: ToggleFavoriteModel
+            // 1. Optimistic UI Update globally
+            let isCurrentlyFavorite = FavoritesManager.shared.isFavorite(productID)
+            _ = FavoritesManager.shared.toggleLocal(productID)
             
-            // NEW: Branch the network call based on current state
-            if isCurrentlyFavorite {
-                response = try await removeFavoriteProductUC.execute(branchProductId: branchProductIDString)
-            } else {
-                response = try await addFavoriteProductUC.execute(branchProductId: branchProductIDString)
-            }
-            
-            // 3. Revert if backend says it failed
-            if response.status == false {
-                revertFavoriteState(for: productID, wasFavorite: isCurrentlyFavorite)
-                errorMessage = response.message ?? "Failed to update favorite."
+            // 2. Call backend
+            do {
+                let branchProductIDString = String(productID)
+                let response: ToggleFavoriteModel
+                
+                if isCurrentlyFavorite {
+                    response = try await removeFavoriteProductUC.execute(branchProductId: branchProductIDString)
+                } else {
+                    response = try await addFavoriteProductUC.execute(branchProductId: branchProductIDString)
+                }
+                
+                // 3. Revert if backend says it failed
+                if response.status == false {
+                    _ = FavoritesManager.shared.toggleLocal(productID) // Revert
+                    errorMessage = response.message ?? "Failed to update favorite."
+                    toast = FancyToast(type: .error, title: "Error", message: errorMessage ?? "")
+                }
+            } catch {
+                // Revert on network crash
+                _ = FavoritesManager.shared.toggleLocal(productID) // Revert
+                errorMessage = error.localizedDescription
                 toast = FancyToast(type: .error, title: "Error", message: errorMessage ?? "")
             }
-        } catch {
-            // Revert on network crash
-            revertFavoriteState(for: productID, wasFavorite: isCurrentlyFavorite)
-            errorMessage = error.localizedDescription
-            toast = FancyToast(type: .error, title: "Error", message: errorMessage ?? "")
         }
-    }
     
-    private func revertFavoriteState(for productID: Int, wasFavorite: Bool) {
-        if wasFavorite {
-            favoriteProductIDs.insert(productID)
-        } else {
-            favoriteProductIDs.remove(productID)
-        }
-    }
+//    private func revertFavoriteState(for productID: Int, wasFavorite: Bool) {
+//        if wasFavorite {
+//            favoriteProductIDs.insert(productID)
+//        } else {
+//            favoriteProductIDs.remove(productID)
+//        }
+//    }
     
     func fetchBranches(storeId: Int) async {
             isLoading = true

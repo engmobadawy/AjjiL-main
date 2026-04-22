@@ -45,86 +45,53 @@ class StoreViewModel {
         self.removeFavoriteProductUC = removeFavoriteProductUC
         self.addProductByBarcodeToCartUC = addProductByBarcodeToCartUC
         
-        // Listen for global favorite changes (e.g., from ProductDetailsView)
-        NotificationCenter.default.addObserver(
-            forName: NSNotification.Name("FavoriteToggled"),
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            guard let self = self,
-                  let userInfo = notification.userInfo,
-                  let id = userInfo["id"] as? Int,
-                  let isFavorite = userInfo["isFavorite"] as? Bool else { return }
-            
-            // Instantly update the product in our local list if it exists
-            if let index = self.storeProducts.firstIndex(where: { $0.id == id }) {
-                self.storeProducts[index].isFavorite = isFavorite
-            }
-        }
+        
     }
     
     // MARK: - Toggle Favorite
     func toggleFavorite(for productID: Int) async {
-        guard let index = storeProducts.firstIndex(where: { $0.id == productID }) else { return }
-        
-        let isCurrentlyFavorite = storeProducts[index].isFavorite
-        let branchProductIDString = String(productID)
-        let newFavoriteState = !isCurrentlyFavorite
-        
-        // 1. Optimistic UI Update locally
-        storeProducts[index].isFavorite = newFavoriteState
-        
-        // BROADCAST the change so HomeView and FavoritesView update instantly
-        NotificationCenter.default.post(
-            name: NSNotification.Name("FavoriteToggled"),
-            object: nil,
-            userInfo: ["id": productID, "isFavorite": newFavoriteState]
-        )
-        
-        // 2. Network Call
-        do {
-            let response: ToggleFavoriteModel
-            if isCurrentlyFavorite {
-                response = try await removeFavoriteProductUC.execute(branchProductId: branchProductIDString)
-            } else {
-                response = try await addFavoriteProductUC.execute(branchProductId: branchProductIDString)
-            }
+            let isCurrentlyFavorite = FavoritesManager.shared.isFavorite(productID)
+            _ = FavoritesManager.shared.toggleLocal(productID)
             
-            // 3. Revert if backend says it failed
-            if response.status == false {
-                storeProducts[index].isFavorite = isCurrentlyFavorite
-                NotificationCenter.default.post(
-                    name: NSNotification.Name("FavoriteToggled"),
-                    object: nil,
-                    userInfo: ["id": productID, "isFavorite": isCurrentlyFavorite]
-                )
+            do {
+                let branchProductIDString = String(productID)
+                let response: ToggleFavoriteModel
+                
+                if isCurrentlyFavorite {
+                    response = try await removeFavoriteProductUC.execute(branchProductId: branchProductIDString)
+                } else {
+                    response = try await addFavoriteProductUC.execute(branchProductId: branchProductIDString)
+                }
+                
+                if response.status == false {
+                    _ = FavoritesManager.shared.toggleLocal(productID) // Revert
+                }
+            } catch {
+                _ = FavoritesManager.shared.toggleLocal(productID) // Revert
             }
-        } catch {
-            // Revert on network crash
-            storeProducts[index].isFavorite = isCurrentlyFavorite
-            NotificationCenter.default.post(
-                name: NSNotification.Name("FavoriteToggled"),
-                object: nil,
-                userInfo: ["id": productID, "isFavorite": isCurrentlyFavorite]
-            )
         }
-    }
     
     // MARK: - Data Fetching
     func fetchProducts(storeId: Int, branchId: Int, categoryId: Int?) async {
-        do {
-            if let categoryId = categoryId {
-                let response = try await getProductsByCategoryUC.execute(storeId: storeId, branchId: branchId, categoryId: categoryId)
-                self.storeProducts = response.data?.map { $0.asFeaturedProductEntity() } ?? []
-            } else {
-                let response = try await getFeaturedProductsUCForStore.execute(storeId: storeId, branchId: branchId, skip: 0, take: 20)
-                self.storeProducts = response.data?.products?.map { $0.asFeaturedProductEntity() } ?? []
+            do {
+                if let categoryId = categoryId {
+                    let response = try await getProductsByCategoryUC.execute(storeId: storeId, branchId: branchId, categoryId: categoryId)
+                    self.storeProducts = response.data?.map { $0.asFeaturedProductEntity() } ?? []
+                } else {
+                    let response = try await getFeaturedProductsUCForStore.execute(storeId: storeId, branchId: branchId, skip: 0, take: 20)
+                    self.storeProducts = response.data?.products?.map { $0.asFeaturedProductEntity() } ?? []
+                }
+                
+                // 👉 NEW: Sync fetched favorites to the Source of Truth
+                for product in self.storeProducts {
+                    FavoritesManager.shared.setFavorite(product.id, isFavorite: product.isFavorite)
+                }
+                
+            } catch {
+                print("❌ Failed to fetch products: \(error)")
+                self.storeProducts = []
             }
-        } catch {
-            print("❌ Failed to fetch products: \(error)")
-            self.storeProducts = []
         }
-    }
     
     func fetchStoreSliders(storeId: Int) async {
         do {

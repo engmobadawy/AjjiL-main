@@ -263,7 +263,7 @@ struct ProductCatalogView: View {
                         NavigationLink(value: product) {
                             HomeProductCard(
                                 product: product,
-                                isFavorite: product.isFavorite, // Directly reads local property
+                                isFavorite: FavoritesManager.shared.isFavorite(product.id), // Directly reads local property
                                 onToggleFavorite: {
                                     Task { await storeViewModel.toggleFavorite(for: product.id) }
                                 },
@@ -462,7 +462,7 @@ struct FeaturedProductsSection: View {
                     NavigationLink(value: product) {
                         HomeProductCard(
                             product: product,
-                            isFavorite: product.isFavorite, // Directly reads local property
+                            isFavorite: FavoritesManager.shared.isFavorite(product.id),
                             onToggleFavorite: {
                                 Task { await storeViewModel.toggleFavorite(for: product.id) }
                             },

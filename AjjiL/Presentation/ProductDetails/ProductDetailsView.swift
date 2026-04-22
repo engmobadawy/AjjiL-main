@@ -40,7 +40,7 @@ struct ProductDetailsView: View {
                         ProductDetailsImageHeader(
                             imageURL: product.images,
                             discount: product.offerDiscount,
-                            isFavorite: product.isFavorite,
+                            isFavorite: FavoritesManager.shared.isFavorite(product.id),
                             onToggleFavorite: {
                                 Task { await viewModel.toggleFavorite() }
                             }

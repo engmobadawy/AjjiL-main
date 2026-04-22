@@ -10,8 +10,8 @@ struct HomeView: View {
     @State private var viewModel = DependencyContainer.HomeDependency.shared.homeVM
     @State private var searchText: String = ""
    
-    @State private var showFeaturedProductsView: Bool = false
-    @State private var showAllStoresView: Bool = false
+//    @State private var showFeaturedProductsView: Bool = false
+//    @State private var showAllStoresView: Bool = false
     @State private var showScannerView: Bool = false
     @State private var showNotificationsView: Bool = false
     
@@ -63,9 +63,9 @@ struct HomeView: View {
             .navigationDestination(for: HomeStoresDataEntity.self) { store in
                 StoreView(storeName: store.name, storeId: store.id)
             }
-            .navigationDestination(isPresented: $showAllStoresView) {
-                AllStoresView()
-            }
+//            .navigationDestination(isPresented: $showAllStoresView) {
+//                AllStoresView()
+//            }
             .navigationDestination(isPresented: $showNotificationsView) {
                 HomeView()
             }
@@ -147,7 +147,7 @@ struct HomeView: View {
                 NavigationLink(value: product) {
                     HomeProductCard(
                         product: product,
-                        isFavorite: viewModel.favoriteProductIDs.contains(product.id),
+                        isFavorite: FavoritesManager.shared.isFavorite(product.id),
                         onToggleFavorite: {
                             Task { await viewModel.toggleFavorite(for: product.id) }
                         },
@@ -194,10 +194,10 @@ struct HomeView: View {
             Text("Stores")
                 .font(.title3.bold())
             Spacer()
-            Button("View All") { showAllStoresView = true }
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.green)
-                .underline()
+//            Button("View All") { showAllStoresView = true }
+//                .font(.subheadline.weight(.semibold))
+//                .foregroundStyle(.green)
+//                .underline()
         }
     }
     
@@ -206,10 +206,10 @@ struct HomeView: View {
             Text("Featured Products")
                 .font(.title3.bold())
             Spacer()
-            Button("View All") { showFeaturedProductsView = true}
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.green)
-                .underline()
+//            Button("View All") { showFeaturedProductsView = true}
+//                .font(.subheadline.weight(.semibold))
+//                .foregroundStyle(.green)
+//                .underline()
         }
         .padding(.top, 16)
     }

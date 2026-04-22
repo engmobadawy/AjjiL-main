@@ -107,6 +107,25 @@ struct OrdersView: View {
                         await viewModel.fetchCurrentOrders(storeName: search, date: dateString)
                     }
                 }
+                
+                
+            }
+            .onAppear {
+                Task {
+                    // Replicate the exact same fetch logic to force a refresh
+                    let search = filterStore.appliedStoreName.isEmpty ? nil : filterStore.appliedStoreName
+                    
+                    var dateString: String? = nil
+                    if let dateToFetch = filterStore.appliedOrderDate {
+                        dateString = dateToFetch.formatted(.iso8601.year().month().day().dateSeparator(.dash))
+                    }
+                    
+                    if selectedTab == .history {
+                        await viewModel.fetchHistory(storeName: search, date: dateString)
+                    } else if selectedTab == .currentOrders {
+                        await viewModel.fetchCurrentOrders(storeName: search, date: dateString)
+                    }
+                }
             }
             .navigationDestination(item: $selectedOrderId) { id in
                 let repo = OrdersRepositoryImp(networkService: NetworkService())

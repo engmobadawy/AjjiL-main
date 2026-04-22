@@ -32,33 +32,33 @@ final class ProductDetailsViewModel {
     }
     
     func fetchProductDetails() async {
-        isLoading = true
-        errorMessage = nil
-        
-        do {
-            productDetail = try await getProductDetailsUC.execute(branchProductId: branchProductId)
-        } catch {
-            errorMessage = error.localizedDescription
+            isLoading = true
+            errorMessage = nil
+            
+            do {
+                productDetail = try await getProductDetailsUC.execute(branchProductId: branchProductId)
+                
+                // 👉 NEW: Sync fetched status to the Source of Truth
+                if let p = productDetail {
+                    FavoritesManager.shared.setFavorite(p.productBranchId, isFavorite: p.isFavorite)
+                }
+                
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+            
+            isLoading = false
         }
         
-        isLoading = false
-    }
-    
-    func toggleFavorite() async {
+        func toggleFavorite() async {
             guard let currentProduct = productDetail else { return }
-            let isCurrentlyFavorite = currentProduct.isFavorite
-            let branchProductIDString = String(currentProduct.productBranchId)
+            let productID = currentProduct.productBranchId
             
-            // 1. Optimistic UI Update
-            productDetail?.isFavorite.toggle()
-            let newFavoriteState = !isCurrentlyFavorite
+            let isCurrentlyFavorite = FavoritesManager.shared.isFavorite(productID)
+            let branchProductIDString = String(productID)
             
-            // BROADCAST the change so HomeView and FavoritesView update instantly
-            NotificationCenter.default.post(
-                name: NSNotification.Name("FavoriteToggled"),
-                object: nil,
-                userInfo: ["id": currentProduct.productBranchId, "isFavorite": newFavoriteState]
-            )
+            // 1. Optimistic UI Update locally
+            _ = FavoritesManager.shared.toggleLocal(productID)
             
             // 2. Network Call
             do {
@@ -71,25 +71,11 @@ final class ProductDetailsViewModel {
                 
                 // 3. Revert if backend says it failed
                 if response.status == false {
-                    productDetail?.isFavorite = isCurrentlyFavorite
-                    
-                    // Revert broadcast on failure
-                    NotificationCenter.default.post(
-                        name: NSNotification.Name("FavoriteToggled"),
-                        object: nil,
-                        userInfo: ["id": currentProduct.productBranchId, "isFavorite": isCurrentlyFavorite]
-                    )
+                    _ = FavoritesManager.shared.toggleLocal(productID) // Revert
                     errorMessage = response.message ?? "Failed to update favorite."
                 }
             } catch {
-                productDetail?.isFavorite = isCurrentlyFavorite
-                
-                // Revert broadcast on failure
-                NotificationCenter.default.post(
-                    name: NSNotification.Name("FavoriteToggled"),
-                    object: nil,
-                    userInfo: ["id": currentProduct.productBranchId, "isFavorite": isCurrentlyFavorite]
-                )
+                _ = FavoritesManager.shared.toggleLocal(productID) // Revert
                 errorMessage = error.localizedDescription
             }
         }

@@ -74,7 +74,7 @@ struct FavoritesView: View {
                                 NavigationLink(value: product) {
                                     HomeProductCard(
                                         product: product.asHomeProduct,
-                                        isFavorite: product.isFavorite,
+                                        isFavorite: FavoritesManager.shared.isFavorite(product.id),
                                         onToggleFavorite: {
                                             Task {
                                                 await viewModel.toggleFavorite(for: product)
