@@ -1,3 +1,11 @@
+//
+//  PromoCodesViewState.swift
+//  AjjiLMB
+//
+//  Created by mohamed mahmoud sobhy badawy on 25/04/2026.
+//
+
+
 import SwiftUI
 
 // MARK: - State
@@ -63,7 +71,7 @@ struct PromoCodesView: View {
                 TopRowNotForHome(
                     title: "Promo Code",
                     showBackButton: true,
-                    kindOfTopRow: .filter,
+                    kindOfTopRow: .none,
                     onBack: {
                         dismiss()
                     }
@@ -307,7 +315,7 @@ struct PromoCodeStoresRowView: View {
                 .foregroundStyle(Color(red: 20/255, green: 140/255, blue: 90/255))
             
             if let stores = stores, !stores.isEmpty {
-                HStack(spacing: -8) {
+                HStack(spacing: -2) {
                     // Safe bounding: Display up to 5 overlapping store images to prevent layout breaking
                     ForEach(stores.prefix(5), id: \.id) { store in
                         AsyncImage(url: URL(string: store.image ?? "")) { phase in

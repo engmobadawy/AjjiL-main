@@ -8,7 +8,7 @@
 
 import Foundation
 
-// ... (GetCouponsUseCase remains the same) ...
+
 
 // MARK: - Get Coupon Branches Use Case (Updated)
 class GetCouponBranchesUseCase {
@@ -22,3 +22,8 @@ class GetCouponBranchesUseCase {
         return try await repository.getCouponBranches(couponId: couponId)
     }
 }
+
+
+
+
+

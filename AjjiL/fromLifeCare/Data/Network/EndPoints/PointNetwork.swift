@@ -1,3 +1,11 @@
+//
+//  PointNetwork.swift
+//  AjjiLMB
+//
+//  Created by mohamed mahmoud sobhy badawy on 25/04/2026.
+//
+
+
 import Foundation
 
 enum PointNetwork {
@@ -46,5 +54,68 @@ extension PointNetwork: TargetType {
     
     var headers: [String: String]? {
         return NetWorkHelper.shared.Headers()
+    }
+}
+
+
+
+
+
+
+
+
+
+import Foundation
+
+// MARK: - Points Response
+struct PointsResponse: Decodable {
+    let status: Bool?
+    let message: String?
+    let data: PointsData?
+}
+
+struct PointsData: Decodable {
+    let maxPoints: Int?
+    let minPoints: Int?
+    let points: Int?
+    let canRedeem: Bool?
+    
+    enum CodingKeys: String, CodingKey {
+        case maxPoints = "max_points"
+        case minPoints = "min_points"
+        case points
+        case canRedeem = "can_redeem"
+    }
+}
+
+// MARK: - Redeem Points Response
+struct RedeemPointsResponse: Decodable {
+    let status: Bool?
+    let message: String?
+    let data: RedeemPointsData?
+}
+
+struct RedeemPointsData: Decodable {
+    let couponCode: String?
+    let expiredAt: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case couponCode = "coupon_code"
+        case expiredAt = "expired_at"
+    }
+}
+
+// MARK: - Calc Points Response
+struct CalcPointsResponse: Decodable {
+    let status: Bool?
+    let message: String?
+    let data: CalcPointsData?
+}
+
+struct CalcPointsData: Decodable {
+    let discountValue: Int?
+    
+    enum CodingKeys: String, CodingKey {
+        case discountValue = "discount_value"
     }
 }

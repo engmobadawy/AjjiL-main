@@ -74,10 +74,10 @@ class HomeViewModel {
                 }
             }
             
-            if banners == nil && stores == nil && products == nil {
-                errorMessage = "Failed to load home data."
-                toast = FancyToast(type: .error, title: "Error", message: errorMessage ?? "")
-            }
+        if banners == nil && stores == nil && products == nil {
+            errorMessage = "Failed to load home data.".newlocalized
+            toast = FancyToast(type: .error, title: "Error".newlocalized, message: errorMessage ?? "")
+        }
             isLoading = false
         }
     
@@ -101,14 +101,13 @@ class HomeViewModel {
                 // 3. Revert if backend says it failed
                 if response.status == false {
                     _ = FavoritesManager.shared.toggleLocal(productID) // Revert
-                    errorMessage = response.message ?? "Failed to update favorite."
-                    toast = FancyToast(type: .error, title: "Error", message: errorMessage ?? "")
+                    errorMessage = response.message ?? "Failed to update favorite.".newlocalized
+                    toast = FancyToast(type: .error, title: "Error".newlocalized, message: errorMessage ?? "")
                 }
             } catch {
-                // Revert on network crash
                 _ = FavoritesManager.shared.toggleLocal(productID) // Revert
-                errorMessage = error.localizedDescription
-                toast = FancyToast(type: .error, title: "Error", message: errorMessage ?? "")
+                errorMessage = error.localizedDescription // System errors are usually localized by default
+                toast = FancyToast(type: .error, title: "Error".newlocalized, message: errorMessage ?? "")
             }
         }
     
@@ -128,7 +127,7 @@ class HomeViewModel {
                 branches = try await getBranchesUC.execute(storeId: storeId)
             } catch {
                 errorMessage = error.localizedDescription
-                toast = FancyToast(type: .error, title: "Error", message: errorMessage ?? "")
+                toast = FancyToast(type: .error, title: "Error".newlocalized, message: errorMessage ?? "")
             }
             
             isLoading = false
@@ -154,8 +153,8 @@ class HomeViewModel {
         // Always show the exact success toast requested
         toast = FancyToast(
             type: .success,
-            title: "Success",
-            message: "added to the cart successfully"
+            title: "Success".newlocalized,
+            message: "added to the cart successfully".newlocalized
         )
     }
     

@@ -9,12 +9,13 @@
 import SwiftUI
 
 struct TabBarView: View {
-    @State private var selectedTab = 2 // Home is selected by default
+    @State private var tabRouter = TabRouter() // Use the new router
     @State private var tabVisibility = TabBarVisibility()
+    
     var body: some View {
         ZStack {
             // Content for selected tab
-            TabView(selection: $selectedTab) {
+            TabView(selection: $tabRouter.selectedTab) { // Bind to router state
                 StoresView()
                     .tag(0)
                 
@@ -40,23 +41,23 @@ struct TabBarView: View {
                         TabBarButton(
                             icon: "tabBarStoresGray",
                             title: "Stores",
-                            isSelected: selectedTab == 0
+                            isSelected: tabRouter.selectedTab == 0
                         ) {
-                            selectedTab = 0
+                            tabRouter.selectedTab = 0
                         }
                         
                         // Orders Tab
                         TabBarButton(
                             icon: "tabBarOrders",
                             title: "Orders",
-                            isSelected: selectedTab == 1
+                            isSelected: tabRouter.selectedTab == 1
                         ) {
-                            selectedTab = 1
+                            tabRouter.selectedTab = 1
                         }
                         
                         // Home Tab (Center - Prominent)
                         Button(action: {
-                            selectedTab = 2
+                            tabRouter.selectedTab = 2
                         }) {
                             ZStack {
                                 Circle()
@@ -75,18 +76,18 @@ struct TabBarView: View {
                         TabBarButton(
                             icon: "tabBarLove",
                             title: "Favorites",
-                            isSelected: selectedTab == 3
+                            isSelected: tabRouter.selectedTab == 3
                         ) {
-                            selectedTab = 3
+                            tabRouter.selectedTab = 3
                         }
                         
                         // Profile Tab
                         TabBarButton(
                             icon: "tabBarProfile",
                             title: "Profile",
-                            isSelected: selectedTab == 4
+                            isSelected: tabRouter.selectedTab == 4
                         ) {
-                            selectedTab = 4
+                            tabRouter.selectedTab = 4
                         }
                     }
                     .padding(.horizontal)
@@ -95,9 +96,23 @@ struct TabBarView: View {
                     .background(Color.white)
                 }.ignoresSafeArea(.keyboard, edges: .bottom)
             }
-        }.environment(tabVisibility)
+        }
+        .environment(tabVisibility)
+        .environment(tabRouter) // Inject the router into the environment
     }
 }
+
+
+
+@Observable
+@MainActor
+final class TabRouter {
+    var selectedTab: Int = 2 // Home is selected by default
+}
+
+
+
+
 
 struct TabBarButton: View {
     let icon: String

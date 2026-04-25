@@ -65,4 +65,59 @@ class ProfileRepositoryImp: ProfileRepository {
         
         throw URLError(.badServerResponse)
     }
+    
+    func changePassword(current: String, new: String, confirm: String) async throws -> String {
+        let publisher = networkService.fetchData(
+            target: ProfileNetwork.changePassword(current: current, new: new, confirm: confirm),
+            responseClass: ChangePasswordResponse.self
+        )
+        
+        for try await response in publisher.values {
+            return response.message ?? "Password updated successfully"
+        }
+        
+        throw URLError(.badServerResponse)
+    }
+    
+    
+    func changePhone(newPhone: String, password: String) async throws -> String {
+            let publisher = networkService.fetchData(
+                target: ProfileNetwork.changePhone(newPhone: newPhone, password: password),
+                responseClass: ChangePhoneResponse.self
+            )
+            
+            for try await response in publisher.values {
+                return response.message ?? "Code sent successfully"
+            }
+            
+            throw URLError(.badServerResponse)
+        }
+        
+        func verifyChangePhone(newPhone: String, code: String) async throws -> String {
+            let publisher = networkService.fetchData(
+                target: ProfileNetwork.verifyChangePhone(newPhone: newPhone, code: code),
+                responseClass: ChangePhoneResponse.self
+            )
+            
+            for try await response in publisher.values {
+                return response.message ?? "Phone verified successfully"
+            }
+            
+            throw URLError(.badServerResponse)
+        }
+    
+    func getPromoCodes() async throws -> [PromoCodeDTO] {
+            let publisher = networkService.fetchData(
+                target: ProfileNetwork.getPromoCodes,
+                responseClass: PromoCodesResponse.self
+            )
+            
+            for try await response in publisher.values {
+                // Unwrapping the data array or returning an empty array if nil
+                return response.data ?? []
+            }
+            
+            throw URLError(.badServerResponse)
+        }
+    
 }

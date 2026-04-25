@@ -191,7 +191,7 @@ struct HomeView: View {
 
     private var storesHeader: some View {
         HStack(alignment: .firstTextBaseline) {
-            Text("Stores")
+            Text("Stores".newlocalized)
                 .font(.title3.bold())
             Spacer()
 //            Button("View All") { showAllStoresView = true }
@@ -203,7 +203,7 @@ struct HomeView: View {
     
     private var featuredProductsHeader: some View {
         HStack(alignment: .firstTextBaseline) {
-            Text("Featured Products")
+            Text("Featured Products".newlocalized)
                 .font(.title3.bold())
             Spacer()
 //            Button("View All") { showFeaturedProductsView = true}
@@ -228,14 +228,14 @@ struct ShopThroughBanner: View {
             HStack(spacing: 10) {
                 Image(systemName: "storefront.fill")
                     .font(.system(size: 18))
-                Text("Shop through")
+                Text("Shop through".newlocalized)
                     .font(.system(size: 18, weight: .semibold))
             }
             
             Spacer()
             
             HStack(spacing: 8) {
-                Text("Store")
+                Text("Store".newlocalized)
                     .font(.subheadline.weight(.medium))
                 
                 Toggle("", isOn: $isStoreMode)

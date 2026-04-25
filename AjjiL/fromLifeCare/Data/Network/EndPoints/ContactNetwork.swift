@@ -1,3 +1,11 @@
+//
+//  ContactNetwork.swift
+//  AjjiLMB
+//
+//  Created by mohamed mahmoud sobhy badawy on 24/04/2026.
+//
+
+
 import Foundation
 
 enum ContactNetwork {
@@ -46,4 +54,29 @@ extension ContactNetwork: TargetType {
     var headers: [String: String]? {
         return NetWorkHelper.shared.Headers()
     }
+}
+
+
+
+
+
+
+import Foundation
+
+// MARK: - Contact Type Models
+struct ContactTypeResponse: Decodable {
+    let status: Bool?
+    let message: String?
+    let data: [ContactType]?
+}
+
+struct ContactType: Decodable, Identifiable {
+    let id: Int
+    let name: String
+}
+
+// MARK: - Contact Us Models
+struct ContactUsResponse: Decodable {
+    let status: Bool?
+    let message: String?
 }

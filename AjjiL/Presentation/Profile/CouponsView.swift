@@ -1,27 +1,15 @@
-//
-//  CouponsViewState.swift
-//  AjjiLMB
-//
-//  Created by mohamed mahmoud sobhy badawy on 25/04/2026.
-//
-
-
 import SwiftUI
 
-// MARK: - State & Models
+// MARK: - State
 
 enum CouponsViewState {
     case loading
     case empty
-    case loaded([Coupon])
+    case loaded([CouponModel])
     case error(String)
 }
 
-// Placeholder model to represent a single coupon
-struct Coupon: Identifiable, Hashable {
-    let id: UUID
-    let title: String
-}
+// MARK: - ViewModel
 
 @Observable
 @MainActor
@@ -29,14 +17,27 @@ final class CouponsViewModel {
     // Internal view state must be private per guidelines
     private(set) var state: CouponsViewState = .loading
     
-    func fetchCoupons() async {
+    // Dependencies
+    private let getCouponsUseCase: GetCouponsUseCase
+    
+    init(getCouponsUseCase: GetCouponsUseCase) {
+        self.getCouponsUseCase = getCouponsUseCase
+    }
+    
+    func fetchCoupons(search: String? = nil) async {
         state = .loading
         
-        // Simulating a network request delay
-        try? await Task.sleep(for: .seconds(1))
-        
-        // Switching to empty state for demonstration
-        state = .empty
+        do {
+            let fetchedCoupons = try await getCouponsUseCase.execute(search: search)
+            
+            if fetchedCoupons.isEmpty {
+                state = .empty
+            } else {
+                state = .loaded(fetchedCoupons)
+            }
+        } catch {
+            state = .error(error.localizedDescription)
+        }
     }
 }
 
@@ -44,46 +45,108 @@ final class CouponsViewModel {
 
 struct CouponsView: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var viewModel = CouponsViewModel()
+    
+    // Inject the ViewModel from the parent view
+    @State private var viewModel: CouponsViewModel
+    
+    // Toast State
+    @State private var showToast: Bool = false
+    
+    init(viewModel: CouponsViewModel) {
+        _viewModel = State(wrappedValue: viewModel)
+    }
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Static top row that persists across all states
-            TopRowNotForHome(
-                title: "Coupons",
-                showBackButton: true,
-                kindOfTopRow: .none,
-                onBack: {
-                    dismiss()
+        ZStack {
+            VStack(spacing: 0) {
+                // Static top row that persists across all states
+                TopRowNotForHome(
+                    title: "Coupons",
+                    showBackButton: true,
+                    kindOfTopRow: .none,
+                    onBack: {
+                        dismiss()
+                    }
+                )
+                
+                // Switch statement driving the view identity based on state
+                Group {
+                    switch viewModel.state {
+                    case .loading:
+                        ProgressView()
+                            .scaleEffect(1.5)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        
+                    case .empty:
+                        EmptyCouponContent()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        
+                    case .loaded(let coupons):
+                        // Pass the closure to trigger the toast
+                        CouponsListView(coupons: coupons) {
+                            triggerToast()
+                        }
+                        
+                    case .error(let message):
+                        VStack(spacing: 12) {
+                            Image(systemName: "exclamationmark.triangle")
+                                .font(.system(size: 40))
+                                .foregroundStyle(.red)
+                            Text(message)
+                                .font(.body)
+                                .foregroundStyle(.red)
+                                .multilineTextAlignment(.center)
+                            
+                            Button("Try Again") {
+                                Task { await viewModel.fetchCoupons() }
+                            }
+                            .buttonStyle(.bordered)
+                        }
+                        .padding()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    }
                 }
-            )
+            }
+            .background(Color(red: 245/255, green: 245/255, blue: 245/255)) // Light background behind cards
             
-            // Switch statement driving the view identity based on state
-            Group {
-                switch viewModel.state {
-                case .loading:
-                    ProgressView()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    
-                case .empty:
-                    EmptyCouponContent()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    
-                case .loaded(let coupons):
-                    // Extracted subview for the populated list
-                    CouponsListView(coupons: coupons)
-                    
-                case .error(let message):
-                    Text(message)
-                        .foregroundStyle(.red)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+            // MARK: - Toast Overlay
+            if showToast {
+                VStack {
+                    Spacer()
+                    Text("Coupon copied!")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 12)
+                        .background(Color(red: 20/255, green: 140/255, blue: 90/255)) // Brand green
+                        .clipShape(Capsule())
+                        .shadow(color: .black.opacity(0.15), radius: 10, y: 5)
+                        .padding(.bottom, 50)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
+                .zIndex(1) // Ensures it sits on top of everything
             }
         }
         .navigationBarBackButtonHidden(true)
         .task {
             // Automatic cancellation of async work tied to view lifecycle
             await viewModel.fetchCoupons()
+        }
+    }
+    
+    // MARK: - Helper Methods
+    private func triggerToast() {
+        // Use animation for smooth appearance
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+            showToast = true
+        }
+        
+        // Auto-hide after 2 seconds using modern Task API
+        Task {
+            try? await Task.sleep(for: .seconds(2))
+            withAnimation(.easeOut(duration: 0.3)) {
+                showToast = false
+            }
         }
     }
 }
@@ -93,7 +156,7 @@ struct CouponsView: View {
 struct EmptyCouponContent: View {
     var body: some View {
         VStack(spacing: 24) {
-            Image("coupon")
+            Image("coupon") // Make sure this asset exists in your catalog
                 .resizable()
                 .scaledToFit()
                 .frame(width: 129, height: 90)
@@ -114,17 +177,155 @@ struct EmptyCouponContent: View {
 }
 
 struct CouponsListView: View {
-    let coupons: [Coupon]
+    let coupons: [CouponModel]
+    var onCopy: () -> Void
     
     var body: some View {
         ScrollView {
-            LazyVStack {
-                // Ensure stable identity for dynamic content
-                ForEach(coupons) { coupon in
-                    Text(coupon.title)
-                        .padding()
+            LazyVStack(spacing: 16) {
+                // Using stable identity (id) from the CouponModel
+                ForEach(coupons, id: \.id) { coupon in
+                    PromoCodeCardView1(coupon: coupon, onCopy: onCopy)
                 }
             }
+            .padding()
+        }
+    }
+}
+
+// MARK: - Promo Code Card Component
+struct PromoCodeCardView1: View {
+    let coupon: CouponModel
+    var onCopy: () -> Void
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            
+            // Header Row
+            HStack(alignment: .center) {
+                Text(coupon.code ?? "N/A")
+                    .font(.system(size: 28, weight: .semibold))
+                    .foregroundStyle(Color(red: 20/255, green: 140/255, blue: 90/255))
+                
+                CouponBadgeView(isUsed: coupon.isUsed ?? false)
+                
+                Spacer()
+                
+                Button {
+                    copyToClipboard(text: coupon.code ?? "")
+                    onCopy() // Trigger toast
+                } label: {
+                    Image(systemName: "doc.on.doc")
+                        .font(.system(size: 20))
+                        .foregroundStyle(.gray.opacity(0.6))
+                }
+            }
+            
+//            // Subtitle
+//            Text("Apply promo code to avail exciting offers")
+//                .font(.system(size: 14, weight: .medium))
+//                .foregroundStyle(Color(red: 1/255, green: 150/255, blue: 131/255))
+            
+            // Stores Row
+            CouponStoresRowView()
+            
+            Spacer(minLength: 0)
+            
+            // Footer
+            HStack {
+                Text("Expiration Date: ")
+                    .font(.system(size: 14))
+                    .foregroundStyle(Color(red: 229/255, green: 57/255, blue: 53/255)) +
+                Text(coupon.expirationDate ?? "N/A")
+                    .font(.system(size: 14))
+                    .foregroundStyle(Color(red: 229/255, green: 57/255, blue: 53/255)) // Requested Red
+                
+                Spacer()
+                
+                let discountValue = Int(coupon.value ?? 0)
+                
+                HStack(spacing: 4) {
+                    Text("-\(discountValue)")
+                        .font(.title2.bold())
+                        .foregroundStyle(.black)
+                    
+                    Image("GrayVector")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 18)
+                }
+            }
+        }
+        .padding()
+        .frame(height: 142) // Strict design requirement
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(.white)
+                .shadow(color: .black.opacity(0.05), radius: 5, x: 0, y: 2)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+        )
+    }
+    
+    private func copyToClipboard(text: String) {
+        UIPasteboard.general.string = text
+    }
+}
+
+// MARK: - Badge Subview
+struct CouponBadgeView: View {
+    let isUsed: Bool
+    
+    var body: some View {
+        Text(isUsed ? "Used" : "Not Used")
+            .font(.system(size: 8, weight: .semibold))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 4)
+            .background(
+                isUsed
+                ? Color(red: 139/255, green: 197/255, blue: 63/255)
+                : Color(red: 255/255, green: 119/255, blue: 1/255)
+            )
+            .clipShape(.rect(cornerRadius: 4))
+    }
+}
+
+// MARK: - Stores Row Subview
+struct CouponStoresRowView: View {
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "storefront")
+                .font(.system(size: 14))
+                .foregroundStyle(Color(red: 20/255, green: 140/255, blue: 90/255))
+            
+            Text("Stores:")
+                .font(.system(size: 14))
+                .foregroundStyle(Color(red: 20/255, green: 140/255, blue: 90/255))
+            
+            Text("All Stores")
+                .font(.system(size: 14))
+                .foregroundStyle(Color(red: 20/255, green: 140/255, blue: 90/255))
+            
+//            HStack(spacing: -8) {
+//                // Mocking store icons. Replace `0..<5` with actual store array later.
+//                ForEach(0..<5, id: \.self) { _ in
+//                    Circle()
+//                        .fill(Color.blue.opacity(0.1))
+//                        .frame(width: 20, height: 20)
+//                        .overlay(
+//                            Image(systemName: "building.2.fill")
+//                                .font(.system(size: 8))
+//                                .foregroundStyle(.blue)
+//                        )
+//                        .overlay(
+//                            Circle().stroke(.white, lineWidth: 1)
+//                        )
+//                }
+//            }
+//            .padding(.leading, 4)
         }
     }
 }

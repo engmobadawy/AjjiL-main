@@ -37,4 +37,9 @@ extension DependencyContainer {
       private(set) lazy var forgetPasswordUseCase: ForgetPasswordUseCase = ForgetPasswordUseCase(authRepo: authRepository)
 //      private(set) lazy var resetNewPasswordViewModel: NewPasswordViewModel = NewPasswordViewModel(forgetPasswordUseCase: forgetPasswordUseCase, userValidationUseCase: ValidationDependency.shared.userValidationUseCase, userDataUseCase: UserTokenDependency.shared.userDataUseCase)
     }
+    
+    
+  
+    
+    
 }

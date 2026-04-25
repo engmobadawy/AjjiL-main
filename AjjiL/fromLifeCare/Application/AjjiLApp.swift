@@ -101,11 +101,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate, MOLHResetable {
         
         
         // Create hosting controller with language environments
+        // Create hosting controller with language environments
         let hostingController = UIHostingController(
             rootView: rootView
+                .id(UUID()) // 👈 ADD THIS EXACT LINE
                 .environment(\.locale, Locale(identifier: Constants.shared.isAR ? "ar" : "en"))
                 .environment(\.layoutDirection, Constants.shared.isAR ? .rightToLeft : .leftToRight)
-               
         )
         
         // Set root view controller with smooth transition

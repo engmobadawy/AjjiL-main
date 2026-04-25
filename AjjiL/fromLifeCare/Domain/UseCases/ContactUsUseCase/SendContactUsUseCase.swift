@@ -1,3 +1,11 @@
+//
+//  SendContactUsUseCase.swift
+//  AjjiLMB
+//
+//  Created by mohamed mahmoud sobhy badawy on 24/04/2026.
+//
+
+
 import Foundation
 
 struct SendContactUsUseCase {

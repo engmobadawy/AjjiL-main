@@ -1,3 +1,11 @@
+//
+//  CouponsNetwork.swift
+//  AjjiLMB
+//
+//  Created by mohamed mahmoud sobhy badawy on 25/04/2026.
+//
+
+
 //  CouponsNetwork.swift
 import Foundation
 
@@ -44,5 +52,75 @@ extension CouponsNetwork: TargetType {
 
     var headers: [String: String]? {
         return NetWorkHelper.shared.Headers()
+    }
+}
+
+
+
+
+
+//  CouponsModels.swift
+import Foundation
+
+// MARK: - Generic Response
+struct BaseDataResponse<T: Decodable>: Decodable {
+    let status: Bool?
+    let message: String?
+    let data: T?
+}
+
+// MARK: - Coupon Model
+struct CouponModel: Decodable {
+    let id: Int?
+    let code: String?
+    let type: Int?
+    let value: Double?
+    let expirationDate: String?
+    let isUsed: Bool?
+    let isAllBranches: Int?
+    let isAllStores: Int?
+    
+    enum CodingKeys: String, CodingKey {
+        case id, code, type, value
+        case expirationDate = "expiration_date"
+        case isUsed = "is_used"
+        case isAllBranches = "is_all_branches"
+        case isAllStores = "is_all_stores"
+    }
+}
+
+// MARK: - Branch Models (Updated)
+//struct BranchModel: Codable {
+//    let status: Bool?
+//    let message: String?
+//    let data: [BranchData]?
+//}
+//
+//struct BranchData: Codable {
+//    let id: Int?
+//    let name: String?
+//    let lat: String?
+//    let lng: String?
+//    let address: String?
+//    let createdAt: String?
+//    
+//    enum CodingKeys: String, CodingKey {
+//        case id, name, lat, lng, address
+//        case createdAt = "created_at"
+//    }
+//}
+
+// MARK: - Store Model
+struct StoreModel: Decodable {
+    let id: Int?
+    let name: String?
+    let image: String?
+    let rateAvg: String?
+    let rateCount: Int?
+    
+    enum CodingKeys: String, CodingKey {
+        case id, name, image
+        case rateAvg = "rate_avg"
+        case rateCount = "rate_count"
     }
 }

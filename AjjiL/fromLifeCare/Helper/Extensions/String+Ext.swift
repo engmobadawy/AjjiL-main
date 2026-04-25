@@ -14,6 +14,31 @@ extension String {
         return NSLocalizedString(self, comment: "")
     }
 
+    
+    var newlocalized: String {
+//            String(localized: String.LocalizationValue(self))
+        
+     
+
+      
+                // 1. Get the current language code from MOLH (e.g., "ar" or "en")
+                let currentLanguage = MOLHLanguage.currentAppleLanguage()
+                
+                // 2. Find the exact language bundle (.lproj folder) in your app
+                if let path = Bundle.main.path(forResource: currentLanguage, ofType: "lproj"),
+                   let bundle = Bundle(path: path) {
+                    
+                    // 3. Force the app to read directly from that specific file, bypassing Apple's cache
+                    return bundle.localizedString(forKey: self, value: nil, table: nil)
+                }
+                
+                // Fallback just in case
+                return NSLocalizedString(self, comment: "")
+            
+        
+        
+        }
+    
     var capitalizeFirstLetter: String {
         if self.count == 0 { return self }
         return prefix(1).uppercased() + dropFirst()

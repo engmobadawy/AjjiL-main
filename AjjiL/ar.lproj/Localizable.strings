@@ -366,3 +366,25 @@
 "empty_is_agree_terms" = "يجب الموافقة على الشروط والأحكام.";
 
 "Invalid Code" = "رمز غير صالح";
+
+
+
+
+
+
+
+
+
+/* HomeViewModel Strings */
+"Failed to load home data." = "فشل تحميل بيانات الصفحة الرئيسية.";
+"Error" = "خطأ";
+"Failed to update favorite." = "فشل تحديث المفضلة.";
+"Success" = "نجاح";
+"added to the cart successfully" = "تمت الإضافة إلى السلة بنجاح";
+
+/* HomeView Strings */
+"Stores" = "المتاجر";
+"View All" = "عرض الكل";
+"Featured Products" = "منتجات مميزة";
+"Shop through" = "تسوق من خلال";
+"Store" = "المتجر";

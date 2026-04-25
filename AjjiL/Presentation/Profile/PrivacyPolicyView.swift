@@ -7,16 +7,9 @@
 //
 
 
-//
-//  TermsAndConditionView.swift
-//  AjjiL
-//
-//  Created by mohamed mahmoud sobhy badawy on 18/02/2026.
-//
-
 import SwiftUI
 
-struct TermsAndConditionView: View {
+struct PrivacyPolicyView: View {
     @Environment(\.dismiss) private var dismiss
     
     // Applying .capitalized to achieve the "Title case" specified in Figma
@@ -25,7 +18,7 @@ struct TermsAndConditionView: View {
     var body: some View {
         VStack(spacing: 0) {
             TopRowNotForHome(
-                title: "Terms & Conditions",
+                title: "Privacy Policy",
                 showBackButton: true,
                 kindOfTopRow: .none,
                 onBack: {
@@ -46,6 +39,4 @@ struct TermsAndConditionView: View {
     }
 }
 
-#Preview {
-    TermsAndConditionView()
-}
+
