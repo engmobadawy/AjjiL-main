@@ -32,71 +32,80 @@ struct ProfileView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 TopRowNotForHome(
-                    title: "profile",
-                    showBackButton: false,
+                    title: "Profile".localized(),
+                    showBackButton: false, // Adjusted to false as standard for root tab, but handles the bell internally
                     kindOfTopRow: .justNotification
                 )
                 
                 ScrollView {
-                    VStack(spacing: 15) {
-                        
-                        if viewModel.isLoading {
-                            // 2. Avatar Skeleton + Shimmer
-                            ProfileAvatarSkeleton()
-                                .shimmering()
+                    // 1. Check for Guest Mode
+                    if Constants.isGuestMode {
+                        guestModeState
+                            .padding(.horizontal, 18)
+                            .padding(.vertical, 28)
+                    } else {
+                        VStack(spacing: 15) {
                             
-                            // 3. Info Skeleton + Shimmer
-                            ProfileInfoSkeleton()
-                                .shimmering()
-                                .padding(.vertical, 4)
+                            if viewModel.isLoading {
+                                // 2. Avatar Skeleton + Shimmer
+                                ProfileAvatarSkeleton()
+                                    .shimmering()
                                 
-                        } else if let profile = viewModel.profile {
-                            // 4. Real Avatar Section (Moved inside the loaded state)
-                            Button {
-                                navigateToPersonalData = true
-                            } label: {
-                                StoresAvatarView(image: viewModel.profileImage)
-                            }
-                            .buttonStyle(.plain)
-                            
-                            // User Info Display
-                            Text(profile.name)
-                                .font(.custom("Poppins-Bold", size: 22))
-                            
-                            HStack(spacing: 4) {
-                                Image("CallToRight")
-                                    .resizable()
-                                    .scaledToFit()
-                                    .frame(width: 14, height: 14)
+                                // 3. Info Skeleton + Shimmer
+                                ProfileInfoSkeleton()
+                                    .shimmering()
+                                    .padding(.vertical, 4)
+                                    
+                            } else if let profile = viewModel.profile {
+                                // 4. Real Avatar Section
+                                Button {
+                                    navigateToPersonalData = true
+                                } label: {
+                                    StoresAvatarView(image: viewModel.profileImage)
+                                }
+                                .buttonStyle(.plain)
                                 
-                                Text("+966 \(profile.phoneNumber)")
-                                    .font(.custom("Poppins-Regular", size: 18))
-                                    .foregroundStyle(.secondary)
+                                // User Info Display
+                                Text(profile.name)
+                                    .font(.custom("Poppins-Bold", size: 22))
+                                
+                                HStack(spacing: 4) {
+                                    Image("CallToRight")
+                                        .resizable()
+                                        .scaledToFit()
+                                        .frame(width: 14, height: 14)
+                                    
+                                    Text("+966 \(profile.phoneNumber)")
+                                        .font(.custom("Poppins-Regular", size: 18))
+                                        .foregroundStyle(.secondary)
+                                }
+                            } else if let errorMessage = viewModel.errorMessage {
+                                // Error / Empty State
+                                errorStateView(message: errorMessage)
                             }
-                        } else if let errorMessage = viewModel.errorMessage {
-                            // Error / Empty State (Already contains the fallback car image internally)
-                            errorStateView(message: errorMessage)
+                            
+                            qrProfileButton
+                                .padding(.top, 10)
+                            
+                            // Menu List UI
+                            menuSection
+                                .padding(.top, 16)
+                            
+                            // Logout Button
+                            WhiteButton(title: "Sign Out", action: {
+                                showLogoutConfirmation = true
+                            })
                         }
-                        
-                        qrProfileButton
-                            .padding(.top, 10)
-                        
-                        // Menu List UI
-                        menuSection
-                            .padding(.top, 16)
-                        
-                        // UPDATED: Trigger popup instead of logging out immediately
-                        WhiteButton(title: "Sign Out", action: {
-                            showLogoutConfirmation = true
-                        })
+                        .padding(.horizontal, 18)
+                        .padding(.vertical, 28)
                     }
-                    .padding(.horizontal, 18)
-                    .padding(.vertical, 28)
                 }
                 .scrollIndicators(.hidden)
             }
             .navigationBarBackButtonHidden(true)
             .task {
+                // Prevent API calls if guest mode
+                guard !Constants.isGuestMode else { return }
                 // Initial fetch
                 await viewModel.fetchProfile()
             }
@@ -170,17 +179,15 @@ struct ProfileView: View {
                 ContactUsView(viewModel: viewModel)
             }
         }
-        // NEW: Popup Overlay using modifiers to maintain View Identity
+        // Popup Overlays
         .overlay {
             ZStack {
-                // Dimmed Background
                 Color.black.opacity(0.4)
                     .ignoresSafeArea()
                     .onTapGesture {
                         showLogoutConfirmation = false
                     }
                 
-                // The Custom Popup
                 LogoutConfirmationPopup(
                     onConfirm: {
                         showLogoutConfirmation = false
@@ -215,6 +222,62 @@ struct ProfileView: View {
             .opacity(showDeleteAccountConfirmation ? 1 : 0)
             .allowsHitTesting(showDeleteAccountConfirmation)
             .animation(.easeInOut(duration: 0.2), value: showDeleteAccountConfirmation)
+        }
+    }
+}
+
+// MARK: - Guest Mode View
+
+private extension ProfileView {
+    @ViewBuilder
+    var guestModeState: some View {
+        VStack(spacing: 15) {
+            // Placeholder Avatar matching the screenshot
+            Image(systemName: "person.crop.circle")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 113, height: 113)
+                // Appears to be the brand orange
+                .foregroundStyle(Color(red: 238/255, green: 130/255, blue: 40/255))
+                .padding(.bottom, 8)
+            
+            Text("Welcome".localized())
+                .font(.custom("Poppins-Bold", size: 24))
+            
+            Text("Get Your Profile Ready".localized())
+                .font(.custom("Poppins-Regular", size: 16))
+                .foregroundStyle(.secondary)
+                .padding(.bottom, 24)
+            
+            // Simplified Menu Section for Guests
+            VStack(spacing: 12) {
+                ProfileMenuRow(iconName: "gearshape", title: "Setting") {
+                    navigateToSettings = true
+                }
+                ProfileMenuRow(iconName: "info.circle", title: "About Us") {
+                    navigateToAboutUsView = true
+                }
+                ProfileMenuRow(iconName: "phone", title: "Contact Us") {
+                    navigateToContactUsView = true
+                }
+                ProfileMenuRow(iconName: "checkmark.shield", title: "Privacy Policy") {
+                    navigateToPrivacyPolicy = true
+                }
+                ProfileMenuRow(iconName: "ellipsis.message", title: "Terms And Conditions") {
+                    navigateToTermsAndConditionView = true
+                }
+            }
+            .padding(.bottom, 24)
+            
+            // Re-routing button directly to LogIn
+            GreenButton(title: "SIGN IN".localized()) {
+                UserDefaults.standard.set(false, forKey: "pressSkip")
+                Constants.isGuestMode = false
+                if let appDelegate = UIApplication.shared.delegate as? AppDelegate {
+                    appDelegate.reset()
+                }
+            }
+            .padding(.bottom, 40)
         }
     }
 }
@@ -270,7 +333,6 @@ struct ProfileInfoSkeleton: View {
 // MARK: - Subviews & Actions
 private extension ProfileView {
     
-    // NEW: Separated logout logic extracted into an action handler
     func performLogout() {
         GenericUserDefault.shared.removeValue(Constants.shared.token)
         MOLH.reset()
@@ -500,18 +562,21 @@ struct SettingsView: View {
                         navigateToLanguage = true
                     }
                     
-                    SettingsNavigationRow(
-                        iconName: "lock",
-                        title: "Change Password"
-                    ) {
-                        navigateToChangePassword = true
-                    }
-                    
-                    SettingsNavigationRow(
-                        iconName: "phone",
-                        title: "Change Phone Number"
-                    ) {
-                        navigateToChangePhone = true
+                    // Conditionally hide Change Password & Phone if guest mode
+                    if !Constants.isGuestMode {
+                        SettingsNavigationRow(
+                            iconName: "lock",
+                            title: "Change Password"
+                        ) {
+                            navigateToChangePassword = true
+                        }
+                        
+                        SettingsNavigationRow(
+                            iconName: "phone",
+                            title: "Change Phone Number"
+                        ) {
+                            navigateToChangePhone = true
+                        }
                     }
                 }
                 .padding(.horizontal, 18)
@@ -663,4 +728,3 @@ struct DeleteAccountConfirmationPopup: View {
         .shadow(color: .black.opacity(0.1), radius: 20, x: 0, y: 10)
     }
 }
-

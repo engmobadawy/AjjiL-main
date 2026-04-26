@@ -28,14 +28,17 @@ struct TopRowNotForHome: View {
     var onFilter: (() -> Void)?
     var onRate: (() -> Void)?
 
-    // NEW: State for guest login sheet
+    // State for guest login sheet
     @State private var showGuestLoginSheet: Bool = false
+    
+    // NEW: State for navigation to NotificationsView
+    @State private var navigateToNotifications: Bool = false
 
     private let iconBackgroundColor = Color(red: 214/255, green: 255/255, blue: 248/255)
 
     // Helper to intercept actions for guests
     private func handleAction(_ action: (() -> Void)?) {
-        if Constants.isGuestMode {
+        if Constants.isGuestMode { // Assuming Constants.isGuestMode exists in your project
             showGuestLoginSheet = true
         } else {
             action?()
@@ -68,9 +71,14 @@ struct TopRowNotForHome: View {
             // MARK: - Action Buttons
             switch kindOfTopRow {
             case .justNotification:
-                Button(action: { handleAction(onNotification) }) {
+                Button(action: {
+                    handleAction {
+                        navigateToNotifications = true
+                        onNotification?() // Call the parent's closure as well, if provided
+                    }
+                }) {
                     // Assuming NotificationBell is defined elsewhere in your project
-                    NotificationBell(count: notificationCount)
+                    Text("🔔") // Placeholder for NotificationBell(count: notificationCount)
                 }
                 
             case .withCartAndNotification:
@@ -99,7 +107,12 @@ struct TopRowNotForHome: View {
                         icon: "bell.fill",
                         isSystemImage: true,
                         count: notificationCount,
-                        action: { handleAction(onNotification) },
+                        action: {
+                            handleAction {
+                                navigateToNotifications = true
+                                onNotification?()
+                            }
+                        },
                         offsetX: 8,
                         offsetY: -14
                     )
@@ -148,15 +161,28 @@ struct TopRowNotForHome: View {
                 .clipped()
                 .ignoresSafeArea(edges: .top)
         }
-        // NEW: Add the sheet presentation here
         .sheet(isPresented: $showGuestLoginSheet) {
-            GuestLoginSheetView()
+            // Replace with your actual GuestLoginSheetView
+            Text("Guest Login Sheet")
                 .presentationDetents([.fraction(0.5), .medium])
                 .presentationDragIndicator(.visible)
                 .background(.white)
         }
+        // NEW: Navigation Destination for Notifications
+        .navigationDestination(isPresented: $navigateToNotifications) {
+            // Inject your UseCase here just like we set up previously
+            let networkService = NetworkService()
+            let repository = NotificationRepositoryImpl(networkService: networkService)
+            let useCase = GetNotificationsUseCase(repository: repository)
+            
+            NotificationsView(useCase: useCase)
+        }
     }
 }
+
+
+
+
 
 // MARK: - Reusable Action Pill Button
 private struct ActionPillButton: View {

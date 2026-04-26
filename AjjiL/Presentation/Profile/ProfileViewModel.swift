@@ -12,7 +12,7 @@ import Observation
 final class ProfileViewModel {
     // MARK: - State Properties
     var profile: ProfileEntity?
-    var profileImage: UIImage? 
+    var profileImage: UIImage?
     var isLoading: Bool = false
     var errorMessage: String?
     
@@ -26,6 +26,9 @@ final class ProfileViewModel {
     /// Fetches user profile data from the backend.
     /// - Parameter forceRefresh: If true, bypasses the local cache check to fetch fresh data.
     func fetchProfile(forceRefresh: Bool = false) async {
+        // Safety check: Prevent guest users from making this API call
+        guard !Constants.isGuestMode else { return }
+        
         // Only skip if we already have data and are NOT forcing a refresh
         if !forceRefresh {
             guard profile == nil else { return }
