@@ -13,6 +13,12 @@ struct HomeTopRow: View {
     let username: String = "AJJil User"
     let notificationCount: Int = 9
     
+    // NEW: Action handler for the bell
+    var onNotification: (() -> Void)? = nil
+    
+    // NEW: State for guest login sheet
+    @State private var showGuestLoginSheet: Bool = false
+    
     var body: some View {
         HStack(alignment: .center) {
             // MARK: - Welcome Text & Emoji
@@ -34,12 +40,20 @@ struct HomeTopRow: View {
             
             Spacer()
             
-            
-            NotificationBell(count: notificationCount)
+            // Wrapped the bell in a Button to handle taps
+            Button {
+                if Constants.isGuestMode {
+                    showGuestLoginSheet = true
+                } else {
+                    onNotification?()
+                }
+            } label: {
+                NotificationBell(count: notificationCount)
+            }
+            .buttonStyle(.plain)
         }
         .padding(.horizontal)
         .padding(.vertical, 12)
-//        .background(Image("background"))
         .background {
             // 1. Create a rigid, invisible box that ignores the top safe area
             Color.clear
@@ -53,6 +67,13 @@ struct HomeTopRow: View {
                 .clipped()
                 // 4. Push the clear box up into the notch/status bar area
                 .ignoresSafeArea(edges: .top)
+        }
+        // NEW: Add the sheet presentation here
+        .sheet(isPresented: $showGuestLoginSheet) {
+            GuestLoginSheetView()
+                .presentationDetents([.fraction(0.5), .medium])
+                .presentationDragIndicator(.visible)
+                .background(.white)
         }
     }
 }

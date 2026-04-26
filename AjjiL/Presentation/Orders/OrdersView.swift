@@ -77,15 +77,23 @@ struct OrdersView: View {
                 
                 ScrollView {
                     VStack(spacing: 0) {
-                        switch selectedTab {
-                        case .currentOrders: currentOrdersState
-                        case .history: historyState
+                        // Check for Guest Mode before trying to show orders
+                        if Constants.isGuestMode {
+                            guestModeState
+                        } else {
+                            switch selectedTab {
+                            case .currentOrders: currentOrdersState
+                            case .history: historyState
+                            }
                         }
                     }
                 }
                 .scrollIndicators(.hidden)
                 // Automatic fetching whenever the tab or applied filters change
                 .task(id: currentTaskID) {
+                    // Prevent API calls if the user is a guest
+                    guard !Constants.isGuestMode else { return }
+                    
                     // Convert empty strings to nil for the API request
                     let search = filterStore.appliedStoreName.isEmpty ? nil : filterStore.appliedStoreName
                     
@@ -108,10 +116,12 @@ struct OrdersView: View {
                     }
                 }
                 
-                
             }
             .onAppear {
                 Task {
+                    // Prevent API calls if the user is a guest
+                    guard !Constants.isGuestMode else { return }
+                    
                     // Replicate the exact same fetch logic to force a refresh
                     let search = filterStore.appliedStoreName.isEmpty ? nil : filterStore.appliedStoreName
                     
@@ -147,6 +157,28 @@ struct OrdersView: View {
     }
     
     // MARK: - Subviews
+    
+    @ViewBuilder
+    private var guestModeState: some View {
+        EmptyStateView(
+            iconName: "ordersCar",
+            title: "No orders yet",
+            subtitle: "Login To start your order",
+            buttonTitle: "Log In",
+            action: {
+                // Clear the skip/guest flags
+                UserDefaults.standard.set(false, forKey: "pressSkip")
+                Constants.isGuestMode = false
+                
+                // Trigger the AppDelegate to re-evaluate the root view
+                // This will smoothly transition the user back to the LogInView
+                if let appDelegate = UIApplication.shared.delegate as? AppDelegate {
+                    appDelegate.reset()
+                }
+            }
+        )
+        .containerRelativeFrame(.vertical)
+    }
     
     @ViewBuilder
     private var currentOrdersState: some View {
@@ -298,7 +330,7 @@ struct EmptyStateView: View {
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             }
-            
+        
             Button(action: action) {
                 Text(buttonTitle)
                     .font(.headline)

@@ -1,4 +1,5 @@
 import SwiftUI
+import Shimmer // 1. Import Shimmer
 
 struct ProfileView: View {
     @State private var viewModel: ProfileViewModel
@@ -12,16 +13,11 @@ struct ProfileView: View {
     @State private var navigateToPromoCodeCardView = false
     @State private var navigateToMyPointsView = false
     
-    
-    
-    
-    
-   
+    // NEW: State to control the popup visibility
+    @State private var showLogoutConfirmation = false
+    @State private var showDeleteAccountConfirmation = false
     
     @Environment(TabRouter.self) private var tabRouter
-    
-    
-    
     
     init() {
         let networkService = NetworkService()
@@ -44,18 +40,25 @@ struct ProfileView: View {
                 ScrollView {
                     VStack(spacing: 15) {
                         
-                        // Profile Avatar Section
-                        Button {
-                            navigateToPersonalData = true
-                        } label: {
-                            StoresAvatarView(image: viewModel.profileImage)
-                        }
-                        .buttonStyle(.plain)
-                        
                         if viewModel.isLoading {
-                            ProgressView()
-                                .padding()
+                            // 2. Avatar Skeleton + Shimmer
+                            ProfileAvatarSkeleton()
+                                .shimmering()
+                            
+                            // 3. Info Skeleton + Shimmer
+                            ProfileInfoSkeleton()
+                                .shimmering()
+                                .padding(.vertical, 4)
+                                
                         } else if let profile = viewModel.profile {
+                            // 4. Real Avatar Section (Moved inside the loaded state)
+                            Button {
+                                navigateToPersonalData = true
+                            } label: {
+                                StoresAvatarView(image: viewModel.profileImage)
+                            }
+                            .buttonStyle(.plain)
+                            
                             // User Info Display
                             Text(profile.name)
                                 .font(.custom("Poppins-Bold", size: 22))
@@ -71,7 +74,7 @@ struct ProfileView: View {
                                     .foregroundStyle(.secondary)
                             }
                         } else if let errorMessage = viewModel.errorMessage {
-                            // Error / Empty State
+                            // Error / Empty State (Already contains the fallback car image internally)
                             errorStateView(message: errorMessage)
                         }
                         
@@ -82,9 +85,9 @@ struct ProfileView: View {
                         menuSection
                             .padding(.top, 16)
                         
+                        // UPDATED: Trigger popup instead of logging out immediately
                         WhiteButton(title: "Sign Out", action: {
-                            GenericUserDefault.shared.removeValue(Constants.shared.token)
-                            MOLH.reset()
+                            showLogoutConfirmation = true
                         })
                     }
                     .padding(.horizontal, 18)
@@ -114,11 +117,10 @@ struct ProfileView: View {
                     }
                 }
             }
-            // 👈 Destination: Settings
+            // Destination: Settings
             .navigationDestination(isPresented: $navigateToSettings) {
                 SettingsView()
             }
-            
             .navigationDestination(isPresented: $navigateToPrivacyPolicy) {
                 PrivacyPolicyView()
             }
@@ -129,89 +131,150 @@ struct ProfileView: View {
                 AboutUsView()
             }
             .navigationDestination(isPresented: $navigateToMyPointsView) {
-                            // 1. Initialize Network & Repository
-                            let networkService = NetworkService()
-                            let repository = PointRepositoryImp(networkService: networkService)
-                            
-                            // 2. Initialize Use Cases
-                            let getPointsUC = GetPointsUC(repo: repository)
-                            let redeemPointsUC = RedeemPointsUC(repo: repository)
-                            let calcPointsUC = CalcPointsUC(repo: repository)
-                            
-                            // 3. Initialize ViewModel
-                            let viewModel = PointsViewModel(
-                                getPointsUC: getPointsUC,
-                                redeemPointsUC: redeemPointsUC,
-                                calcPointsUC: calcPointsUC
-                            )
-                            
-                            // 4. Inject into the View
-                            MyPointsView(viewModel: viewModel)
-                        }
-            
-            
+                let networkService = NetworkService()
+                let repository = PointRepositoryImp(networkService: networkService)
+                let getPointsUC = GetPointsUC(repo: repository)
+                let redeemPointsUC = RedeemPointsUC(repo: repository)
+                let calcPointsUC = CalcPointsUC(repo: repository)
+                
+                let viewModel = PointsViewModel(
+                    getPointsUC: getPointsUC,
+                    redeemPointsUC: redeemPointsUC,
+                    calcPointsUC: calcPointsUC
+                )
+                MyPointsView(viewModel: viewModel)
+            }
             .navigationDestination(isPresented: $navigateToCouponsView) {
-                            // 1. Initialize Network & Repository
-                            let networkService = NetworkService()
-                            let repository = CouponsRepositoryImp(networkService: networkService)
-                            
-                            // 2. Initialize Use Case
-                            let getCouponsUC = GetCouponsUseCase(repository: repository)
-                            
-                            // 3. Initialize ViewModel
-                            let viewModel = CouponsViewModel(getCouponsUseCase: getCouponsUC)
-                            
-                            // 4. Inject into the View
-                            CouponsView(viewModel: viewModel)
-                        }
-            
-            
+                let networkService = NetworkService()
+                let repository = CouponsRepositoryImp(networkService: networkService)
+                let getCouponsUC = GetCouponsUseCase(repository: repository)
+                let viewModel = CouponsViewModel(getCouponsUseCase: getCouponsUC)
+                CouponsView(viewModel: viewModel)
+            }
             .navigationDestination(isPresented: $navigateToPromoCodeCardView) {
-                // 1. Initialize Network & Repository
                 let networkService = NetworkService()
                 let repository = ProfileRepositoryImp(networkService: networkService)
-                
-                // 2. Initialize Use Case
                 let getPromoCodesUC = GetPromoCodesUC(repo: repository)
-                
-                // 3. Initialize ViewModel
                 let viewModel = PromoCodesViewModel(getPromoCodesUC: getPromoCodesUC)
-                
-                // 4. Inject into the View
                 PromoCodesView(viewModel: viewModel)
             }
-            
             .navigationDestination(isPresented: $navigateToContactUsView) {
-                            // 1. Initialize Network & Repository
-                            let networkService = NetworkService()
-                            let repository = ContactRepositoryImp(networkService: networkService)
-                            
-                            // 2. Initialize Use Cases
-                            let getContactTypesUC = GetContactTypesUseCase(repository: repository)
-                            let sendContactUsUC = SendContactUsUseCase(repository: repository)
-                            
-                            // 3. Initialize ViewModel
-                            let viewModel = ContactUsViewModel(
-                                getContactTypesUseCase: getContactTypesUC,
-                                sendContactUsUseCase: sendContactUsUC
-                            )
-                            
-                            // 4. Inject into the View
-                            ContactUsView(viewModel: viewModel)
-                        }
-            
-            
-            
-            
-            
-            
-            
+                let networkService = NetworkService()
+                let repository = ContactRepositoryImp(networkService: networkService)
+                let getContactTypesUC = GetContactTypesUseCase(repository: repository)
+                let sendContactUsUC = SendContactUsUseCase(repository: repository)
+                let viewModel = ContactUsViewModel(
+                    getContactTypesUseCase: getContactTypesUC,
+                    sendContactUsUseCase: sendContactUsUC
+                )
+                ContactUsView(viewModel: viewModel)
+            }
+        }
+        // NEW: Popup Overlay using modifiers to maintain View Identity
+        .overlay {
+            ZStack {
+                // Dimmed Background
+                Color.black.opacity(0.4)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        showLogoutConfirmation = false
+                    }
+                
+                // The Custom Popup
+                LogoutConfirmationPopup(
+                    onConfirm: {
+                        showLogoutConfirmation = false
+                        performLogout()
+                    },
+                    onCancel: {
+                        showLogoutConfirmation = false
+                    }
+                )
+            }
+            .opacity(showLogoutConfirmation ? 1 : 0)
+            .allowsHitTesting(showLogoutConfirmation)
+            .animation(.easeInOut(duration: 0.2), value: showLogoutConfirmation)
+        }
+        .overlay {
+            ZStack {
+                Color.black.opacity(0.4)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        showDeleteAccountConfirmation = false
+                    }
+                
+                DeleteAccountConfirmationPopup(
+                    onConfirm: {
+                        showDeleteAccountConfirmation = false
+                    },
+                    onCancel: {
+                        showDeleteAccountConfirmation = false
+                    }
+                )
+            }
+            .opacity(showDeleteAccountConfirmation ? 1 : 0)
+            .allowsHitTesting(showDeleteAccountConfirmation)
+            .animation(.easeInOut(duration: 0.2), value: showDeleteAccountConfirmation)
         }
     }
 }
 
-// MARK: - Subviews
+// MARK: - Skeleton Loading Views
+
+/// Skeleton mimicking the Avatar Photo and Edit Badge
+struct ProfileAvatarSkeleton: View {
+    var body: some View {
+        Circle()
+            .fill(.gray.opacity(0.3))
+            .frame(width: 113, height: 113)
+            .overlay(
+                Circle()
+                    .stroke(Color.gray.opacity(0.4), lineWidth: 3)
+            )
+            .overlay(alignment: .bottomTrailing) {
+                Circle()
+                    .fill(.gray.opacity(0.3))
+                    .frame(width: 38, height: 38)
+                    .overlay(
+                        Circle()
+                            .stroke(Color.gray.opacity(0.4), lineWidth: 1)
+                    )
+                    .offset(x: -12, y: -12)
+            }
+    }
+}
+
+/// Skeleton mimicking the user's name and phone number
+struct ProfileInfoSkeleton: View {
+    var body: some View {
+        VStack(spacing: 8) {
+            Rectangle()
+                .fill(.gray.opacity(0.3))
+                .frame(width: 160, height: 26)
+                .clipShape(.rect(cornerRadius: 6))
+            
+            HStack(spacing: 6) {
+                Circle()
+                    .fill(.gray.opacity(0.3))
+                    .frame(width: 14, height: 14)
+                
+                Rectangle()
+                    .fill(.gray.opacity(0.3))
+                    .frame(width: 110, height: 18)
+                    .clipShape(.rect(cornerRadius: 4))
+            }
+        }
+    }
+}
+
+// MARK: - Subviews & Actions
 private extension ProfileView {
+    
+    // NEW: Separated logout logic extracted into an action handler
+    func performLogout() {
+        GenericUserDefault.shared.removeValue(Constants.shared.token)
+        MOLH.reset()
+    }
     
     @ViewBuilder
     private func errorStateView(message: String) -> some View {
@@ -272,55 +335,43 @@ private extension ProfileView {
     var menuSection: some View {
         VStack(spacing: 12) {
             ProfileMenuRow(iconName: "bag", title: "My Orders") {
-                // Navigate to My Orders
                 tabRouter.selectedTab = 1
             }
             
             ProfileMenuRow(iconName: "gift", title: "My Points") {
-                // Navigate to My Points
                 navigateToMyPointsView = true
             }
             
             ProfileMenuRow(iconName: "percent", title: "Coupons") {
-                // Navigate to Coupons
-                
                 navigateToCouponsView = true
             }
             
             ProfileMenuRow(iconName: "ticket", title: "Promo Code") {
-                // Navigate to Promo Code
                 navigateToPromoCodeCardView = true
             }
             
-            // 👈 Settings Navigation Triggered Here
             ProfileMenuRow(iconName: "gearshape", title: "Settings") {
                 navigateToSettings = true
             }
             
-            // Note: Language Row has been completely removed from here.
-            
             ProfileMenuRow(iconName: "phone", title: "Contact Us") {
-                // Navigate to Contact Us
                 navigateToContactUsView = true
             }
             
             ProfileMenuRow(iconName: "info.circle", title: "About Us") {
-                // Navigate to About Us
                 navigateToAboutUsView = true
             }
             
             ProfileMenuRow(iconName: "checkmark.shield", title: "Privacy Policy") {
-                // Navigate to Privacy Policy
                 navigateToPrivacyPolicy = true
             }
             
             ProfileMenuRow(iconName: "ellipsis.message", title: "Terms & Conditions") {
-                // Navigate to Terms & Conditions
                 navigateToTermsAndConditionView = true
             }
             
             ProfileMenuRow(iconName: "trash", title: "Delete Account") {
-                // Handle Delete Account
+                showDeleteAccountConfirmation = true
             }
         }.padding(.bottom , 12)
     }
@@ -365,26 +416,65 @@ struct ProfileMenuRow: View {
     }
 }
 
+// MARK: - Logout Confirmation Popup Component
+struct LogoutConfirmationPopup: View {
+    let onConfirm: () -> Void
+    let onCancel: () -> Void
+    
+    private let themeGreen = Color(red: 68/255, green: 146/255, blue: 130/255)
+    
+    var body: some View {
+        VStack(spacing: 24) {
+            Text("Do You Want To Logout?".localized())
+                .font(.custom("Poppins-Bold", size: 22))
+                .foregroundStyle(themeGreen)
+                .multilineTextAlignment(.center)
+            
+            VStack(spacing: 12) {
+                Button(action: onConfirm) {
+                    Text("Yes".localized())
+                        .font(.custom("Poppins-Medium", size: 16))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(themeGreen)
+                        .clipShape(.rect(cornerRadius: 12))
+                }
+                .buttonStyle(.plain)
+                
+                Button(action: onCancel) {
+                    Text("Cancel".localized())
+                        .font(.custom("Poppins-Medium", size: 16))
+                        .foregroundStyle(.gray)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(Color(white: 0.94))
+                        .clipShape(.rect(cornerRadius: 12))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(24)
+        .background(Color.white)
+        .clipShape(.rect(cornerRadius: 24))
+        .padding(.horizontal, 32)
+        .shadow(color: .black.opacity(0.1), radius: 20, x: 0, y: 10)
+    }
+}
 
 
-
-
-import SwiftUI
-
+// MARK: - Settings View
 
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     
-    // MARK: - State
     @State private var isPushNotificationEnabled: Bool = true
     @State private var navigateToLanguage: Bool = false
-    @State private var navigateToChangePassword: Bool = false // 👈 1. Added state for navigation
+    @State private var navigateToChangePassword: Bool = false
     @State private var navigateToChangePhone: Bool = false
     
     var body: some View {
         VStack(spacing: 0) {
-            
-            // Custom Top Row
             TopRowNotForHome(
                 title: "Settings".localized(),
                 showBackButton: true,
@@ -396,15 +486,12 @@ struct SettingsView: View {
             
             ScrollView {
                 VStack(spacing: 16) {
-                    
-                    // 1. Push Notification Toggle
                     SettingsToggleRow(
                         iconName: "bell",
                         title: "Push Notification",
                         isOn: $isPushNotificationEnabled
                     )
                     
-                    // 2. Language Row
                     SettingsNavigationRow(
                         iconName: "globe",
                         title: "Language",
@@ -413,22 +500,19 @@ struct SettingsView: View {
                         navigateToLanguage = true
                     }
                     
-                    // 3. Change Password
                     SettingsNavigationRow(
                         iconName: "lock",
                         title: "Change Password"
                     ) {
-                        navigateToChangePassword = true // 👈 2. Trigger navigation on tap
+                        navigateToChangePassword = true
                     }
                     
-                    // 4. Change Phone Number
                     SettingsNavigationRow(
                         iconName: "phone",
                         title: "Change Phone Number"
                     ) {
                         navigateToChangePhone = true
                     }
-                    
                 }
                 .padding(.horizontal, 18)
                 .padding(.vertical, 24)
@@ -436,17 +520,14 @@ struct SettingsView: View {
             .scrollIndicators(.hidden)
         }
         .navigationBarBackButtonHidden(true)
-        
-        // 👈 3. Added Navigation Destination for Change Password
         .navigationDestination(isPresented: $navigateToChangePassword) {
             ChangePasswordView(onBack: {
                 navigateToChangePassword = false
             })
         }
         .navigationDestination(isPresented: $navigateToChangePhone) {
-                    ChangePhoneView()
-                }
-        
+            ChangePhoneView()
+        }
         .sheet(isPresented: $navigateToLanguage) {
             LanguageSelectionView()
                 .presentationDetents([.fraction(0.55), .large])
@@ -457,7 +538,6 @@ struct SettingsView: View {
 
 // MARK: - Reusable Setting Row Components
 
-/// A row used specifically for boolean toggles
 struct SettingsToggleRow: View {
     let iconName: String
     let title: String
@@ -493,7 +573,6 @@ struct SettingsToggleRow: View {
     }
 }
 
-/// A row used specifically for navigation with an optional trailing value text
 struct SettingsNavigationRow: View {
     let iconName: String
     let title: String
@@ -538,3 +617,50 @@ struct SettingsNavigationRow: View {
         .buttonStyle(.plain)
     }
 }
+
+struct DeleteAccountConfirmationPopup: View {
+    let onConfirm: () -> Void
+    let onCancel: () -> Void
+    
+    private let themeGreen = Color(red: 68/255, green: 146/255, blue: 130/255)
+    private let deleteRed = Color(red: 232/255, green: 59/255, blue: 46/255)
+    
+    var body: some View {
+        VStack(spacing: 24) {
+            Text("Do You Want To Delete\nYour Account?".localized())
+                .font(.custom("Poppins-Bold", size: 22))
+                .foregroundStyle(themeGreen)
+                .multilineTextAlignment(.center)
+            
+            VStack(spacing: 12) {
+                Button(action: onConfirm) {
+                    Text("Yes, Delete".localized())
+                        .font(.custom("Poppins-Medium", size: 16))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(deleteRed)
+                        .clipShape(.rect(cornerRadius: 12))
+                }
+                .buttonStyle(.plain)
+                
+                Button(action: onCancel) {
+                    Text("Cancel".localized())
+                        .font(.custom("Poppins-Medium", size: 16))
+                        .foregroundStyle(.gray)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(Color(white: 0.94))
+                        .clipShape(.rect(cornerRadius: 12))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(24)
+        .background(Color.white)
+        .clipShape(.rect(cornerRadius: 24))
+        .padding(.horizontal, 32)
+        .shadow(color: .black.opacity(0.1), radius: 20, x: 0, y: 10)
+    }
+}
+

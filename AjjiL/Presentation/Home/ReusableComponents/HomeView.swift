@@ -1,6 +1,8 @@
 import SwiftUI
 import Shimmer // 1. Import the library
 
+
+
 struct HomeView: View {
     @Environment(TabBarVisibility.self) private var tabVisibility
     
@@ -10,10 +12,11 @@ struct HomeView: View {
     @State private var viewModel = DependencyContainer.HomeDependency.shared.homeVM
     @State private var searchText: String = ""
    
-//    @State private var showFeaturedProductsView: Bool = false
-//    @State private var showAllStoresView: Bool = false
     @State private var showScannerView: Bool = false
     @State private var showNotificationsView: Bool = false
+    
+    // NEW: State to control the guest login sheet
+    @State private var showGuestLoginSheet: Bool = false
     
     var body: some View {
         NavigationStack {
@@ -28,7 +31,7 @@ struct HomeView: View {
                     // Toggle between Skeleton and Actual Data
                     if viewModel.isLoading {
                         skeletonLayout
-                            .shimmering() // 2. Apply shimmer effect to the entire skeleton
+                            .shimmering()
                     } else {
                         VStack(spacing: 18) {
                             BannerCollectionView(banners: viewModel.sliderCards)
@@ -55,44 +58,42 @@ struct HomeView: View {
                         addFavoriteProductUC: DependencyContainer.FavoritesDependency.shared.addFavoriteProductUC,
                         removeFavoriteProductUC: DependencyContainer.FavoritesDependency.shared.removeFavoriteProductUC,
                         addProductByBarcodeToCartUC: AddProductByBarcodeToCartUC(
-                                                repo: CartRepositoryImp(networkService: DependencyContainer.shared.networkService)
-                                            )
+                            repo: CartRepositoryImp(networkService: DependencyContainer.shared.networkService)
+                        )
                     )
                 )
             }
             .navigationDestination(for: HomeStoresDataEntity.self) { store in
                 StoreView(storeName: store.name, storeId: store.id)
             }
-//            .navigationDestination(isPresented: $showAllStoresView) {
-//                AllStoresView()
-//            }
             .navigationDestination(isPresented: $showNotificationsView) {
                 HomeView()
             }
             .navigationDestination(isPresented: $showScannerView) {
                 ScannerMainView()
             }
+            // NEW: Add the sheet presentation
+            .sheet(isPresented: $showGuestLoginSheet) {
+                GuestLoginSheetView()
+                    .presentationDetents([.fraction(0.5), .medium])
+                    .presentationDragIndicator(.visible)
+                    .background(.white)
+            }
         }
         .task {
             await viewModel.fetchData()
         }
-        
         .toastView(toast: $viewModel.toast)
-            
     }
 
     // MARK: - Skeleton Loading Layout
-    
-    /// 3. Provide mock shapes to represent your UI while data is fetching
     private var skeletonLayout: some View {
         VStack(spacing: 18) {
-            // Banner Skeleton
             Rectangle()
                 .fill(.gray.opacity(0.3))
                 .clipShape(.rect(cornerRadius: 12))
                 .frame(height: 160)
             
-            // Stores Section Skeleton
             VStack(alignment: .leading, spacing: 12) {
                 storesHeader
                 
@@ -110,7 +111,6 @@ struct HomeView: View {
             
             featuredProductsHeader
             
-            // Featured Products Grid Skeleton
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
                 ForEach(0..<4, id: \.self) { _ in
                     Rectangle()
@@ -122,11 +122,9 @@ struct HomeView: View {
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 18)
-        // .redacted(reason: .placeholder) // Optional: add if you use real Text() inside the skeleton
     }
 
     // MARK: - Extracted Header
-    
     private var searchAndToggleHeader: some View {
         VStack(spacing: 7) {
             ShopThroughBanner(isStoreMode: $isStoreMode)
@@ -140,7 +138,6 @@ struct HomeView: View {
     }
 
     // MARK: - Product Grid
-
     private var featuredProductsGrid: some View {
         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
             ForEach(viewModel.featuredProducts) { product in
@@ -149,17 +146,32 @@ struct HomeView: View {
                         product: product,
                         isFavorite: FavoritesManager.shared.isFavorite(product.id),
                         onToggleFavorite: {
-                            Task { await viewModel.toggleFavorite(for: product.id) }
+                            // NEW: Check Guest Mode for Favorites
+                            if Constants.isGuestMode {
+                                showGuestLoginSheet = true
+                            } else {
+                                Task { await viewModel.toggleFavorite(for: product.id) }
+                            }
                         },
                         onAddToCart: {
-                                                // Cleaned up print statements
-                                                let branchId = savedBranchID == 0 ? 1 : savedBranchID
-                                                Task {
-                                                    await viewModel.addToCart(product: product, branchId: branchId)
-                                                }
-                                            },
-                        onScanToBuy: { print("Scanning \(product.name)")
-                            showScannerView = true
+                            // NEW: Check Guest Mode for Cart
+                            if Constants.isGuestMode {
+                                showGuestLoginSheet = true
+                            } else {
+                                let branchId = savedBranchID == 0 ? 1 : savedBranchID
+                                Task {
+                                    await viewModel.addToCart(product: product, branchId: branchId)
+                                }
+                            }
+                        },
+                        onScanToBuy: {
+                            // NEW: Check Guest Mode for Scanner
+                            if Constants.isGuestMode {
+                                showGuestLoginSheet = true
+                            } else {
+                                print("Scanning \(product.name)")
+                                showScannerView = true
+                            }
                         }
                     )
                 }
@@ -169,7 +181,6 @@ struct HomeView: View {
     }
 
     // MARK: - Stores Section
-
     private var storesSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             storesHeader
@@ -194,10 +205,6 @@ struct HomeView: View {
             Text("Stores".newlocalized)
                 .font(.title3.bold())
             Spacer()
-//            Button("View All") { showAllStoresView = true }
-//                .font(.subheadline.weight(.semibold))
-//                .foregroundStyle(.green)
-//                .underline()
         }
     }
     
@@ -206,10 +213,6 @@ struct HomeView: View {
             Text("Featured Products".newlocalized)
                 .font(.title3.bold())
             Spacer()
-//            Button("View All") { showFeaturedProductsView = true}
-//                .font(.subheadline.weight(.semibold))
-//                .foregroundStyle(.green)
-//                .underline()
         }
         .padding(.top, 16)
     }
@@ -250,3 +253,75 @@ struct ShopThroughBanner: View {
         .background(brandLightGreen)
     }
 }
+
+// MARK: - Guest Login Sheet
+
+struct GuestLoginSheetView: View {
+    @Environment(\.dismiss) var dismiss
+    
+    var body: some View {
+        VStack(spacing: 24) {
+            Image("loginFirst")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 252, height: 168)
+            
+            Text("Login First, To Complete\nYour Order".newlocalized)
+                .font(.system(size: 28, weight: .semibold))
+                // Using the exact brand green from your ShopThroughBanner to match
+                .foregroundStyle(Color(red: 0.28, green: 0.63, blue: 0.44))
+                .multilineTextAlignment(.center)
+            
+            GreenButton(title: "Sign In".newlocalized) {
+                dismiss() // Close the sheet
+                
+                // Clear the skip/guest flags
+                UserDefaults.standard.set(false, forKey: "pressSkip")
+                Constants.isGuestMode = false
+                
+                // Trigger the AppDelegate to re-evaluate the root view
+                if let appDelegate = UIApplication.shared.delegate as? AppDelegate {
+                    appDelegate.reset()
+                }
+            }
+            .padding(.top, 8)
+        }
+        .padding(32)
+    }
+}
+
+// MARK: - Custom Components
+
+//struct ShopThroughBanner: View {
+//    @Binding var isStoreMode: Bool
+//    
+//    private let brandGreen = Color(red: 0.21, green: 0.60, blue: 0.51)
+//    private let brandLightGreen = Color(red: 0.88, green: 0.98, blue: 0.95)
+//
+//    var body: some View {
+//        HStack {
+//            HStack(spacing: 10) {
+//                Image(systemName: "storefront.fill")
+//                    .font(.system(size: 18))
+//                Text("Shop through".newlocalized)
+//                    .font(.system(size: 18, weight: .semibold))
+//            }
+//            
+//            Spacer()
+//            
+//            HStack(spacing: 8) {
+//                Text("Store".newlocalized)
+//                    .font(.subheadline.weight(.medium))
+//                
+//                Toggle("", isOn: $isStoreMode)
+//                    .labelsHidden()
+//                    .scaleEffect(0.8)
+//                    .tint(brandGreen)
+//            }
+//        }
+//        .foregroundStyle(brandGreen)
+//        .padding(.horizontal, 18)
+//        .padding(.vertical, 12)
+//        .background(brandLightGreen)
+//    }
+//}

@@ -84,14 +84,25 @@ struct MyPointsView: View {
             await viewModel.fetchPoints()
         }
         .sheet(isPresented: $viewModel.showRedeemSheet, onDismiss: { viewModel.resetForm() }) {
-            RedeemPointsSheet(viewModel: viewModel, greenColor: primaryGreen)
+            RedeemPointsSheet(viewModel: viewModel, greenColor: primaryGreen, onViewPromoCodes: {
+                // 1. Dismiss the sheet
+                                    viewModel.showRedeemSheet = false
+                                    
+                                    // 2. Wait briefly for the sheet to disappear, then trigger navigation
+                                    Task {
+                                        try? await Task.sleep(for: .milliseconds(300))
+                                        navigateToPromoCodes = true
+                                    }
+            })
                 .presentationDetents([.medium])
                 .presentationDragIndicator(.visible)
                 .presentationBackground(.white)
         }
-        .sheet(isPresented: $viewModel.showSuccessSheet) {
+        .sheet(isPresented: $viewModel.showSuccessSheet, onDismiss: {
+            viewModel.successData = nil
+        }) {
             PromoCodeSuccessSheet(viewModel: viewModel, greenColor: primaryGreen)
-                .presentationDetents([.medium, .large])
+                .presentationDetents([.fraction(0.7)])
                 .presentationDragIndicator(.visible)
                 .presentationBackground(.white)
         }
@@ -290,7 +301,7 @@ final class PointsViewModel {
     func resetForm() {
         pointsToRedeemInput = ""
         calculatedDiscount = ""
-        successData = nil
+//        successData = nil
     }
 }
 
@@ -306,6 +317,9 @@ struct RedeemPointsSheet: View {
     @Bindable var viewModel: PointsViewModel
     let greenColor: Color
     
+    // NEW: Closure to handle the navigation from the parent
+    var onViewPromoCodes: () -> Void
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 24) {
             headerRow
@@ -315,9 +329,9 @@ struct RedeemPointsSheet: View {
                     .font(.headline)
                 
                 Text("Creates a code to gain a discount amount on your order")
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                                    .fixedSize(horizontal: false, vertical: true)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             
             conversionInputs
@@ -349,7 +363,8 @@ struct RedeemPointsSheet: View {
             )
             .disabled(!viewModel.isRedeemSubmitValid || viewModel.isLoading)
             
-            CenterLinkButton(title: "View all promo code")
+            // Pass the closure to the reusable button
+            CenterLinkButton(title: "View all promo code", action: onViewPromoCodes)
             
             Spacer()
         }
@@ -414,19 +429,19 @@ struct RedeemPointsSheet: View {
     }
 }
 
-// Reusable Subview
+// Reusable Subview Updated with Action and precise RGBA color
 private struct CenterLinkButton: View {
     let title: String
+    let action: () -> Void // Add action parameter
     
     var body: some View {
         HStack {
             Spacer()
-            Button(title) {
-                // TODO: Navigation action
-            }
-            .font(.subheadline)
-            .foregroundStyle(.orange)
-            .underline()
+            Button(title, action: action)
+                .font(.subheadline)
+                // Updated to precise rgba(255, 119, 1, 1)
+                .foregroundStyle(Color(red: 255/255, green: 119/255, blue: 1/255))
+                .underline()
             Spacer()
         }
         .padding(.top, 8)
@@ -439,23 +454,26 @@ private struct CenterLinkButton: View {
 
 
 
-import SwiftUI
+
 
 struct PromoCodeSuccessSheet: View {
     @Environment(\.dismiss) private var dismiss
     let viewModel: PointsViewModel
     let greenColor: Color
     
+    // 1. Add state to track if the user just copied the code
+    @State private var isCopied = false
+    
     var body: some View {
         VStack(spacing: 24) {
             HStack {
                 Text("Redeem Your Points Now")
-                    .font(.title3)
+                    .font(.custom("Poppins-SemiBold", size: 18))
                     .fontWeight(.bold)
                 Spacer()
                 Button { dismiss() } label: {
                     Image(systemName: "xmark.circle")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.black)
                         .font(.title2)
                 }
             }
@@ -464,18 +482,18 @@ struct PromoCodeSuccessSheet: View {
             
             // Placeholder for Success Illustration
             Image("redeemPoints")
-                .font(.system(size: 80, weight: .bold))
-                .foregroundStyle(greenColor)
-                .padding(.vertical, 40)
-            
+                .resizable()
+                .scaledToFit()
+                .frame(width: 174, height: 200)
+                                    
             VStack(spacing: 8) {
                 Text("Your Promo Code")
-                    .font(.title2)
+                    .font(.custom("Poppins-SemiBold", size: 28))
                     .fontWeight(.bold)
                     .foregroundStyle(greenColor)
                 
                 Text("This code can be used only once")
-                    .font(.subheadline)
+                    .font(.custom("Poppins-Regular", size: 16))
                     .foregroundStyle(.secondary)
             }
             
@@ -484,19 +502,36 @@ struct PromoCodeSuccessSheet: View {
                     Text(code)
                         .font(.title3)
                         .fontWeight(.semibold)
+                        .foregroundStyle(greenColor) // Made the code green to match screenshot
                     
                     Spacer()
                     
                     Button {
                         UIPasteboard.general.string = code
-                        // Optional: Show a toast/feedback
+                        
+                        // 2. Trigger the copy state with animation
+                        withAnimation {
+                            isCopied = true
+                        }
+                        
+                        // 3. Reset the icon back after 2 seconds automatically
+                        Task {
+                            try? await Task.sleep(for: .seconds(2))
+                            withAnimation {
+                                isCopied = false
+                            }
+                        }
                     } label: {
-                        Image(systemName: "doc.on.doc")
+                        // 4. Toggle the SF Symbol based on state
+                        Image(systemName: isCopied ? "checkmark" : "doc.on.doc")
                             .foregroundStyle(greenColor)
+                            .font(.title3)
+                            // 5. iOS 17+ smooth symbol transition
+                            .contentTransition(.symbolEffect(.replace))
                     }
                 }
                 .padding()
-                .background(Color.white)
+                .background(.white)
                 .clipShape(.rect(cornerRadius: 12))
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
@@ -506,13 +541,20 @@ struct PromoCodeSuccessSheet: View {
             }
             
             if let expiration = viewModel.successData?.expiredAt {
-                Text("Expires on: \(expiration)")
-                    .font(.footnote)
-                    .foregroundStyle(.red)
+                HStack(spacing: 4) {
+                    Text("Expires on:")
+                        .foregroundStyle(.secondary)
+                    Text(expiration)
+                        .foregroundStyle(.red)
+                }
+                .font(.footnote)
+                // Left-aligned to match the screenshot
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 24)
             }
             
             Spacer()
         }
-        .background(Color(UIColor.systemGroupedBackground).ignoresSafeArea())
+        .background(.white) // White background like in your second screenshot
     }
 }

@@ -1,11 +1,5 @@
-//
-//  StoresAvatarView.swift
-//  AjjiL
-//
-//  Created by mohamed mahmoud sobhy badawy on 15/03/2026.
-//
-
-import SwiftUI
+import  SwiftUI
+// MARK: - Avatar Views
 
 struct StoresAvatarView: View {
     let image: UIImage?

@@ -9,6 +9,7 @@ import SwiftUI
 struct PersonalDataView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var model: PersonalDataViewModel
+    @State private var successItem: SuccessSheetItem?
     
     var onSaveSuccess: () -> Void
     
@@ -58,8 +59,8 @@ struct PersonalDataView: View {
                     ) {
                         Task {
                             if await model.saveChanges() {
-                                onSaveSuccess()
-                                dismiss()
+                                // Trigger the success sheet instead of dismissing immediately
+                                successItem = SuccessSheetItem()
                             }
                         }
                     }
@@ -87,10 +88,18 @@ struct PersonalDataView: View {
                 Button(action: showNextTextField) { Image(systemName: "chevron.down").foregroundStyle(.black) }
             }
         }
+        // Attach the sheet modifier here
+        .sheet(item: $successItem) { _ in
+            SuccessSheetVieww(onDone: {
+                onSaveSuccess()
+                dismiss()
+            })
+            .background(.white)
+        }
     }
 }
 
-// Logic & Subviews
+// MARK: - Logic & Subviews
 private extension PersonalDataView {
     var formFields: some View {
         VStack(spacing: 18) {
@@ -148,5 +157,45 @@ private extension PersonalDataView {
     
     func showPreviousTextField() {
         if focusedField == .email { focusedField = .username } else { focusedField = nil }
+    }
+}
+
+// MARK: - Success Sheet Components
+
+// A simple model to drive the sheet presentation safely
+struct SuccessSheetItem: Identifiable {
+    let id = UUID()
+}
+
+struct SuccessSheetVieww: View {
+    @Environment(\.dismiss) private var dismiss
+    var onDone: () -> Void
+    
+    var body: some View {
+        VStack(spacing: 32) {
+            Spacer()
+            
+            Image("saved")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 275, height: 179)
+            
+            Text("Saved Successfully")
+                .font(.system(size: 28, weight: .semibold))
+                // Using the same theme color as your save button for consistency
+                .foregroundStyle(Color(red: 142/255, green: 166/255, blue: 161/255))
+            
+            Spacer()
+            
+            GreenButton(title: "Done", action: {
+                dismiss() // Sheet dismisses itself first
+                onDone()  // Then triggers the parent to close
+            })
+            .padding(.bottom, 24)
+        }
+        .padding(.horizontal, 24)
+        .presentationDetents([.medium])
+        .presentationDragIndicator(.visible)
+        .presentationCornerRadius(32)
     }
 }

@@ -28,13 +28,26 @@ struct TopRowNotForHome: View {
     var onFilter: (() -> Void)?
     var onRate: (() -> Void)?
 
+    // NEW: State for guest login sheet
+    @State private var showGuestLoginSheet: Bool = false
+
     private let iconBackgroundColor = Color(red: 214/255, green: 255/255, blue: 248/255)
+
+    // Helper to intercept actions for guests
+    private func handleAction(_ action: (() -> Void)?) {
+        if Constants.isGuestMode {
+            showGuestLoginSheet = true
+        } else {
+            action?()
+        }
+    }
 
     var body: some View {
         HStack(spacing: 0) {
             
             // MARK: - Back Button
             if showBackButton {
+                // We DO NOT intercept the back button for guests
                 Button(action: { onBack?() }) {
                     Image(systemName: "arrow.left")
                         .font(.system(size: 18, weight: .semibold))
@@ -55,7 +68,7 @@ struct TopRowNotForHome: View {
             // MARK: - Action Buttons
             switch kindOfTopRow {
             case .justNotification:
-                Button(action: { onNotification?() }) {
+                Button(action: { handleAction(onNotification) }) {
                     // Assuming NotificationBell is defined elsewhere in your project
                     NotificationBell(count: notificationCount)
                 }
@@ -70,7 +83,7 @@ struct TopRowNotForHome: View {
                         icon: "car",
                         isSystemImage: false,
                         count: cartCount,
-                        action: { onCart?() },
+                        action: { handleAction(onCart) },
                         offsetX: -16,
                         offsetY: -14
                     )
@@ -86,7 +99,7 @@ struct TopRowNotForHome: View {
                         icon: "bell.fill",
                         isSystemImage: true,
                         count: notificationCount,
-                        action: { onNotification?() },
+                        action: { handleAction(onNotification) },
                         offsetX: 8,
                         offsetY: -14
                     )
@@ -107,7 +120,7 @@ struct TopRowNotForHome: View {
                     iconName: "filter",
                     isSystemImage: false,
                     backgroundColor: iconBackgroundColor,
-                    action: { onFilter?() }
+                    action: { handleAction(onFilter) }
                 )
                 
             case .rate:
@@ -116,7 +129,7 @@ struct TopRowNotForHome: View {
                     iconName: "star.fill",
                     isSystemImage: true,
                     backgroundColor: iconBackgroundColor,
-                    action: { onRate?() }
+                    action: { handleAction(onRate) }
                 )
                 
             case .none:
@@ -134,6 +147,13 @@ struct TopRowNotForHome: View {
                 }
                 .clipped()
                 .ignoresSafeArea(edges: .top)
+        }
+        // NEW: Add the sheet presentation here
+        .sheet(isPresented: $showGuestLoginSheet) {
+            GuestLoginSheetView()
+                .presentationDetents([.fraction(0.5), .medium])
+                .presentationDragIndicator(.visible)
+                .background(.white)
         }
     }
 }
@@ -226,7 +246,6 @@ private struct BadgeIconButton: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .contentShape(Rectangle())
         }
-        // .buttonStyle(ScaleButtonStyle())
         .animation(.spring(response: 0.3, dampingFraction: 0.6), value: count)
     }
 }

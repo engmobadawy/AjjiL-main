@@ -44,54 +44,55 @@ class StoreViewModel {
         self.addFavoriteProductUC = addFavoriteProductUC
         self.removeFavoriteProductUC = removeFavoriteProductUC
         self.addProductByBarcodeToCartUC = addProductByBarcodeToCartUC
-        
-        
     }
     
     // MARK: - Toggle Favorite
     func toggleFavorite(for productID: Int) async {
-            let isCurrentlyFavorite = FavoritesManager.shared.isFavorite(productID)
-            _ = FavoritesManager.shared.toggleLocal(productID)
+        // Safety check: Prevent guest users from making this API call
+        guard !Constants.isGuestMode else { return }
+        
+        let isCurrentlyFavorite = FavoritesManager.shared.isFavorite(productID)
+        _ = FavoritesManager.shared.toggleLocal(productID)
+        
+        do {
+            let branchProductIDString = String(productID)
+            let response: ToggleFavoriteModel
             
-            do {
-                let branchProductIDString = String(productID)
-                let response: ToggleFavoriteModel
-                
-                if isCurrentlyFavorite {
-                    response = try await removeFavoriteProductUC.execute(branchProductId: branchProductIDString)
-                } else {
-                    response = try await addFavoriteProductUC.execute(branchProductId: branchProductIDString)
-                }
-                
-                if response.status == false {
-                    _ = FavoritesManager.shared.toggleLocal(productID) // Revert
-                }
-            } catch {
+            if isCurrentlyFavorite {
+                response = try await removeFavoriteProductUC.execute(branchProductId: branchProductIDString)
+            } else {
+                response = try await addFavoriteProductUC.execute(branchProductId: branchProductIDString)
+            }
+            
+            if response.status == false {
                 _ = FavoritesManager.shared.toggleLocal(productID) // Revert
             }
+        } catch {
+            _ = FavoritesManager.shared.toggleLocal(productID) // Revert
         }
+    }
     
     // MARK: - Data Fetching
     func fetchProducts(storeId: Int, branchId: Int, categoryId: Int?) async {
-            do {
-                if let categoryId = categoryId {
-                    let response = try await getProductsByCategoryUC.execute(storeId: storeId, branchId: branchId, categoryId: categoryId)
-                    self.storeProducts = response.data?.map { $0.asFeaturedProductEntity() } ?? []
-                } else {
-                    let response = try await getFeaturedProductsUCForStore.execute(storeId: storeId, branchId: branchId, skip: 0, take: 20)
-                    self.storeProducts = response.data?.products?.map { $0.asFeaturedProductEntity() } ?? []
-                }
-                
-                // 👉 NEW: Sync fetched favorites to the Source of Truth
-                for product in self.storeProducts {
-                    FavoritesManager.shared.setFavorite(product.id, isFavorite: product.isFavorite)
-                }
-                
-            } catch {
-                print("❌ Failed to fetch products: \(error)")
-                self.storeProducts = []
+        do {
+            if let categoryId = categoryId {
+                let response = try await getProductsByCategoryUC.execute(storeId: storeId, branchId: branchId, categoryId: categoryId)
+                self.storeProducts = response.data?.map { $0.asFeaturedProductEntity() } ?? []
+            } else {
+                let response = try await getFeaturedProductsUCForStore.execute(storeId: storeId, branchId: branchId, skip: 0, take: 20)
+                self.storeProducts = response.data?.products?.map { $0.asFeaturedProductEntity() } ?? []
             }
+            
+            // 👉 NEW: Sync fetched favorites to the Source of Truth
+            for product in self.storeProducts {
+                FavoritesManager.shared.setFavorite(product.id, isFavorite: product.isFavorite)
+            }
+            
+        } catch {
+            print("❌ Failed to fetch products: \(error)")
+            self.storeProducts = []
         }
+    }
     
     func fetchStoreSliders(storeId: Int) async {
         do {
@@ -115,6 +116,9 @@ class StoreViewModel {
     }
     
     func addToCart(product: HomeFeaturedProductDataEntity, branchId: Int) async {
+        // Safety check: Prevent guest users from making this API call
+        guard !Constants.isGuestMode else { return }
+        
         let branchIdString = String(branchId)
         // Use barcode if available, otherwise fallback to the product ID
         let barcodeString = product.barcode.isEmpty ? String(product.id) : product.barcode

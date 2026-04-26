@@ -6,16 +6,14 @@ struct ProductDetailsView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showScannerView: Bool = false
     
+    // NEW: State to control the guest login sheet
+    @State private var showGuestLoginSheet: Bool = false
     
     // 1. Add the AppStorage variables
     @AppStorage("isStoreMode") private var isStoreMode: Bool = false
     @AppStorage("savedBranchID") private var savedBranchID: Int = 0
     
-      let viewModel: ProductDetailsViewModel
-
-//    init(viewModel: ProductDetailsViewModel) {
-//        self._viewModel = State(initialValue: viewModel)
-//    }
+    let viewModel: ProductDetailsViewModel
 
     var body: some View {
         VStack(spacing: 0) {
@@ -42,7 +40,12 @@ struct ProductDetailsView: View {
                             discount: product.offerDiscount,
                             isFavorite: FavoritesManager.shared.isFavorite(product.id),
                             onToggleFavorite: {
-                                Task { await viewModel.toggleFavorite() }
+                                // NEW: Check Guest Mode
+                                if Constants.isGuestMode {
+                                    showGuestLoginSheet = true
+                                } else {
+                                    Task { await viewModel.toggleFavorite() }
+                                }
                             }
                         )
                         
@@ -54,27 +57,11 @@ struct ProductDetailsView: View {
                         
                         ProductDetailsBarcodeSection(barcode: product.barcode)
                         
-                        // 2. Conditionally render the button text and action
-//                        GreenButton(title: isStoreMode ? "Scan to buy" : "Add to Cart") {
-//                            if isStoreMode {
-//                                    viewModel.scanToBuy()
-//                                                    }
-//                            else {
-//                                let branchId = savedBranchID == 0 ? 1 : savedBranchID
-//                                Task {
-//                                    await viewModel.addToCart(branchId: branchId)
-//                                }
-//                            }
-//                        }
-//                        .padding(.horizontal, 18)
-                        
-                        
-                        // Replace the GreenButton block with this:
-
                         Button {
-                            if isStoreMode {
-                                
-                                
+                            // NEW: Check Guest Mode FIRST
+                            if Constants.isGuestMode {
+                                showGuestLoginSheet = true
+                            } else if isStoreMode {
                                 showScannerView = true
                             } else {
                                 let branchId = savedBranchID == 0 ? 1 : savedBranchID
@@ -118,6 +105,13 @@ struct ProductDetailsView: View {
         }
         .navigationDestination(isPresented: $showScannerView) {
             ScannerMainView()
+        }
+        // NEW: Add the sheet presentation
+        .sheet(isPresented: $showGuestLoginSheet) {
+            GuestLoginSheetView()
+                .presentationDetents([.fraction(0.5), .medium])
+                .presentationDragIndicator(.visible)
+                .background(.white)
         }
         .navigationBarBackButtonHidden(true)
         .background(.white)
@@ -293,7 +287,7 @@ private struct ThumbnailView: View {
 }
 
 private struct ProductDetailsInfoSection: View {
-    let product: ProductDetailResponse // CHANGED to the endpoint's response model
+    let product: ProductDetailResponse
     
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -447,3 +441,5 @@ private struct ProductDetailRibbon: View {
             .offset(x: 38, y: 12)
     }
 }
+
+

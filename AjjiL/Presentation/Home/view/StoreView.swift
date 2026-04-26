@@ -10,6 +10,9 @@ struct StoreView: View {
     @State private var showAllCategories: Bool = false
     @State private var showScannerView: Bool = false
     
+    // NEW: State to control the guest login sheet
+    @State private var showGuestLoginSheet: Bool = false
+    
     // Global HomeViewModel for shared state like favorites and branches
     var homeViewModel = DependencyContainer.HomeDependency.shared.homeVM
     
@@ -68,19 +71,24 @@ struct StoreView: View {
                                 currentMode: currentMode,
                                 onViewAllCategories: {
                                     showAllCategories = true
+                                },
+                                onScanToBuy: {
+                                    showScannerView = true
+                                },
+                                onGuestAction: {
+                                    showGuestLoginSheet = true
                                 }
-                                ,
-                                onScanToBuy: {                  // 👈 Add this
-                                            showScannerView = true
-                                        }
                             )
                         case .products:
                             ProductCatalogView(
                                 storeViewModel: storeViewModel,
                                 selectedCategoryID: $selectedCategoryID,
-                                onScanToBuy: {                  // 👈 Add this
-                                            showScannerView = true
-                                        }
+                                onScanToBuy: {
+                                    showScannerView = true
+                                },
+                                onGuestAction: {
+                                    showGuestLoginSheet = true
+                                }
                             )
                         case .offers:
                             OffersContentView(
@@ -123,9 +131,7 @@ struct StoreView: View {
                     storeName: storeName,
                     storeId: String(storeId) // <--- Added missing argument
                 )
-            }                
-            
-            
+            }
             .navigationDestination(isPresented: $showAllCategories) {
                 CategoriesView(
                     storeId: storeId,
@@ -152,6 +158,13 @@ struct StoreView: View {
                 )
                 .zIndex(2)
             }
+        }
+        // NEW: Add the sheet presentation to the main ZStack
+        .sheet(isPresented: $showGuestLoginSheet) {
+            GuestLoginSheetView()
+                .presentationDetents([.fraction(0.5), .medium])
+                .presentationDragIndicator(.visible)
+                .background(.white)
         }
         .task(id: storeId) {
             if storeViewModel.storeCategories.isEmpty {
@@ -188,6 +201,7 @@ struct StoreContentView: View {
     let currentMode: ShopMode
     var onViewAllCategories: () -> Void
     var onScanToBuy: () -> Void
+    var onGuestAction: () -> Void // NEW
     
     private var isStoreEmpty: Bool {
         storeViewModel.storeSliders.isEmpty && storeViewModel.storeProducts.isEmpty && storeViewModel.storeCategories.isEmpty
@@ -225,7 +239,12 @@ struct StoreContentView: View {
                 }
                 
                 if !storeViewModel.storeProducts.isEmpty {
-                    FeaturedProductsSection(storeViewModel: storeViewModel, products: storeViewModel.storeProducts,onScanToBuy: onScanToBuy)
+                    FeaturedProductsSection(
+                        storeViewModel: storeViewModel,
+                        products: storeViewModel.storeProducts,
+                        onScanToBuy: onScanToBuy,
+                        onGuestAction: onGuestAction // Passed down
+                    )
                 }
             }
             .padding(.bottom, 16)
@@ -239,6 +258,8 @@ struct ProductCatalogView: View {
     var storeViewModel: StoreViewModel
     @Binding var selectedCategoryID: Int?
     var onScanToBuy: () -> Void
+    var onGuestAction: () -> Void // NEW
+    
     @AppStorage("savedBranchID") private var savedBranchID: Int = 0
     
     var body: some View {
@@ -263,16 +284,32 @@ struct ProductCatalogView: View {
                         NavigationLink(value: product) {
                             HomeProductCard(
                                 product: product,
-                                isFavorite: FavoritesManager.shared.isFavorite(product.id), // Directly reads local property
+                                isFavorite: FavoritesManager.shared.isFavorite(product.id),
                                 onToggleFavorite: {
-                                    Task { await storeViewModel.toggleFavorite(for: product.id) }
+                                    // NEW: Check Guest Mode
+                                    if Constants.isGuestMode {
+                                        onGuestAction()
+                                    } else {
+                                        Task { await storeViewModel.toggleFavorite(for: product.id) }
+                                    }
                                 },
                                 onAddToCart: {
-                                    let branchId = savedBranchID == 0 ? 1 : savedBranchID
-                                                                        Task { await storeViewModel.addToCart(product: product, branchId: branchId) }
-                                    
+                                    // NEW: Check Guest Mode
+                                    if Constants.isGuestMode {
+                                        onGuestAction()
+                                    } else {
+                                        let branchId = savedBranchID == 0 ? 1 : savedBranchID
+                                        Task { await storeViewModel.addToCart(product: product, branchId: branchId) }
+                                    }
                                 },
-                                onScanToBuy: onScanToBuy
+                                onScanToBuy: {
+                                    // NEW: Check Guest Mode
+                                    if Constants.isGuestMode {
+                                        onGuestAction()
+                                    } else {
+                                        onScanToBuy()
+                                    }
+                                }
                             )
                         }
                         .buttonStyle(.plain)
@@ -281,6 +318,60 @@ struct ProductCatalogView: View {
                 .padding(.horizontal, 18)
                 .padding(.vertical, 16)
             }
+        }
+    }
+}
+
+struct FeaturedProductsSection: View {
+    var storeViewModel: StoreViewModel
+    let products: [HomeFeaturedProductDataEntity]
+    var onScanToBuy: () -> Void
+    var onGuestAction: () -> Void // NEW
+    
+    @AppStorage("selectedTab") private var selectedTab: StoreTab = .store
+    @AppStorage("savedBranchID") private var savedBranchID: Int = 0
+    
+    var body: some View {
+        VStack(spacing: 16) {
+            SectionHeader(title: "Featured Products", actionTitle: "View All") {selectedTab = .products}
+            
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
+                ForEach(products) { product in
+                    NavigationLink(value: product) {
+                        HomeProductCard(
+                            product: product,
+                            isFavorite: FavoritesManager.shared.isFavorite(product.id),
+                            onToggleFavorite: {
+                                // NEW: Check Guest Mode
+                                if Constants.isGuestMode {
+                                    onGuestAction()
+                                } else {
+                                    Task { await storeViewModel.toggleFavorite(for: product.id) }
+                                }
+                            },
+                            onAddToCart: {
+                                // NEW: Check Guest Mode
+                                if Constants.isGuestMode {
+                                    onGuestAction()
+                                } else {
+                                    let branchId = savedBranchID == 0 ? 1 : savedBranchID
+                                    Task { await storeViewModel.addToCart(product: product, branchId: branchId) }
+                                }
+                            },
+                            onScanToBuy: {
+                                // NEW: Check Guest Mode
+                                if Constants.isGuestMode {
+                                    onGuestAction()
+                                } else {
+                                    onScanToBuy()
+                                }
+                            }
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 18)
         }
     }
 }
@@ -443,42 +534,6 @@ struct CategoryCardView: View {
             }
             .clipShape(.rect(cornerRadius: 28))
             .contentShape(.rect(cornerRadius: 28))
-    }
-}
-
-struct FeaturedProductsSection: View {
-    var storeViewModel: StoreViewModel
-    let products: [HomeFeaturedProductDataEntity]
-    var onScanToBuy: () -> Void
-    @AppStorage("selectedTab") private var selectedTab: StoreTab = .store
-    @AppStorage("savedBranchID") private var savedBranchID: Int = 0
-    
-    var body: some View {
-        VStack(spacing: 16) {
-            SectionHeader(title: "Featured Products", actionTitle: "View All") {selectedTab = .products}
-            
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-                ForEach(products) { product in
-                    NavigationLink(value: product) {
-                        HomeProductCard(
-                            product: product,
-                            isFavorite: FavoritesManager.shared.isFavorite(product.id),
-                            onToggleFavorite: {
-                                Task { await storeViewModel.toggleFavorite(for: product.id) }
-                            },
-                            onAddToCart: {
-                                let branchId = savedBranchID == 0 ? 1 : savedBranchID
-                                                                Task { await storeViewModel.addToCart(product: product, branchId: branchId) }
-                                
-                            },
-                            onScanToBuy: onScanToBuy
-                        )
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(.horizontal, 18)
-        }
     }
 }
 
@@ -696,14 +751,11 @@ struct OffersContentView: View {
 struct EmptyOffersStateView: View {
     var body: some View {
         VStack(spacing: 0) {
-            
             Image("noOffersYet")
                 .resizable()
                 .scaledToFit()
                 .frame(width: 153, height: 171)
                 .padding(.top, 200)
-            
-            
         }
         .frame(maxWidth: .infinity)
     }
@@ -721,3 +773,4 @@ struct EmptyProductsStateView: View {
         .frame(maxWidth: .infinity)
     }
 }
+
