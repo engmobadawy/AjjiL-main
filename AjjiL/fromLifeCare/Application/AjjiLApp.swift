@@ -1,7 +1,8 @@
 import SwiftUI
 import UIKit
 import MOLH
-import Firebase
+import FirebaseCore
+import FirebaseMessaging
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate, MOLHResetable {
     var window: UIWindow?
@@ -161,12 +162,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate, MOLHResetable {
     func applicationWillTerminate(_ application: UIApplication) {}
     
     // MARK: - Push Notifications
-    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
-        let tokenString = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()
-        print("📱 Device Token: \(tokenString)")
-        // Save token to GenericUserDefault
-        // GenericUserDefault.shared.setValue(tokenString, Constants.shared.deviceToken)
-    }
+        func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+            let tokenString = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()
+            print("📱 Device Token: \(tokenString)")
+            
+            // ADD THIS LINE: Pass the token to Firebase
+            Messaging.messaging().apnsToken = deviceToken
+        }
     
     func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
         print("❌ Failed to register for remote notifications: \(error.localizedDescription)")

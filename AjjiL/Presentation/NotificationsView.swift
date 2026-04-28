@@ -20,7 +20,7 @@ struct NotificationsView: View {
         VStack(spacing: 0) {
             // Using your existing top row component
             TopRowNotForHome(
-                title: "Notifications",
+                title: "Notifications".newlocalized,
                 showBackButton: true,
                 kindOfTopRow: .none,
                 onBack: { dismiss() }
@@ -28,9 +28,12 @@ struct NotificationsView: View {
             
             if viewModel.isLoading && viewModel.notifications.isEmpty {
                 Spacer()
-                ProgressView("Loading notifications...")
+                // 🛠️ FIX: Added .newlocalized
+                ProgressView("Loading notifications...".newlocalized)
                 Spacer()
-            } else if let errorMessage = viewModel.errorMessage {
+            }
+            
+                else if let errorMessage = viewModel.errorMessage {
                 Spacer()
                 Text(errorMessage)
                     .foregroundStyle(.red)
@@ -50,19 +53,20 @@ struct NotificationsView: View {
     // MARK: - View Components
     
     @ViewBuilder
-    private var emptyStateView: some View {
-        VStack(spacing: 16) {
-            Spacer()
-            Image(systemName: "bell.slash")
-                .font(.system(size: 48))
-                .foregroundStyle(.tertiary)
-            
-            Text("No notifications yet")
-                .font(.custom("Poppins-Regular", size: 16))
-                .foregroundStyle(.secondary)
-            Spacer()
+        private var emptyStateView: some View {
+            VStack(spacing: 16) {
+                Spacer()
+                Image(systemName: "bell.slash")
+                    .font(.system(size: 48))
+                    .foregroundStyle(.tertiary)
+                
+                // 🛠️ FIX: Added .newlocalized
+                Text("No notifications yet".newlocalized)
+                    .font(.custom("Poppins-Regular", size: 16))
+                    .foregroundStyle(.secondary)
+                Spacer()
+            }
         }
-    }
     
     @ViewBuilder
     private var notificationsList: some View {
@@ -123,7 +127,7 @@ struct NotificationRowView: View {
                 
                 // Text Content
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(notification.title ?? "Notification")
+                    Text(notification.title ?? "Notification".newlocalized)
                         .font(.custom("Poppins-SemiBold", size: 16, relativeTo: .headline))
                         .foregroundStyle(Color.primary.opacity(0.8))
                     

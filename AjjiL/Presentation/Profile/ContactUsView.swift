@@ -5,9 +5,7 @@
 //  Created by mohamed mahmoud sobhy badawy on 24/04/2026.
 //
 
-
 import SwiftUI
-
 
 struct ContactUsView: View {
     @Environment(\.dismiss) private var dismiss
@@ -31,7 +29,8 @@ struct ContactUsView: View {
         VStack(spacing: 0) {
             // MARK: - Top Row
             TopRowNotForHome(
-                title: "Contact us",
+                // 🛠️ FIX: Added .newlocalized
+                title: "Contact us".newlocalized,
                 showBackButton: true,
                 kindOfTopRow: .none,
                 onBack: {
@@ -49,11 +48,13 @@ struct ContactUsView: View {
                         .padding(.top, 28)
                         .padding(.bottom, 18)
                     
-                    Text("Get In Touch")
+                    // 🛠️ FIX: Added .newlocalized
+                    Text("Get In Touch".newlocalized)
                         .font(.system(size: 28, weight: .semibold))
                         .foregroundStyle(.primary)
                     
-                    Text("Tell us about your inquiries")
+                    // 🛠️ FIX: Added .newlocalized
+                    Text("Tell us about your inquiries".newlocalized)
                         .font(.system(size: 16, weight: .regular))
                         .foregroundStyle(.secondary)
                         .padding(.bottom, 8)
@@ -81,16 +82,14 @@ struct ContactUsView: View {
             SuccessSheetView {
                 showSuccessSheet = false
                 dismiss()
-//                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-//                    dismiss()
-//                }
             }
             .presentationDetents([.fraction(0.55), .medium])
             .presentationCornerRadius(28)
         }
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {
-                Button("Done") {
+                // 🛠️ FIX: Added .newlocalized
+                Button("Done".newlocalized) {
                     focusedField = nil
                 }
                 Spacer()
@@ -108,32 +107,32 @@ struct ContactUsView: View {
 private extension ContactUsView {
     
     // MARK: - Email Field (Reusing CustomTextField)
-        var emailField: some View {
-            CustomTextField(
-                isValid: viewModel.emailError == nil, // <-- FIXED: Check if error is nil instead of isEmailValid
-                errorMessage: viewModel.emailError,
-                text: $viewModel.email,
-                placeholder: "appssquare.com",
-                icon: Image(systemName: "envelope.fill"),
-                backgroundColor: Color(uiColor: .systemGray6),
-                strokeColor: emailStrokeColor,
-                preset: .email,
-                submitLabel: .next,
-                onSubmit: { focusedField = .message }
-            )
-            .focused($focusedField, equals: .email)
-            .onChange(of: viewModel.email) { _, _ in
-                viewModel.hasInteractedWithEmail = true
-            }
-            .task(id: viewModel.email) {
-                do {
-                    try await Task.sleep(for: .milliseconds(500))
-                    viewModel.validateEmail()
-                } catch {}
-            }
+    var emailField: some View {
+        CustomTextField(
+            isValid: viewModel.emailError == nil,
+            errorMessage: viewModel.emailError,
+            text: $viewModel.email,
+            placeholder: "appssquare.com", // Usually domains aren't localized, but you can if needed
+            icon: Image(systemName: "envelope.fill"),
+            backgroundColor: Color(uiColor: .systemGray6),
+            strokeColor: emailStrokeColor,
+            preset: .email,
+            submitLabel: .next,
+            onSubmit: { focusedField = .message }
+        )
+        .focused($focusedField, equals: .email)
+        .onChange(of: viewModel.email) { _, _ in
+            viewModel.hasInteractedWithEmail = true
         }
+        .task(id: viewModel.email) {
+            do {
+                try await Task.sleep(for: .milliseconds(500))
+                viewModel.validateEmail()
+            } catch {}
+        }
+    }
     
-    // MARK: - Problem Type Menu (Custom Wrapped with Error Logic)
+    // MARK: - Problem Type Menu
     var problemTypeMenu: some View {
         VStack(alignment: .leading, spacing: 6) {
             Menu {
@@ -156,7 +155,6 @@ private extension ContactUsView {
                 .background(Color(uiColor: .systemGray6))
                 .clipShape(.rect(cornerRadius: 12))
                 .overlay {
-                    // Applies a red border if there is an error, green if valid, clear otherwise
                     RoundedRectangle(cornerRadius: 12)
                         .stroke(viewModel.typeError != nil ? Color.red : (viewModel.isTypeValid ? .brandGreen : .clear), lineWidth: 1)
                 }
@@ -172,10 +170,11 @@ private extension ContactUsView {
         }
     }
     
-    // MARK: - Message Field (Custom Wrapped with Error Logic)
+    // MARK: - Message Field
     var messageField: some View {
         VStack(alignment: .leading, spacing: 6) {
-            TextField("Message", text: $viewModel.message, axis: .vertical)
+            // 🛠️ FIX: Added .newlocalized
+            TextField("Message".newlocalized, text: $viewModel.message, axis: .vertical)
                 .lineLimit(5...8)
                 .padding()
                 .frame(minHeight: 120, alignment: .topLeading)
@@ -183,7 +182,6 @@ private extension ContactUsView {
                 .clipShape(.rect(cornerRadius: 12))
                 .focused($focusedField, equals: .message)
                 .overlay {
-                    // Applies a red border if there is an error, green if valid, clear otherwise
                     RoundedRectangle(cornerRadius: 12)
                         .stroke(viewModel.messageError != nil ? Color.red : (viewModel.isMessageValid ? .brandGreen : .clear), lineWidth: 1)
                 }
@@ -197,7 +195,6 @@ private extension ContactUsView {
                     } catch {}
                 }
             
-            // Error Message Underneath
             if let error = viewModel.messageError {
                 Text(error)
                     .font(.caption)
@@ -209,7 +206,6 @@ private extension ContactUsView {
     
     var bottomActionSection: some View {
         VStack(spacing: 8) {
-            // Global Status Message
             if let error = viewModel.errorMessage {
                 Text(error)
                     .font(.caption)
@@ -217,8 +213,8 @@ private extension ContactUsView {
                     .padding(.horizontal)
             }
             
-            // Reusing the disabled/opacity pattern from SignUpView
-            GreenButton(title: viewModel.isLoading ? " " : "Send") {
+            // 🛠️ FIX: Added .newlocalized
+            GreenButton(title: viewModel.isLoading ? " " : "Send".newlocalized) {
                 focusedField = nil
                 Task {
                     await viewModel.submitForm()
@@ -249,15 +245,14 @@ private extension ContactUsView {
            let type = viewModel.contactTypes.first(where: { $0.id == id }) {
             return type.name
         }
-        return "Problem Type"
+        // 🛠️ FIX: Added .newlocalized
+        return "Problem Type".newlocalized
     }
     
     private var emailStrokeColor: Color? {
         viewModel.isEmailValid || (focusedField == .email && viewModel.email.isEmpty) ? .brandGreen : nil
     }
 }
-
-
 
 @MainActor
 @Observable
@@ -270,7 +265,7 @@ class ContactUsViewModel {
     // MARK: - UI State
     var contactTypes: [ContactType] = []
     var isLoading: Bool = false
-    var errorMessage: String? // Global error (e.g. network failure)
+    var errorMessage: String?
     var successMessage: String?
     
     // MARK: - Validation State
@@ -309,7 +304,6 @@ class ContactUsViewModel {
             if email.trimmingCharacters(in: .whitespaces).isEmpty {
                 throw ContactFormError.emptyEmail
             }
-            // Simple email regex pattern
             let emailRegEx = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
             let emailPred = NSPredicate(format:"SELF MATCHES %@", emailRegEx)
             if !emailPred.evaluate(with: email) {
@@ -372,12 +366,7 @@ class ContactUsViewModel {
                 contactTypeId: typeId
             )
             successMessage = response
-            // Clear fields on success
-//            email = ""
-//            message = ""
-//            selectedContactTypeId = nil
             
-            // Reset validation state
             hasAttemptedSubmit = false
             hasInteractedWithEmail = false
             hasInteractedWithType = false
@@ -393,26 +382,24 @@ class ContactUsViewModel {
     }
     
     // MARK: - Generic Validation Engine
-        private func runValidation(
-            hasInteracted: Bool,
-            isValid: inout Bool,
-            error: inout String?,
-            validationBlock: () throws -> Void
-        ) {
-            guard hasInteracted || hasAttemptedSubmit else {
-                updateState(isValid: &isValid, error: &error, newValid: false, newError: nil)
-                return
-            }
-            
-            do {
-                try validationBlock()
-                updateState(isValid: &isValid, error: &error, newValid: true, newError: nil)
-            } catch let caughtError { // 1. Explicitly name the thrown error here
-                // 2. Now '&error' correctly points to your String parameter,
-                // and 'caughtError' gives you the message!
-                updateState(isValid: &isValid, error: &error, newValid: false, newError: caughtError.localizedDescription)
-            }
+    private func runValidation(
+        hasInteracted: Bool,
+        isValid: inout Bool,
+        error: inout String?,
+        validationBlock: () throws -> Void
+    ) {
+        guard hasInteracted || hasAttemptedSubmit else {
+            updateState(isValid: &isValid, error: &error, newValid: false, newError: nil)
+            return
         }
+        
+        do {
+            try validationBlock()
+            updateState(isValid: &isValid, error: &error, newValid: true, newError: nil)
+        } catch let caughtError {
+            updateState(isValid: &isValid, error: &error, newValid: false, newError: caughtError.localizedDescription)
+        }
+    }
     
     private func updateState(isValid: inout Bool, error: inout String?, newValid: Bool, newError: String?) {
         if isValid != newValid { isValid = newValid }
@@ -421,7 +408,6 @@ class ContactUsViewModel {
 }
 
 // MARK: - Private Error Enum
-// Named uniquely and made private to avoid colliding with your global ValidationError
 private enum ContactFormError: LocalizedError {
     case emptyEmail
     case invalidEmail
@@ -431,23 +417,15 @@ private enum ContactFormError: LocalizedError {
     
     var errorDescription: String? {
         switch self {
-        case .emptyEmail: return "Please enter your email."
-        case .invalidEmail: return "Please enter a valid email address."
-        case .emptyType: return "Please select a problem type."
-        case .emptyMessage: return "Please enter your message."
-        case .shortMessage: return "Message must be at least 10 characters."
+        // 🛠️ FIX: Added .newlocalized
+        case .emptyEmail: return "Please enter your email.".newlocalized
+        case .invalidEmail: return "Please enter a valid email address.".newlocalized
+        case .emptyType: return "Please select a problem type.".newlocalized
+        case .emptyMessage: return "Please enter your message.".newlocalized
+        case .shortMessage: return "Message must be at least 10 characters.".newlocalized
         }
     }
 }
-
-
-
-
-
-
-
-
-import SwiftUI
 
 struct SuccessSheetView: View {
     var onDone: () -> Void
@@ -456,21 +434,20 @@ struct SuccessSheetView: View {
         VStack(spacing: 32) {
             Spacer()
             
-            // Image from Figma
             Image("SavedSuccessfully")
                 .resizable()
                 .scaledToFit()
                 .frame(width: 247, height: 199)
             
-            // Success Text
-            Text("Sent Successfully")
-                .font(.custom("Poppins-SemiBold", size: 24)) // Adjust font name if needed
-                .foregroundStyle(Color(red: 65/255, green: 142/255, blue: 125/255)) // Matches the approximate green in your design
+            // 🛠️ FIX: Added .newlocalized
+            Text("Sent Successfully".newlocalized)
+                .font(.custom("Poppins-SemiBold", size: 24))
+                .foregroundStyle(Color(red: 65/255, green: 142/255, blue: 125/255))
             
             Spacer()
             
-            // Done Button
-            GreenButton(title: "Done") {
+            // 🛠️ FIX: Added .newlocalized
+            GreenButton(title: "Done".newlocalized) {
                 onDone()
             }
             .padding(.horizontal, 24)

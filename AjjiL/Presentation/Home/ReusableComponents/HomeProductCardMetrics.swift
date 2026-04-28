@@ -201,8 +201,8 @@ private struct ProductActionRow: View {
                     .opacity(!isStoreMode ? 1 : 0)
                     .clipped()
                 
-                // FIX: Align text logic
-                Text(isStoreMode ? "Scan to buy" : "Add to cart")
+                // 🛠️ FIX: Added .newlocalized to both string literals
+                Text(isStoreMode ? "Scan to buy".newlocalized : "Add to cart".newlocalized)
                     .font(.custom("Poppins-SemiBold", size: 14))
                     .contentTransition(.opacity)
             }

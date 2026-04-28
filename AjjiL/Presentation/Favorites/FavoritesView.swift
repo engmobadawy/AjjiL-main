@@ -6,14 +6,13 @@
 //
 
 import SwiftUI
-import Shimmer // 1. Import Shimmer
+import Shimmer
 
 struct FavoritesView: View {
-    // 👈 1. Add branch ID AppStorage to know where to add the cart item
-        @AppStorage("savedBranchID") private var savedBranchID: Int = 0
+    @AppStorage("savedBranchID") private var savedBranchID: Int = 0
     
-    // Automatically injected from your Dependency Container
-    @State private var viewModel: FavoritesViewModel = DependencyContainer.FavoritesDependency.shared.favoritesVM
+    // 🛠️ FIX: Use @Bindable for an injected @Observable dependency that needs bindings
+    @Bindable private var viewModel: FavoritesViewModel = DependencyContainer.FavoritesDependency.shared.favoritesVM
     
     @State private var showScannerView: Bool = false
     
@@ -23,7 +22,6 @@ struct FavoritesView: View {
         case notEmpty
     }
     
-    // Computed property ensures the UI always matches the exact data state
     private var currentState: ViewState {
         if viewModel.isLoading && viewModel.products.isEmpty {
             return .loading
@@ -34,7 +32,6 @@ struct FavoritesView: View {
         }
     }
     
-    // Grid configuration: Two flexible columns with 16pt spacing
     private let columns = [
         GridItem(.flexible(), spacing: 16),
         GridItem(.flexible(), spacing: 16)
@@ -44,29 +41,29 @@ struct FavoritesView: View {
         VStack(spacing: 0) {
             NavigationStack {
                 TopRowNotForHome(
-                    title: "Favorites",
-                    showBackButton: false,
-                    kindOfTopRow: .justNotification
-                )
+                                    title: "Favorites".newlocalized,
+                                    showBackButton: false,
+                                    kindOfTopRow: .justNotification
+                                )
             
                 ScrollView {
                     switch currentState {
                     case .loading:
-                        // 2. Replace ProgressView with the Shimmering Skeleton
                         FavoritesGridSkeleton()
                             .shimmering()
                             .padding(.top, 16)
                             
                     case .empty:
-                        VStack(alignment: .center, spacing: 28) {
-                            Image("NoFavorites")
-                                .resizable()
-                                .frame(width: 168, height: 168)
-                            
-                            Text("No Favorites yet")
-                                .font(.custom("Poppins-SemiBold", size: 28))
-                        }
-                        .padding(.top, 198)
+                                            VStack(alignment: .center, spacing: 28) {
+                                                Image("NoFavorites")
+                                                    .resizable()
+                                                    .frame(width: 168, height: 168)
+                                                
+                                        
+                                                Text("No Favorites yet".newlocalized)
+                                                    .font(.custom("Poppins-SemiBold", size: 28))
+                                            }
+                                            .padding(.top, 198)
                         
                     case .notEmpty:
                         LazyVGrid(columns: columns, spacing: 16) {
@@ -81,7 +78,6 @@ struct FavoritesView: View {
                                             }
                                         },
                                         onAddToCart: {
-                                            // 👈 2. Call addToCart using asHomeProduct
                                             let branchId = savedBranchID == 0 ? 1 : savedBranchID
                                             Task {
                                                 await viewModel.addToCart(product: product.asHomeProduct, branchId: branchId)
@@ -90,7 +86,7 @@ struct FavoritesView: View {
                                         onScanToBuy: { showScannerView = true }
                                     )
                                 }
-                                .buttonStyle(.plain) // Prevents the whole card from styling as a default button
+                                .buttonStyle(.plain)
                             }
                         }
                         .padding(.top, 16)
@@ -105,27 +101,25 @@ struct FavoritesView: View {
                             addFavoriteProductUC: DependencyContainer.FavoritesDependency.shared.addFavoriteProductUC,
                             removeFavoriteProductUC: DependencyContainer.FavoritesDependency.shared.removeFavoriteProductUC,
                             addProductByBarcodeToCartUC: AddProductByBarcodeToCartUC(
-                                                    repo: CartRepositoryImp(networkService: DependencyContainer.shared.networkService)
-                                                )
+                                repo: CartRepositoryImp(networkService: DependencyContainer.shared.networkService)
+                            )
                         )
                     )
                 }
                 .navigationDestination(isPresented: $showScannerView) {
-                                    ScannerMainView()
-                                }
+                    ScannerMainView()
+                }
             }
         }
         .navigationBarBackButtonHidden(true)
         .task {
             await viewModel.fetchFavorites()
         }
-        .toastView(toast: $viewModel.toast)
+        .toastView(toast: $viewModel.toast) // 👈 @Bindable allows this $ binding to work flawlessly
     }
 }
 
 // MARK: - Skeleton View
-
-/// 3. Dedicated Skeleton mimicking your 2-column Product Grid
 struct FavoritesGridSkeleton: View {
     private let columns = [
         GridItem(.flexible(), spacing: 16),
@@ -135,7 +129,6 @@ struct FavoritesGridSkeleton: View {
     var body: some View {
         LazyVGrid(columns: columns, spacing: 16) {
             ForEach(0..<6, id: \.self) { _ in
-                // A simple placeholder block representing the height of HomeProductCard
                 Rectangle()
                     .fill(.gray.opacity(0.3))
                     .frame(height: 220)

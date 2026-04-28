@@ -45,7 +45,7 @@ struct AllStoresView: View {
                 title: "All Stores",
                 showBackButton: true,
                 cartCount: 3,
-                notificationCount: 12,
+//                notificationCount: 12,
                 kindOfTopRow: .withCartAndNotification,
                 onBack: { print("Back") },
                 onCart: { print("Cart") },

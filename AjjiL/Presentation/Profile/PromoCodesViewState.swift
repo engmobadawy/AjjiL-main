@@ -5,7 +5,6 @@
 //  Created by mohamed mahmoud sobhy badawy on 25/04/2026.
 //
 
-
 import SwiftUI
 
 // MARK: - State
@@ -69,7 +68,8 @@ struct PromoCodesView: View {
             VStack(spacing: 0) {
                 // Static top row that persists across all states
                 TopRowNotForHome(
-                    title: "Promo Code",
+                    // 🛠️ FIX: Added .newlocalized
+                    title: "Promo Code".newlocalized,
                     showBackButton: true,
                     kindOfTopRow: .none,
                     onBack: {
@@ -104,7 +104,8 @@ struct PromoCodesView: View {
                                 .foregroundStyle(.red)
                                 .multilineTextAlignment(.center)
                             
-                            Button("Try Again") {
+                            // 🛠️ FIX: Added .newlocalized
+                            Button("Try Again".newlocalized) {
                                 Task { await viewModel.fetchPromoCodes() }
                             }
                             .buttonStyle(.bordered)
@@ -120,7 +121,8 @@ struct PromoCodesView: View {
             if showToast {
                 VStack {
                     Spacer()
-                    Text("Promo code copied!")
+                    // 🛠️ FIX: Added .newlocalized
+                    Text("Promo code copied!".newlocalized)
                         .font(.system(size: 14, weight: .medium))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 24)
@@ -169,11 +171,13 @@ struct EmptyPromoCodeContent: View {
                 .frame(width: 129, height: 90)
             
             VStack(spacing: 8) {
-                Text("No Promo Codes Available")
+                // 🛠️ FIX: Added .newlocalized
+                Text("No Promo Codes Available".newlocalized)
                     .font(.system(size: 28, weight: .semibold))
                     .foregroundStyle(.primary)
                 
-                Text("All the available promo codes will be here")
+                // 🛠️ FIX: Added .newlocalized
+                Text("All the available promo codes will be here".newlocalized)
                     .font(.system(size: 16, weight: .regular))
                     .foregroundStyle(.secondary)
             }
@@ -210,7 +214,8 @@ struct PromoCodeCardView: View {
             
             // Header Row
             HStack(alignment: .center) {
-                Text(promoCode.code ?? "N/A")
+                // 🛠️ FIX: Added .newlocalized for N/A
+                Text(promoCode.code ?? "N/A".newlocalized)
                     .font(.system(size: 28, weight: .semibold))
                     .foregroundStyle(Color(red: 20/255, green: 140/255, blue: 90/255))
                 
@@ -229,7 +234,8 @@ struct PromoCodeCardView: View {
             }
             
             // Subtitle
-            Text("Apply promo code to avail exciting offers")
+            // 🛠️ FIX: Added .newlocalized
+            Text("Apply promo code to avail exciting offers".newlocalized)
                 .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(Color(red: 1/255, green: 150/255, blue: 131/255))
             
@@ -240,10 +246,12 @@ struct PromoCodeCardView: View {
             
             // Footer
             HStack {
-                Text("Expiration Date: ")
+                // 🛠️ FIX: Added .newlocalized
+                Text("Expiration Date: ".newlocalized)
                     .font(.system(size: 14))
                     .foregroundStyle(Color(red: 229/255, green: 57/255, blue: 53/255)) +
-                Text(promoCode.expirationDate ?? "N/A")
+                // 🛠️ FIX: Added .newlocalized for N/A
+                Text(promoCode.expirationDate ?? "N/A".newlocalized)
                     .font(.system(size: 14))
                     .foregroundStyle(Color(red: 229/255, green: 57/255, blue: 53/255))
                 
@@ -286,7 +294,8 @@ struct PromoCodeBadgeView: View {
     let isUsed: Bool
     
     var body: some View {
-        Text(isUsed ? "Used" : "Not Used")
+        // 🛠️ FIX: Added .newlocalized
+        Text(isUsed ? "Used".newlocalized : "Not Used".newlocalized)
             .font(.system(size: 8, weight: .semibold))
             .foregroundStyle(.white)
             .padding(.horizontal, 6)
@@ -310,7 +319,8 @@ struct PromoCodeStoresRowView: View {
                 .font(.system(size: 14))
                 .foregroundStyle(Color(red: 20/255, green: 140/255, blue: 90/255))
             
-            Text("Stores:")
+            // 🛠️ FIX: Added .newlocalized
+            Text("Stores:".newlocalized)
                 .font(.system(size: 14))
                 .foregroundStyle(Color(red: 20/255, green: 140/255, blue: 90/255))
             
@@ -348,7 +358,8 @@ struct PromoCodeStoresRowView: View {
                 }
                 .padding(.leading, 4)
             } else {
-                Text("All Stores")
+                // 🛠️ FIX: Added .newlocalized
+                Text("All Stores".newlocalized)
                     .font(.system(size: 12))
                     .foregroundStyle(.gray)
                     .padding(.leading, 4)

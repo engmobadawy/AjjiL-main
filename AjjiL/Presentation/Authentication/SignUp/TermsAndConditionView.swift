@@ -1,22 +1,16 @@
-//
-//  TermsAndConditionView.swift
-//  AjjiL
-//
-//  Created by mohamed mahmoud sobhy badawy on 18/02/2026.
-//
-
 import SwiftUI
 
 struct TermsAndConditionView: View {
     @Environment(\.dismiss) private var dismiss
     
-    // Applying .capitalized to achieve the "Title case" specified in Figma
-    private let termsText = "Our Privacy Policy explains what personal information we collect, how we use personal information, how personal information is shared, and privacy rights. Our Privacy Policy explains what personal information we collect, how we use personal information, how personal information is shared, and privacy rights. Our Privacy Policy explains what personal information we collect, how we use personal information, how personal information is shared, and privacy rights. personal information we collect, how we use personal information, how personal information is shared, and privacy rights. personal information we collect, how we use personal information, how personal information is shared, and privacy rights. ".capitalized
+    // 🛠️ FIX: Added .newlocalized
+    private let termsText = "Our Privacy Policy explains what personal information we collect, how we use personal information, how personal information is shared, and privacy rights. Our Privacy Policy explains what personal information we collect, how we use personal information, how personal information is shared, and privacy rights. Our Privacy Policy explains what personal information we collect, how we use personal information, how personal information is shared, and privacy rights. personal information we collect, how we use personal information, how personal information is shared, and privacy rights. personal information we collect, how we use personal information, how personal information is shared, and privacy rights. ".newlocalized.capitalized
     
     var body: some View {
         VStack(spacing: 0) {
             TopRowNotForHome(
-                title: "Terms & Conditions",
+                // 🛠️ FIX: Added .newlocalized
+                title: "Terms & Conditions".newlocalized,
                 showBackButton: true,
                 kindOfTopRow: .none,
                 onBack: {

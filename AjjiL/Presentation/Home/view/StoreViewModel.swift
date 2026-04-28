@@ -48,12 +48,19 @@ class StoreViewModel {
     
     // MARK: - Toggle Favorite
     func toggleFavorite(for productID: Int) async {
-        // Safety check: Prevent guest users from making this API call
         guard !Constants.isGuestMode else { return }
         
         let isCurrentlyFavorite = FavoritesManager.shared.isFavorite(productID)
+        
+        // 1. Optimistic UI Update globally
         _ = FavoritesManager.shared.toggleLocal(productID)
         
+        // 🛠️ FIX: Update the local array so NavigationLink passes fresh data
+        if let index = storeProducts.firstIndex(where: { $0.id == productID }) {
+            storeProducts[index].isFavorite = !isCurrentlyFavorite
+        }
+        
+        // 2. Call Backend
         do {
             let branchProductIDString = String(productID)
             let response: ToggleFavoriteModel
@@ -64,11 +71,21 @@ class StoreViewModel {
                 response = try await addFavoriteProductUC.execute(branchProductId: branchProductIDString)
             }
             
+            // 3. Revert if backend says it failed
             if response.status == false {
-                _ = FavoritesManager.shared.toggleLocal(productID) // Revert
+                revertFavoriteState(for: productID, wasFavorite: isCurrentlyFavorite)
             }
         } catch {
-            _ = FavoritesManager.shared.toggleLocal(productID) // Revert
+            // Revert on network error
+            revertFavoriteState(for: productID, wasFavorite: isCurrentlyFavorite)
+        }
+    }
+    
+    // 🛠️ FIX: Clean helper function to revert both global manager and local array
+    private func revertFavoriteState(for productID: Int, wasFavorite: Bool) {
+        _ = FavoritesManager.shared.toggleLocal(productID) // Revert global manager
+        if let index = storeProducts.firstIndex(where: { $0.id == productID }) {
+            storeProducts[index].isFavorite = wasFavorite // Revert local array
         }
     }
     
@@ -83,7 +100,7 @@ class StoreViewModel {
                 self.storeProducts = response.data?.products?.map { $0.asFeaturedProductEntity() } ?? []
             }
             
-            // 👉 NEW: Sync fetched favorites to the Source of Truth
+            // Sync fetched favorites to the Source of Truth
             for product in self.storeProducts {
                 FavoritesManager.shared.setFavorite(product.id, isFavorite: product.isFavorite)
             }
@@ -116,26 +133,23 @@ class StoreViewModel {
     }
     
     func addToCart(product: HomeFeaturedProductDataEntity, branchId: Int) async {
-        // Safety check: Prevent guest users from making this API call
         guard !Constants.isGuestMode else { return }
         
         let branchIdString = String(branchId)
-        // Use barcode if available, otherwise fallback to the product ID
         let barcodeString = product.barcode.isEmpty ? String(product.id) : product.barcode
         let defaultQuantity = "1"
         
-        // Execute network call, ignore errors
         _ = try? await addProductByBarcodeToCartUC.execute(
             branchId: branchIdString,
             barcode: barcodeString,
             quantity: defaultQuantity
         )
         
-        // Always show the exact success toast requested
+        // 🛠️ FIX: Localized Toast
         toast = FancyToast(
             type: .success,
-            title: "Success",
-            message: "added to the cart successfully"
+            title: "Success".newlocalized,
+            message: "added to the cart successfully".newlocalized
         )
     }
 }

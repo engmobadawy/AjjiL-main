@@ -18,7 +18,6 @@ struct TopRowNotForHome: View {
     }
     
     var cartCount: Int = 0
-    var notificationCount: Int = 0
     var kindOfTopRow: TopRowButtonMode
     
     // Actions
@@ -28,17 +27,16 @@ struct TopRowNotForHome: View {
     var onFilter: (() -> Void)?
     var onRate: (() -> Void)?
 
-    // State for guest login sheet
+    // State Management
+    @State private var viewModel = NotificationBadgeViewModel()
     @State private var showGuestLoginSheet: Bool = false
-    
-    // NEW: State for navigation to NotificationsView
     @State private var navigateToNotifications: Bool = false
 
     private let iconBackgroundColor = Color(red: 214/255, green: 255/255, blue: 248/255)
 
     // Helper to intercept actions for guests
     private func handleAction(_ action: (() -> Void)?) {
-        if Constants.isGuestMode { // Assuming Constants.isGuestMode exists in your project
+        if Constants.isGuestMode {
             showGuestLoginSheet = true
         } else {
             action?()
@@ -50,13 +48,13 @@ struct TopRowNotForHome: View {
             
             // MARK: - Back Button
             if showBackButton {
-                // We DO NOT intercept the back button for guests
                 Button(action: { onBack?() }) {
                     Image(systemName: "arrow.left")
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundStyle(.primary)
                         .frame(width: 40, height: 42)
                         .contentShape(.circle)
+                        .rotationEffect(.degrees(MOLHLanguage.isRTLLanguage() ? 180 : 0))
                 }
                 .buttonStyle(.plain)
             }
@@ -71,55 +69,64 @@ struct TopRowNotForHome: View {
             // MARK: - Action Buttons
             switch kindOfTopRow {
             case .justNotification:
-                Button(action: {
-                    handleAction {
-                        navigateToNotifications = true
-                        onNotification?() // Call the parent's closure as well, if provided
-                    }
-                }) {
-                    // Assuming NotificationBell is defined elsewhere in your project
-                    Text("🔔") // Placeholder for NotificationBell(count: notificationCount)
+                BadgeIconButton(
+                    icon: "bell.fill",
+                    isSystemImage: true,
+                    count: viewModel.unreadCount, // Dynamically fetched
+                    action: {
+                        handleAction {
+                            navigateToNotifications = true
+                            onNotification?()
+                        }
+                    },
+                    offsetX: 8,
+                    offsetY: -14
+                )
+                .frame(width: 42, height: 42)
+                .background {
+                    Circle()
+                        .fill(iconBackgroundColor)
+                        .strokeBorder(.white, lineWidth: 1)
                 }
                 
             case .withCartAndNotification:
                 HStack(alignment: .bottom, spacing: 0) {
-                    Color.clear
-                        .frame(width: 12, height: 12)
+                    Color.clear.frame(width: 12, height: 12)
                     
-                    // Cart Button (Custom Asset)
+                    // MARK: - Cart Button
                     BadgeIconButton(
                         icon: "car",
                         isSystemImage: false,
                         count: cartCount,
+                        showBadgeText: false, // <-- ONLY SHOW ORANGE DOT
                         action: { handleAction(onCart) },
-                        offsetX: -16,
-                        offsetY: -14
+                        offsetX: -10,  // <-- Negative X puts the badge on the LEFT
+                        offsetY: -14  // <-- Negative Y puts the badge on the TOP
                     )
                     .frame(width: 40, height: 42)
                     
-                    // The Vertical Separator
+                    // Vertical Separator
                     Rectangle()
                         .fill(.white)
                         .frame(width: 1, height: 24)
                     
-                    // Bell Button (SF Symbol)
+                    // MARK: - Bell Button
                     BadgeIconButton(
                         icon: "bell.fill",
                         isSystemImage: true,
-                        count: notificationCount,
+                        count: viewModel.unreadCount, // Dynamically fetched
                         action: {
                             handleAction {
                                 navigateToNotifications = true
                                 onNotification?()
                             }
                         },
-                        offsetX: 8,
+                        offsetX: 8,   // <-- Positive X puts the badge on the RIGHT
                         offsetY: -14
                     )
                     .frame(width: 40, height: 42)
                     
-                    Color.clear
-                        .frame(width: 8, height: 8)
+                    Color.clear.frame(width: 8, height: 8)
                 }
                 .background {
                     Capsule()
@@ -128,23 +135,24 @@ struct TopRowNotForHome: View {
                 }
                 
             case .filter:
-                ActionPillButton(
-                    title: "Filter",
-                    iconName: "filter",
-                    isSystemImage: false,
-                    backgroundColor: iconBackgroundColor,
-                    action: { handleAction(onFilter) }
-                )
-                
+                            ActionPillButton(
+                                // 🛠️ FIX: Added .newlocalized
+                                title: "Filter".newlocalized,
+                                iconName: "filter",
+                                isSystemImage: false,
+                                backgroundColor: iconBackgroundColor,
+                                action: { handleAction(onFilter) }
+                            )
+                            
             case .rate:
-                ActionPillButton(
-                    title: "Rate",
-                    iconName: "star.fill",
-                    isSystemImage: true,
-                    backgroundColor: iconBackgroundColor,
-                    action: { handleAction(onRate) }
-                )
-                
+                            ActionPillButton(
+                                // 🛠️ FIX: Added .newlocalized
+                                title: "Rate".newlocalized,
+                                iconName: "star.fill",
+                                isSystemImage: true,
+                                backgroundColor: iconBackgroundColor,
+                                action: { handleAction(onRate) }
+                            )
             case .none:
                 Spacer()
             }
@@ -162,27 +170,33 @@ struct TopRowNotForHome: View {
                 .ignoresSafeArea(edges: .top)
         }
         .sheet(isPresented: $showGuestLoginSheet) {
-            // Replace with your actual GuestLoginSheetView
-            Text("Guest Login Sheet")
+            GuestLoginSheetView() // Replace with your actual view if different
                 .presentationDetents([.fraction(0.5), .medium])
                 .presentationDragIndicator(.visible)
                 .background(.white)
         }
-        // NEW: Navigation Destination for Notifications
         .navigationDestination(isPresented: $navigateToNotifications) {
-            // Inject your UseCase here just like we set up previously
             let networkService = NetworkService()
             let repository = NotificationRepositoryImpl(networkService: networkService)
             let useCase = GetNotificationsUseCase(repository: repository)
             
             NotificationsView(useCase: useCase)
         }
+        .task {
+            // Only fetch if the mode includes the notification bell
+            if kindOfTopRow == .justNotification || kindOfTopRow == .withCartAndNotification {
+                await viewModel.fetchUnreadCount()
+            }
+        }
+        .onChange(of: navigateToNotifications) { _, newValue in
+            if newValue == false {
+                Task {
+                    await viewModel.fetchUnreadCount()
+                }
+            }
+        }
     }
 }
-
-
-
-
 
 // MARK: - Reusable Action Pill Button
 private struct ActionPillButton: View {
@@ -197,14 +211,12 @@ private struct ActionPillButton: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 0) {
-                // Text Area (56px width remaining)
                 Text(title)
                     .font(.custom("Poppins-Regular", size: 18))
                     .foregroundStyle(Color(red: 0.2, green: 0.2, blue: 0.2))
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.leading, 4)
                 
-                // Orange Circle Area (42px)
                 ZStack {
                     Circle()
                         .fill(circleColor)
@@ -229,7 +241,7 @@ private struct ActionPillButton: View {
             }
         }
         .buttonStyle(.plain)
-        .contentShape(Capsule())
+        .contentShape(.capsule)
     }
 }
 
@@ -238,6 +250,7 @@ private struct BadgeIconButton: View {
     let icon: String
     var isSystemImage: Bool = true
     let count: Int
+    var showBadgeText: Bool = true
     let action: () -> Void
     var offsetImage: CGFloat = 8
     
@@ -259,19 +272,63 @@ private struct BadgeIconButton: View {
                         .foregroundStyle(Color(red: 0.1, green: 0.15, blue: 0.2))
                 }
                 
-                Text(count < 100 ? count.formatted() : "99")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(.white)
-                    .frame(minWidth: 14, minHeight: 14)
-                    .padding(2)
-                    .background(.orange, in: .circle)
-                    .offset(x: offsetX, y: offsetY)
-                    .transition(.scale.combined(with: .opacity))
+                // CONDITIONAL BADGE RENDERING
+                if showBadgeText {
+                    Text(count < 100 ? count.formatted() : "99")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(.white)
+                        .frame(minWidth: 14, minHeight: 14)
+                        .padding(2)
+                        .background(.orange, in: .circle)
+                        .offset(x: offsetX, y: offsetY)
+                        .transition(.scale.combined(with: .opacity))
+                } else {
+                    // Exact matching dimensions of the text badge (14 min + 4 total padding = 18x18)
+                    Circle()
+                        .fill(.orange)
+                        .frame(width: 18, height: 18)
+                        .offset(x: offsetX, y: offsetY)
+                        .transition(.scale.combined(with: .opacity))
+                }
             }
             .offset(y: offsetImage)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .contentShape(Rectangle())
+            .contentShape(.rect)
         }
         .animation(.spring(response: 0.3, dampingFraction: 0.6), value: count)
+    }
+}
+
+// MARK: - Notification Badge View Model
+@Observable
+@MainActor
+final class NotificationBadgeViewModel {
+    private(set) var unreadCount: Int = 0
+    private let getUnreadCountUseCase: GetUnreadNotificationCountUseCase
+    
+    init(useCase: GetUnreadNotificationCountUseCase? = nil) {
+        if let useCase = useCase {
+            self.getUnreadCountUseCase = useCase
+        } else {
+            // Default dependency injection
+            let networkService = NetworkService()
+            let repository = NotificationRepositoryImpl(networkService: networkService)
+            self.getUnreadCountUseCase = GetUnreadNotificationCountUseCase(repository: repository)
+        }
+    }
+    
+    func fetchUnreadCount() async {
+        // Prevent unnecessary network calls for guests
+        guard !Constants.isGuestMode else {
+            self.unreadCount = 0
+            return
+        }
+        
+        do {
+            let count = try await getUnreadCountUseCase.execute()
+            self.unreadCount = count
+        } catch {
+            print("Failed to fetch unread notification count: \(error)")
+        }
     }
 }

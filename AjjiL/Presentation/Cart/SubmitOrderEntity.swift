@@ -34,7 +34,8 @@ extension SubmitOrderModel {
     func map() -> SubmitOrderEntity {
         return SubmitOrderEntity(
             status: self.status ?? false,
-            message: self.message ?? "Unknown error",
+            // 🛠️ FIX: Added .newlocalized
+            message: self.message ?? "Unknown error".newlocalized,
             orderId: self.data?.orderId ?? 0,
             paymentLink: self.data?.paymentLink ?? ""
         )

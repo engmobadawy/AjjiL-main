@@ -99,19 +99,24 @@ final class ProfileViewModel {
         case .typeMismatch(let type, let context):
             let key = context.codingPath.last?.stringValue ?? "unknown"
             print("❌ Type Mismatch: Expected \(type) for key '\(key)'.")
-            errorMessage = "Data format error."
+            // 🛠️ FIX: Localized
+            errorMessage = "Data format error.".newlocalized
         case .keyNotFound(let key, _):
             print("❌ Key Not Found: The key '\(key.stringValue)' is missing.")
-            errorMessage = "Missing data error."
+            // 🛠️ FIX: Localized
+            errorMessage = "Missing data error.".newlocalized
         case .valueNotFound(let type, let context):
             let key = context.codingPath.last?.stringValue ?? "unknown"
             print("❌ Value Not Found: Expected \(type) for key '\(key)' but got null.")
-            errorMessage = "Null value error."
+            // 🛠️ FIX: Localized
+            errorMessage = "Null value error.".newlocalized
         case .dataCorrupted(let context):
             print("❌ Data Corrupted: \(context.debugDescription)")
-            errorMessage = "Data corrupted."
+            // 🛠️ FIX: Localized
+            errorMessage = "Data corrupted.".newlocalized
         @unknown default:
-            errorMessage = "An unexpected error occurred."
+            // 🛠️ FIX: Localized
+            errorMessage = "An unexpected error occurred.".newlocalized
         }
     }
 }

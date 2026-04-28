@@ -26,6 +26,7 @@ class HomeViewModel {
     private let removeFavoriteProductUC: RemoveFavoriteProductUC
     private let getBranchesUC: GetBranchesUC
     private let addProductByBarcodeToCartUC: AddProductByBarcodeToCartUC
+    private let getMapBranchesUC: GetMapBranchesUC
     
     init(
         getHomeDataUC: GetHomeDataUC,
@@ -35,6 +36,7 @@ class HomeViewModel {
         addFavoriteProductUC: AddFavoriteProductUC,
         removeFavoriteProductUC: RemoveFavoriteProductUC ,
         getBranchesUC: GetBranchesUC,
+        getMapBranchesUC: GetMapBranchesUC,
         addProductByBarcodeToCartUC: AddProductByBarcodeToCartUC
     ) {
         self.getHomeDataUC = getHomeDataUC
@@ -44,6 +46,7 @@ class HomeViewModel {
         self.addFavoriteProductUC = addFavoriteProductUC
         self.removeFavoriteProductUC = removeFavoriteProductUC
         self.getBranchesUC = getBranchesUC
+        self.getMapBranchesUC = getMapBranchesUC
         self.addProductByBarcodeToCartUC = addProductByBarcodeToCartUC
     }
     
@@ -61,7 +64,7 @@ class HomeViewModel {
         homeStores = stores ?? []
         featuredProducts = products ?? []
         
-        // 👉 NEW: Sync fetched favorites to the Source of Truth
+        // Sync fetched favorites to the Source of Truth
         if let products = products {
             for product in products {
                 FavoritesManager.shared.setFavorite(product.id, isFavorite: product.isFavorite)
@@ -77,12 +80,17 @@ class HomeViewModel {
     
     // MARK: - ASYNC TOGGLE
     func toggleFavorite(for productID: Int) async {
-        // Safety check: Prevent guest users from making this API call
         guard !Constants.isGuestMode else { return }
         
-        // 1. Optimistic UI Update globally
         let isCurrentlyFavorite = FavoritesManager.shared.isFavorite(productID)
+        
+        // 1. Optimistic UI Update globally
         _ = FavoritesManager.shared.toggleLocal(productID)
+        
+        // 🛠️ FIX: Update local array so NavigationLink passes fresh data to ProductDetailsView
+        if let index = featuredProducts.firstIndex(where: { $0.id == productID }) {
+            featuredProducts[index].isFavorite = !isCurrentlyFavorite
+        }
         
         // 2. Call backend
         do {
@@ -97,14 +105,22 @@ class HomeViewModel {
             
             // 3. Revert if backend says it failed
             if response.status == false {
-                _ = FavoritesManager.shared.toggleLocal(productID) // Revert
+                revertFavoriteState(for: productID, wasFavorite: isCurrentlyFavorite)
                 errorMessage = response.message ?? "Failed to update favorite.".newlocalized
                 toast = FancyToast(type: .error, title: "Error".newlocalized, message: errorMessage ?? "")
             }
         } catch {
-            _ = FavoritesManager.shared.toggleLocal(productID) // Revert
-            errorMessage = error.localizedDescription // System errors are usually localized by default
+            revertFavoriteState(for: productID, wasFavorite: isCurrentlyFavorite)
+            errorMessage = error.localizedDescription
             toast = FancyToast(type: .error, title: "Error".newlocalized, message: errorMessage ?? "")
+        }
+    }
+    
+    // 🛠️ FIX: Helper to cleanly revert both global manager and local array
+    private func revertFavoriteState(for productID: Int, wasFavorite: Bool) {
+        _ = FavoritesManager.shared.toggleLocal(productID) // Revert global manager
+        if let index = featuredProducts.firstIndex(where: { $0.id == productID }) {
+            featuredProducts[index].isFavorite = wasFavorite // Revert local array
         }
     }
     
@@ -124,22 +140,18 @@ class HomeViewModel {
     
     // MARK: - Add to Cart
     func addToCart(product: HomeFeaturedProductDataEntity, branchId: Int) async {
-        // Safety check: Prevent guest users from making this API call
         guard !Constants.isGuestMode else { return }
         
         let branchIdString = String(branchId)
-        // Use barcode if available, otherwise fallback to the product ID
         let barcodeString = product.barcode.isEmpty ? String(product.id) : product.barcode
         let defaultQuantity = "1"
         
-        // Execute the network call but ignore any errors using try?
         _ = try? await addProductByBarcodeToCartUC.execute(
             branchId: branchIdString,
             barcode: barcodeString,
             quantity: defaultQuantity
         )
         
-        // Always show the exact success toast requested
         toast = FancyToast(
             type: .success,
             title: "Success".newlocalized,

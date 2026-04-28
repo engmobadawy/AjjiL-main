@@ -66,27 +66,27 @@ final class CartViewModel {
     }
     
     // MARK: - Apply Promo Code
-    func applyPromo(cartId: String, code: String) async {
-        guard !code.isEmpty else { return }
-        isApplyingPromo = true
-        promoError = nil
-        
-        do {
-            let response = try await verifyPromoCodeUC.execute(cartId: cartId, couponCode: code)
+        func applyPromo(cartId: String, code: String) async {
+            guard !code.isEmpty else { return }
+            isApplyingPromo = true
+            promoError = nil
             
-            if response.status == true, let data = response.data {
-                self.promoData = data
-            } else {
-                // If backend returns a false status but doesn't throw a network error
-                self.promoError = response.message ?? "Not valid code"
+            do {
+                let response = try await verifyPromoCodeUC.execute(cartId: cartId, couponCode: code)
+                
+                if response.status == true, let data = response.data {
+                    self.promoData = data
+                } else {
+                    // 🛠️ FIX: Added .newlocalized
+                    self.promoError = response.message ?? "Not valid code".newlocalized
+                }
+            } catch {
+                // 🛠️ FIX: Added .newlocalized
+                self.promoError = "Not valid code".newlocalized
             }
-        } catch {
-            // If the network call throws an error
-            self.promoError = "Not valid code"
+            
+            isApplyingPromo = false
         }
-        
-        isApplyingPromo = false
-    }
     
     
     
@@ -234,7 +234,7 @@ struct CartView: View {
     var body: some View {
         VStack(spacing: 0) {
             TopRowNotForHome(
-                title: "\(storeName) - Cart",
+                title: "\(storeName) - Cart".newlocalized,
                 showBackButton: true,
                 kindOfTopRow: .justNotification,
                 onBack: {
@@ -251,6 +251,7 @@ struct CartView: View {
             
             contentState
         }
+        .navigationBarBackButtonHidden(true)
         .onTapGesture {
             isKeyboardOpen = false
         }
@@ -328,11 +329,11 @@ struct CartView: View {
                     } else {
                         // Payment Selection Component
                         VStack(alignment: .leading, spacing: 16) {
-                            Text("Checkout Now")
+                            Text("Checkout Now".newlocalized)
                                 .font(.custom("Poppins-Bold", size: 20))
                                 .foregroundStyle(Color.titleDark)
                             
-                            Text("Select The Suitable Payment Method For You")
+                            Text("Select The Suitable Payment Method For You".newlocalized)
                                 .font(.custom("Poppins-Regular", size: 16))
                                 .foregroundStyle(.secondary)
                             
@@ -386,7 +387,7 @@ struct CartView: View {
                     )
                     
                     if !isKeyboardOpen {
-                        GreenButton(title: isCheckoutPhase ? "Confirm Payment" : "Checkout") {
+                        GreenButton(title: isCheckoutPhase ? "Confirm Payment".newlocalized : "Checkout".newlocalized) {
                             if isCheckoutPhase {
                                 guard let selectedMethod = selectedPaymentMethod else { return }
                                 print("🟢 [CartView] Confirm Payment button tapped! Selected Method: \(selectedMethod.rawValue)")
@@ -668,16 +669,16 @@ struct CartSummaryFooter: View {
     
     var body: some View {
         VStack(spacing: 12) {
-            summaryRow(title: "Subtotal (Excl. VAT)", value: "\(totals.totalExc)")
-            summaryRow(title: "Subtotal (Incl. VAT)", value: "\(totals.totalInc)")
-            summaryRow(title: "Vat Value", value: "\(totals.totalTax)")
-            summaryRow(title: "Discount", value: "\(totals.discount)", valueColor: .red, isDiscount: true)
+            summaryRow(title: "Subtotal (Excl. VAT)".newlocalized, value: "\(totals.totalExc)")
+            summaryRow(title: "Subtotal (Incl. VAT)".newlocalized, value: "\(totals.totalInc)")
+            summaryRow(title: "Vat Value".newlocalized, value: "\(totals.totalTax)")
+            summaryRow(title: "Discount".newlocalized, value: "\(totals.discount)", valueColor: .red, isDiscount: true)
             
             Divider()
                 .padding(.vertical, 4)
             
             HStack {
-                Text("Total Price")
+                Text("Total Price".newlocalized)
                     .font(.title3)
                     .fontWeight(.bold)
                 
@@ -730,13 +731,14 @@ struct CartSummaryFooter2: View {
         VStack(spacing: 16) {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 0) {
-                    TextField("coupons", text: $couponCode)
-                        .focused(isKeyboardOpen)
-                        .padding(.horizontal, 16)
-                        .foregroundStyle(Color.titleDark)
-                        .disabled(promoData != nil || isApplyingPromo)
-                    
-                    Button(promoData != nil ? "Applied" : "Apply") {
+                    TextField("coupons".newlocalized, text: $couponCode)
+                                            .focused(isKeyboardOpen)
+                                            .padding(.horizontal, 16)
+                                            .foregroundStyle(Color.titleDark)
+                                            .disabled(promoData != nil || isApplyingPromo)
+                                        
+                                        // 🛠️ FIX: Added .newlocalized
+                        Button(promoData != nil ? "Applied".newlocalized : "Apply".newlocalized) {
                         withAnimation(.snappy) {
                             if promoData != nil {
                                 onRemoveCoupon()
@@ -773,12 +775,12 @@ struct CartSummaryFooter2: View {
             
             // MARK: - price list
             VStack(spacing: 12) {
-                summaryRow(title: "subtotal (no vat)", value: "\(totals.totalExc)")
-                summaryRow(title: "subtotal (with vat)", value: "\(totals.totalInc)")
-                summaryRow(title: "vat", value: "\(totals.totalTax)")
-                
-                let displayDiscount = promoData != nil ? "\(promoData!.couponValue ?? 0)" : "\(totals.discount)"
-                summaryRow(title: "discount", value: displayDiscount, valueColor: .red, isDiscount: true)
+                summaryRow(title: "subtotal (no vat)".newlocalized, value: "\(totals.totalExc)")
+                                summaryRow(title: "subtotal (with vat)".newlocalized, value: "\(totals.totalInc)")
+                                summaryRow(title: "vat".newlocalized, value: "\(totals.totalTax)")
+                                
+                                let displayDiscount = promoData != nil ? "\(promoData!.couponValue ?? 0)" : "\(totals.discount)"
+                                summaryRow(title: "discount".newlocalized, value: displayDiscount, valueColor: .red, isDiscount: true)
             }
             
             Divider()
@@ -786,7 +788,7 @@ struct CartSummaryFooter2: View {
             
             // MARK: - final total
             HStack {
-                Text("total price")
+                Text("total price".newlocalized)
                     .font(.title3)
                     .fontWeight(.bold)
                     .foregroundStyle(Color.titleDark)
@@ -905,11 +907,13 @@ struct PaymentGatewaySheet: View {
     var body: some View {
         NavigationStack {
             WebView(url: destination.url)
-                .navigationTitle("Secure Payment")
+                // 🛠️ FIX: Added .newlocalized
+                .navigationTitle("Secure Payment".newlocalized)
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
-                        Button("Cancel") {
+                        // 🛠️ FIX: Added .newlocalized
+                        Button("back".newlocalized) {
                             dismiss()
                         }
                     }

@@ -38,14 +38,13 @@ struct ChangePasswordView: View {
         VStack(spacing: 0) {
             TopRowWithBack(onBack: onBack)
             
-            
-            
             ScrollView {
                 VStack(spacing: 18) {
                     headerSection
                     formFields
                     
-                    GreenButton(title: model.isLoading ? " " : "Save".localized(), action: handleChangePassword)
+                    // 🛠️ FIX: Added .newlocalized
+                    GreenButton(title: model.isLoading ? " " : "Save".newlocalized, action: handleChangePassword)
                         .disabled(!model.isFormValid || model.isLoading)
                         .opacity((model.isFormValid && !model.isLoading) ? 1.0 : 0.45)
                         .overlay {
@@ -64,7 +63,8 @@ struct ChangePasswordView: View {
         }
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {
-                Button("Done".localized()) {
+                // 🛠️ FIX: Added .newlocalized
+                Button("Done".newlocalized) {
                     hideKeyboard()
                     handleChangePassword()
                 }
@@ -85,13 +85,15 @@ struct ChangePasswordView: View {
         .toastView(toast: $toast)
         .onChange(of: model.errorMessage) { _, newError in
             if let message = newError {
-                toast = FancyToast(type: .error, title: "error".localized(), message: message)
+                // 🛠️ FIX: Added .newlocalized
+                toast = FancyToast(type: .error, title: "error".newlocalized, message: message)
                 model.errorMessage = nil
             }
         }
         .onChange(of: model.successMessage) { _, newSuccess in
             if let message = newSuccess {
-                toast = FancyToast(type: .success, title: "success".localized(), message: message)
+                // 🛠️ FIX: Added .newlocalized
+                toast = FancyToast(type: .success, title: "success".newlocalized, message: message)
                 model.successMessage = nil
             }
         }
@@ -105,7 +107,8 @@ struct ChangePasswordView: View {
                 isValid: model.oldPasswordError == nil,
                 errorMessage: model.oldPasswordError,
                 text: $model.oldPassword,
-                placeholder: "Old Password".localized(),
+                // 🛠️ FIX: Added .newlocalized
+                placeholder: "Old Password".newlocalized,
                 backgroundColor: .goodGray,
                 strokeColor: oldPasswordStrokeColor,
                 preset: .password,
@@ -128,7 +131,8 @@ struct ChangePasswordView: View {
                 isValid: model.newPasswordError == nil,
                 errorMessage: model.newPasswordError,
                 text: $model.newPassword,
-                placeholder: "New Password".localized(),
+                // 🛠️ FIX: Added .newlocalized
+                placeholder: "New Password".newlocalized,
                 backgroundColor: .goodGray,
                 strokeColor: newPasswordStrokeColor,
                 preset: .newPassword,
@@ -151,7 +155,8 @@ struct ChangePasswordView: View {
                 isValid: model.confirmError == nil,
                 errorMessage: model.confirmError,
                 text: $model.confirmPassword,
-                placeholder: "Confirm New Password".localized(),
+                // 🛠️ FIX: Added .newlocalized
+                placeholder: "Confirm New Password".newlocalized,
                 backgroundColor: .goodGray,
                 strokeColor: confirmStrokeColor,
                 preset: .newPassword,
@@ -175,11 +180,13 @@ struct ChangePasswordView: View {
 private extension ChangePasswordView {
     var headerSection: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("Change Password".localized())
+            // 🛠️ FIX: Added .newlocalized
+            Text("Change Password".newlocalized)
                 .font(.custom("Poppins-Bold", size: 28))
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            Text("Type your old password to verify you and then type your new password.".localized())
+            // 🛠️ FIX: Added .newlocalized
+            Text("Type your old password to verify you and then type your new password.".newlocalized)
                 .font(.custom("Poppins-Regular", size: 16))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -226,9 +233,6 @@ private extension ChangePasswordView {
         model.isConfirmValid || (focusedField == .confirm && model.confirmPassword.isEmpty) ? .brandGreen : nil
     }
 }
-
-
-
 
 
 import SwiftUI

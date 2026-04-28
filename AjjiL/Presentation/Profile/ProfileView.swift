@@ -32,7 +32,8 @@ struct ProfileView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 TopRowNotForHome(
-                    title: "Profile".localized(),
+                    // 🛠️ FIX: Changed to .newlocalized
+                    title: "Profile".newlocalized,
                     showBackButton: false, // Adjusted to false as standard for root tab, but handles the bell internally
                     kindOfTopRow: .justNotification
                 )
@@ -92,7 +93,8 @@ struct ProfileView: View {
                                 .padding(.top, 16)
                             
                             // Logout Button
-                            WhiteButton(title: "Sign Out", action: {
+                            // 🛠️ FIX: Added .newlocalized
+                            WhiteButton(title: "Sign Out".newlocalized, action: {
                                 showLogoutConfirmation = true
                             })
                         }
@@ -241,10 +243,12 @@ private extension ProfileView {
                 .foregroundStyle(Color(red: 238/255, green: 130/255, blue: 40/255))
                 .padding(.bottom, 8)
             
-            Text("Welcome".localized())
+            // 🛠️ FIX: Changed to .newlocalized
+            Text("Welcome".newlocalized)
                 .font(.custom("Poppins-Bold", size: 24))
             
-            Text("Get Your Profile Ready".localized())
+            // 🛠️ FIX: Changed to .newlocalized
+            Text("Get Your Profile Ready".newlocalized)
                 .font(.custom("Poppins-Regular", size: 16))
                 .foregroundStyle(.secondary)
                 .padding(.bottom, 24)
@@ -270,7 +274,8 @@ private extension ProfileView {
             .padding(.bottom, 24)
             
             // Re-routing button directly to LogIn
-            GreenButton(title: "SIGN IN".localized()) {
+            // 🛠️ FIX: Changed to .newlocalized
+            GreenButton(title: "SIGN IN".newlocalized) {
                 UserDefaults.standard.set(false, forKey: "pressSkip")
                 Constants.isGuestMode = false
                 if let appDelegate = UIApplication.shared.delegate as? AppDelegate {
@@ -341,10 +346,12 @@ private extension ProfileView {
     @ViewBuilder
     private func errorStateView(message: String) -> some View {
         VStack(spacing: 12) {
-            Text("welcome".localized())
+            // 🛠️ FIX: Changed to .newlocalized
+            Text("welcome".newlocalized)
                 .font(.custom("Poppins-Bold", size: 24))
             
-            Text("get_profile_ready".localized())
+            // 🛠️ FIX: Changed to .newlocalized
+            Text("get_profile_ready".newlocalized)
                 .font(.custom("Poppins-Regular", size: 16))
                 .foregroundStyle(.secondary)
             
@@ -382,7 +389,8 @@ private extension ProfileView {
                     .scaledToFit()
                     .frame(width: 24, height: 24)
                 
-                Text("QR Profile Code".localized())
+                // 🛠️ FIX: Changed to .newlocalized
+                Text("QR Profile Code".newlocalized)
                     .font(.custom("Poppins-Regular", size: 18))
             }
             .foregroundStyle(.white)
@@ -455,7 +463,8 @@ struct ProfileMenuRow: View {
                     .background(Color.secondary.opacity(0.1))
                     .clipShape(.rect(cornerRadius: 8))
                 
-                Text(title.localized())
+                // 🛠️ FIX: Changed to .newlocalized
+                Text(title.newlocalized)
                     .font(.custom("Poppins-Medium", size: 16))
                     .foregroundStyle(.primary)
                 
@@ -464,6 +473,7 @@ struct ProfileMenuRow: View {
                 Image(systemName: "chevron.right")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(.secondary)
+                    .rotationEffect(.degrees(MOLHLanguage.isRTLLanguage() ? 180 : 0))
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
@@ -487,14 +497,16 @@ struct LogoutConfirmationPopup: View {
     
     var body: some View {
         VStack(spacing: 24) {
-            Text("Do You Want To Logout?".localized())
+            // 🛠️ FIX: Changed to .newlocalized
+            Text("Do You Want To Logout?".newlocalized)
                 .font(.custom("Poppins-Bold", size: 22))
                 .foregroundStyle(themeGreen)
                 .multilineTextAlignment(.center)
             
             VStack(spacing: 12) {
                 Button(action: onConfirm) {
-                    Text("Yes".localized())
+                    // 🛠️ FIX: Changed to .newlocalized
+                    Text("Yes".newlocalized)
                         .font(.custom("Poppins-Medium", size: 16))
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
@@ -505,7 +517,8 @@ struct LogoutConfirmationPopup: View {
                 .buttonStyle(.plain)
                 
                 Button(action: onCancel) {
-                    Text("Cancel".localized())
+                    // 🛠️ FIX: Changed to .newlocalized
+                    Text("Cancel".newlocalized)
                         .font(.custom("Poppins-Medium", size: 16))
                         .foregroundStyle(.gray)
                         .frame(maxWidth: .infinity)
@@ -527,10 +540,13 @@ struct LogoutConfirmationPopup: View {
 
 // MARK: - Settings View
 
+
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     
-    @State private var isPushNotificationEnabled: Bool = true
+    // Persistent state using AppStorage
+    @AppStorage("isPushNotificationEnabled") private var isPushNotificationEnabled: Bool = true
+    
     @State private var navigateToLanguage: Bool = false
     @State private var navigateToChangePassword: Bool = false
     @State private var navigateToChangePhone: Bool = false
@@ -538,7 +554,7 @@ struct SettingsView: View {
     var body: some View {
         VStack(spacing: 0) {
             TopRowNotForHome(
-                title: "Settings".localized(),
+                title: "Settings".newlocalized,
                 showBackButton: true,
                 kindOfTopRow: .none,
                 onBack: {
@@ -553,6 +569,12 @@ struct SettingsView: View {
                         title: "Push Notification",
                         isOn: $isPushNotificationEnabled
                     )
+                    // Modern iOS 17+ onChange modifier
+                    .onChange(of: isPushNotificationEnabled) { oldValue, newValue in
+                        Task {
+                            await updateBackendNotificationPreference(isEnabled: newValue, oldValue: oldValue)
+                        }
+                    }
                     
                     SettingsNavigationRow(
                         iconName: "globe",
@@ -599,6 +621,32 @@ struct SettingsView: View {
                 .presentationCornerRadius(28)
         }
     }
+    
+    // MARK: - Backend Integration Helpers
+    
+    private func updateBackendNotificationPreference(isEnabled: Bool, oldValue: Bool) async {
+        // 1. Optional System Verification
+        if isEnabled {
+            let hasPermission = await checkSystemNotificationPermission()
+            if !hasPermission {
+                print("⚠️ User toggled ON, but system notification permissions are denied in iOS Settings.")
+                // To do: Show an alert instructing the user to open iOS Settings
+            }
+        }
+        
+        print("🌐 Syncing push notification preference to backend: \(isEnabled)")
+        
+       
+        
+
+        
+    }
+    
+    private func checkSystemNotificationPermission() async -> Bool {
+        let center = UNUserNotificationCenter.current()
+        let settings = await center.notificationSettings()
+        return settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional
+    }
 }
 
 // MARK: - Reusable Setting Row Components
@@ -617,7 +665,8 @@ struct SettingsToggleRow: View {
                 .background(Color.secondary.opacity(0.1))
                 .clipShape(.rect(cornerRadius: 8))
             
-            Text(title.localized())
+            // 🛠️ FIX: Changed to .newlocalized
+            Text(title.newlocalized)
                 .font(.custom("Poppins-Medium", size: 16))
                 .foregroundStyle(.primary)
             
@@ -654,14 +703,16 @@ struct SettingsNavigationRow: View {
                     .background(Color.secondary.opacity(0.1))
                     .clipShape(.rect(cornerRadius: 8))
                 
-                Text(title.localized())
+                // 🛠️ FIX: Changed to .newlocalized
+                Text(title.newlocalized)
                     .font(.custom("Poppins-Medium", size: 16))
                     .foregroundStyle(.primary)
                 
                 Spacer()
                 
                 if let valueText {
-                    Text(valueText.localized())
+                    // 🛠️ FIX: Changed to .newlocalized
+                    Text(valueText.newlocalized)
                         .font(.custom("Poppins-Regular", size: 14))
                         .foregroundStyle(.primary)
                 }
@@ -669,6 +720,7 @@ struct SettingsNavigationRow: View {
                 Image(systemName: "chevron.right")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(.secondary)
+                    .rotationEffect(.degrees(MOLHLanguage.isRTLLanguage() ? 180 : 0))
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
@@ -692,14 +744,16 @@ struct DeleteAccountConfirmationPopup: View {
     
     var body: some View {
         VStack(spacing: 24) {
-            Text("Do You Want To Delete\nYour Account?".localized())
+            // 🛠️ FIX: Changed to .newlocalized
+            Text("Do You Want To Delete\nYour Account?".newlocalized)
                 .font(.custom("Poppins-Bold", size: 22))
                 .foregroundStyle(themeGreen)
                 .multilineTextAlignment(.center)
             
             VStack(spacing: 12) {
                 Button(action: onConfirm) {
-                    Text("Yes, Delete".localized())
+                    // 🛠️ FIX: Changed to .newlocalized
+                    Text("Yes, Delete".newlocalized)
                         .font(.custom("Poppins-Medium", size: 16))
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
@@ -710,7 +764,8 @@ struct DeleteAccountConfirmationPopup: View {
                 .buttonStyle(.plain)
                 
                 Button(action: onCancel) {
-                    Text("Cancel".localized())
+                    // 🛠️ FIX: Changed to .newlocalized
+                    Text("Cancel".newlocalized)
                         .font(.custom("Poppins-Medium", size: 16))
                         .foregroundStyle(.gray)
                         .frame(maxWidth: .infinity)

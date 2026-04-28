@@ -10,7 +10,7 @@ struct SearchBarButton: View {
     @Binding var text: String
     var placeholder: String = "Find The Store or Product"
     var onSubmit: (() -> Void)? = nil
-
+    @Environment(\.layoutDirection) private var appLayoutDirection
     @FocusState private var isFocused: Bool
 
     var body: some View {
@@ -19,16 +19,43 @@ struct SearchBarButton: View {
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(.secondary)
 
-            TextField(
-                "",
-                text: $text,
-                prompt: Text(placeholder).font(.custom("Poppins-Regular", size: 16))
-            )
+           
             .focused($isFocused)
             .submitLabel(.search)
             .textInputAutocapitalization(.never)
             .autocorrectionDisabled()
             .onSubmit { onSubmit?() }
+            
+            
+            
+            
+            
+            
+            if #available(iOS 26.0, *) {
+                TextField(
+                    "",
+                    text: $text,
+                    prompt: Text(placeholder.newlocalized).font(.custom("Poppins-Regular", size: 16))
+                )
+//                    .textInputPreset(preset)
+                    .font(.system(size: 18))
+                    .onSubmit { onSubmit?() }
+                    .multilineTextAlignment(strategy: .layoutBased)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    // 2. Give the TextField back the app's real layout direction
+                    .environment(\.layoutDirection, appLayoutDirection)
+            } else {
+                TextField("", text: $text)
+//                    .textInputPreset(preset)
+                    .font(.system(size: 18))
+                    .onSubmit { onSubmit?() }
+                    .textFieldStyle(PlainTextFieldStyle())
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    // 2. Give the TextField back the app's real layout direction
+                    .environment(\.layoutDirection, appLayoutDirection)
+            }
+
         }
         .padding(.horizontal, 14)
         .frame(height: 46)

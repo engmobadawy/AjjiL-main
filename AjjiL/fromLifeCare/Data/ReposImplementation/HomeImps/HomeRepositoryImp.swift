@@ -84,4 +84,20 @@ class HomeRepositoryImp: HomeRepository {
         throw URLError(.badServerResponse)
     }
     
+    
+    
+    // Add this method inside your HomeRepositoryImp class
+    func getMapBranches() async throws -> [MapBranchEntity] {
+        let publisher = networkService.fetchData(
+            target: HomeNetwork.getMapBranches,
+            responseClass: MapBranchesResponse.self
+        )
+        
+        for try await modelDTO in publisher.values {
+            return modelDTO.map()
+        }
+        
+        throw URLError(.badServerResponse)
+    }
+    
 }

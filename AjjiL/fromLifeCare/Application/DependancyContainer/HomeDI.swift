@@ -12,7 +12,6 @@ extension DependencyContainer {
         
         // Repositories
         private(set) lazy var homeRepo: HomeRepository = HomeRepositoryImp(networkService: DependencyContainer.shared.networkService)
-        
         private(set) lazy var cartRepo: CartRepository = CartRepositoryImp(networkService: DependencyContainer.shared.networkService)
         
         // Home UseCases
@@ -20,10 +19,13 @@ extension DependencyContainer {
         private(set) lazy var getHomeBannersUC: GetHomeBannersUC = GetHomeBannersUC(repo: homeRepo)
         private(set) lazy var getHomeStoresUC: GetHomeStoresUC = GetHomeStoresUC(repo: homeRepo)
         private(set) lazy var getFeaturedProductsUC: GetFeaturedProductsUC = GetFeaturedProductsUC(repo: homeRepo)
-        
-        // NEW: Instantiate the GetBranches UseCase
         private(set) lazy var getBranchesUC: GetBranchesUC = GetBranchesUC(repo: homeRepo)
+        
+        // 👈 NEW: Map Branches UseCase
+        private(set) lazy var getMapBranchesUC: GetMapBranchesUC = GetMapBranchesUC(repo: homeRepo)
+        
         private(set) lazy var addProductByBarcodeToCartUC: AddProductByBarcodeToCartUC = AddProductByBarcodeToCartUC(repo: cartRepo)
+        
         // HomeViewModel
         @MainActor
         private(set) lazy var homeVM: HomeViewModel = HomeViewModel(
@@ -33,11 +35,11 @@ extension DependencyContainer {
             getFeaturedProductsUC: getFeaturedProductsUC,
             addFavoriteProductUC: DependencyContainer.FavoritesDependency.shared.addFavoriteProductUC,
             removeFavoriteProductUC: DependencyContainer.FavoritesDependency.shared.removeFavoriteProductUC,
-            
-            // NEW: Pass the UseCase into the ViewModel
             getBranchesUC: getBranchesUC,
             
-            // 3. Pass the missing argument here
+            // 👈 Inject UseCase into your ViewModel here
+            getMapBranchesUC: getMapBranchesUC,
+            
             addProductByBarcodeToCartUC: addProductByBarcodeToCartUC
         )
     }

@@ -7,11 +7,14 @@
 
 
 import SwiftUI
+import Firebase
+import FirebaseMessaging
+import UserNotifications
 
 struct TabBarView: View {
     @State private var tabRouter = TabRouter() // Use the new router
     @State private var tabVisibility = TabBarVisibility()
-    
+    @State private var tokenViewModel = TokenSubmitterViewModel()
     var body: some View {
         ZStack {
             // Content for selected tab
@@ -99,9 +102,68 @@ struct TabBarView: View {
         }
         .environment(tabVisibility)
         .environment(tabRouter) // Inject the router into the environment
+        .task {
+                    await tokenViewModel.submitTokenIfNeeded()
+                }
     }
 }
 
+
+
+
+
+
+@Observable
+@MainActor
+final class TokenSubmitterViewModel {
+    private let submitTokenUseCase: SubmitTokenUseCase
+    
+    //
+    init(submitTokenUseCase: SubmitTokenUseCase? = nil) {
+        self.submitTokenUseCase = submitTokenUseCase ?? SubmitTokenUseCase(
+            repository: NotificationRepositoryImpl(
+                networkService: NetworkService()
+            )
+        )
+    }
+    
+    func submitTokenIfNeeded() async {
+        do {
+            // 1. ASK FOR PERMISSION FIRST
+            let center = UNUserNotificationCenter.current()
+            let granted = try await center.requestAuthorization(options: [.alert, .sound, .badge])
+            
+            if !granted {
+                print("⚠️ User denied notification permissions. We won't submit the token.")
+                return
+            }
+            
+            // ✅ FIX 2: Remove 'await' here since this is a synchronous UIKit method
+            UIApplication.shared.registerForRemoteNotifications()
+            
+            // 2. Await the Firebase FCM Token safely
+            let fcmToken = try await Messaging.messaging().token()
+            
+            // 3. Retrieve the unique Device ID
+            guard let deviceId = UIDevice.current.identifierForVendor?.uuidString else {
+                print("⚠️ Could not retrieve device ID")
+                return
+            }
+            
+            // 4. Execute the network request
+            let response = try await submitTokenUseCase.execute(token: fcmToken, deviceId: deviceId)
+            
+            if response.status == true {
+                print("✅ Successfully submitted FCM token to backend!")
+            } else {
+                print("❌ Backend returned an error: \(response.message ?? "Unknown")")
+            }
+            
+        } catch {
+            print("❌ Failed to fetch or submit FCM token: \(error.localizedDescription)")
+        }
+    }
+}
 
 
 @Observable

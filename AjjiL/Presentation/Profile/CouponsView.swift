@@ -61,7 +61,8 @@ struct CouponsView: View {
             VStack(spacing: 0) {
                 // Static top row that persists across all states
                 TopRowNotForHome(
-                    title: "Coupons",
+                    // 🛠️ FIX: Added .newlocalized
+                    title: "Coupons".newlocalized,
                     showBackButton: true,
                     kindOfTopRow: .none,
                     onBack: {
@@ -97,7 +98,8 @@ struct CouponsView: View {
                                 .foregroundStyle(.red)
                                 .multilineTextAlignment(.center)
                             
-                            Button("Try Again") {
+                            // 🛠️ FIX: Added .newlocalized
+                            Button("Try Again".newlocalized) {
                                 Task { await viewModel.fetchCoupons() }
                             }
                             .buttonStyle(.bordered)
@@ -113,7 +115,8 @@ struct CouponsView: View {
             if showToast {
                 VStack {
                     Spacer()
-                    Text("Coupon copied!")
+                    // 🛠️ FIX: Added .newlocalized
+                    Text("Coupon copied!".newlocalized)
                         .font(.system(size: 14, weight: .medium))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 24)
@@ -162,11 +165,13 @@ struct EmptyCouponContent: View {
                 .frame(width: 129, height: 90)
             
             VStack(spacing: 8) {
-                Text("No Coupons Available")
+                // 🛠️ FIX: Added .newlocalized
+                Text("No Coupons Available".newlocalized)
                     .font(.system(size: 28, weight: .semibold))
                     .foregroundStyle(.primary)
                 
-                Text("All the available Coupons will be here")
+                // 🛠️ FIX: Added .newlocalized
+                Text("All the available Coupons will be here".newlocalized)
                     .font(.system(size: 16, weight: .regular))
                     .foregroundStyle(.secondary)
             }
@@ -203,7 +208,8 @@ struct PromoCodeCardView1: View {
             
             // Header Row
             HStack(alignment: .center) {
-                Text(coupon.code ?? "N/A")
+                // 🛠️ FIX: Added .newlocalized
+                Text(coupon.code ?? "N/A".newlocalized)
                     .font(.system(size: 28, weight: .semibold))
                     .foregroundStyle(Color(red: 20/255, green: 140/255, blue: 90/255))
                 
@@ -221,11 +227,6 @@ struct PromoCodeCardView1: View {
                 }
             }
             
-//            // Subtitle
-//            Text("Apply promo code to avail exciting offers")
-//                .font(.system(size: 14, weight: .medium))
-//                .foregroundStyle(Color(red: 1/255, green: 150/255, blue: 131/255))
-            
             // Stores Row
             CouponStoresRowView()
             
@@ -233,10 +234,11 @@ struct PromoCodeCardView1: View {
             
             // Footer
             HStack {
-                Text("Expiration Date: ")
+                // 🛠️ FIX: Added .newlocalized
+                Text("Expiration Date: ".newlocalized)
                     .font(.system(size: 14))
                     .foregroundStyle(Color(red: 229/255, green: 57/255, blue: 53/255)) +
-                Text(coupon.expirationDate ?? "N/A")
+                Text(coupon.expirationDate ?? "N/A".newlocalized)
                     .font(.system(size: 14))
                     .foregroundStyle(Color(red: 229/255, green: 57/255, blue: 53/255)) // Requested Red
                 
@@ -279,7 +281,8 @@ struct CouponBadgeView: View {
     let isUsed: Bool
     
     var body: some View {
-        Text(isUsed ? "Used" : "Not Used")
+        // 🛠️ FIX: Added .newlocalized
+        Text(isUsed ? "Used".newlocalized : "Not Used".newlocalized)
             .font(.system(size: 8, weight: .semibold))
             .foregroundStyle(.white)
             .padding(.horizontal, 6)
@@ -301,31 +304,15 @@ struct CouponStoresRowView: View {
                 .font(.system(size: 14))
                 .foregroundStyle(Color(red: 20/255, green: 140/255, blue: 90/255))
             
-            Text("Stores:")
+            // 🛠️ FIX: Added .newlocalized
+            Text("Stores:".newlocalized)
                 .font(.system(size: 14))
                 .foregroundStyle(Color(red: 20/255, green: 140/255, blue: 90/255))
             
-            Text("All Stores")
+            // 🛠️ FIX: Added .newlocalized
+            Text("All Stores".newlocalized)
                 .font(.system(size: 14))
                 .foregroundStyle(Color(red: 20/255, green: 140/255, blue: 90/255))
-            
-//            HStack(spacing: -8) {
-//                // Mocking store icons. Replace `0..<5` with actual store array later.
-//                ForEach(0..<5, id: \.self) { _ in
-//                    Circle()
-//                        .fill(Color.blue.opacity(0.1))
-//                        .frame(width: 20, height: 20)
-//                        .overlay(
-//                            Image(systemName: "building.2.fill")
-//                                .font(.system(size: 8))
-//                                .foregroundStyle(.blue)
-//                        )
-//                        .overlay(
-//                            Circle().stroke(.white, lineWidth: 1)
-//                        )
-//                }
-//            }
-//            .padding(.leading, 4)
         }
     }
 }

@@ -1,3 +1,11 @@
+//
+//  GetMapBranchesUC.swift
+//  AjjiLMB
+//
+//  Created by mohamed mahmoud sobhy badawy on 29/04/2026.
+//
+
+
 import Foundation
 
 final class GetMapBranchesUC {

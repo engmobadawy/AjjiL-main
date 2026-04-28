@@ -2,14 +2,12 @@ import SwiftUI
 import Kingfisher
 import Shimmer
 
+
 struct ProductDetailsView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showScannerView: Bool = false
-    
-    // NEW: State to control the guest login sheet
     @State private var showGuestLoginSheet: Bool = false
     
-    // 1. Add the AppStorage variables
     @AppStorage("isStoreMode") private var isStoreMode: Bool = false
     @AppStorage("savedBranchID") private var savedBranchID: Int = 0
     
@@ -18,11 +16,11 @@ struct ProductDetailsView: View {
     var body: some View {
         VStack(spacing: 0) {
             TopRowNotForHome(
-                title: "Details",
-                showBackButton: true,
-                kindOfTopRow: .withCartAndNotification,
-                onBack: { dismiss() }
-            )
+                            title: "Details".newlocalized,
+                            showBackButton: true,
+                            kindOfTopRow: .justNotification,
+                            onBack: { dismiss() }
+                        )
             
             if viewModel.isLoading && viewModel.productDetail == nil {
                 ScrollView {
@@ -38,9 +36,9 @@ struct ProductDetailsView: View {
                         ProductDetailsImageHeader(
                             imageURL: product.images,
                             discount: product.offerDiscount,
-                            isFavorite: FavoritesManager.shared.isFavorite(product.id),
+                            // 🛠️ FIX: Query the manager using productBranchId, not id!
+                            isFavorite: FavoritesManager.shared.isFavorite(product.productBranchId),
                             onToggleFavorite: {
-                                // NEW: Check Guest Mode
                                 if Constants.isGuestMode {
                                     showGuestLoginSheet = true
                                 } else {
@@ -58,7 +56,6 @@ struct ProductDetailsView: View {
                         ProductDetailsBarcodeSection(barcode: product.barcode)
                         
                         Button {
-                            // NEW: Check Guest Mode FIRST
                             if Constants.isGuestMode {
                                 showGuestLoginSheet = true
                             } else if isStoreMode {
@@ -71,24 +68,20 @@ struct ProductDetailsView: View {
                             }
                         } label: {
                             HStack(spacing: !isStoreMode ? 8 : 0) {
-                                // Cart Icon
                                 Image(systemName: "cart.badge.plus")
                                     .font(.system(size: 18, weight: .semibold))
                                     .frame(width: !isStoreMode ? nil : 0)
                                     .opacity(!isStoreMode ? 1 : 0)
                                     .clipped()
                                 
-                                // Button Text
-                                Text(isStoreMode ? "Scan to buy" : "Add to cart")
+                                Text(isStoreMode ? "Scan to buy".newlocalized : "Add to cart".newlocalized)
                                     .font(.custom("Poppins-SemiBold", size: 16))
                                     .contentTransition(.opacity)
                             }
                             .frame(maxWidth: .infinity)
-                            .frame(height: 55) // Taller for the Details view
-                            // Dark green text when in store mode, white when adding to cart
+                            .frame(height: 55)
                             .foregroundStyle(isStoreMode ? Color(red: 0, green: 0.59, blue: 0.51) : .white)
                             .background(
-                                // Light green background in store mode, dark green when adding to cart
                                 isStoreMode ? Color(red: 0.79, green: 0.93, blue: 0.85) : Color(red: 0, green: 0.59, blue: 0.51),
                                 in: .rect(cornerRadius: 12)
                             )
@@ -106,7 +99,6 @@ struct ProductDetailsView: View {
         .navigationDestination(isPresented: $showScannerView) {
             ScannerMainView()
         }
-        // NEW: Add the sheet presentation
         .sheet(isPresented: $showGuestLoginSheet) {
             GuestLoginSheetView()
                 .presentationDetents([.fraction(0.5), .medium])
@@ -123,6 +115,7 @@ struct ProductDetailsView: View {
         .toastView(toast: Bindable(viewModel).toast)
     }
 }
+
 
 // MARK: - Skeleton View
 
@@ -342,13 +335,14 @@ private struct ProductDetailsDescriptionSection: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Description")
+            // 🛠️ FIX: Added .newlocalized
+            Text("Description".newlocalized)
                 .font(.custom("Poppins-SemiBold", size: 18))
                 .foregroundStyle(.black)
             
-            // Just use the API data. If it's empty, show a clean fallback.
             if descriptionText.isEmpty {
-                Text("No description available.")
+                // 🛠️ FIX: Added .newlocalized
+                Text("No description available.".newlocalized)
                     .font(.custom("Poppins-Regular", size: 15))
                     .foregroundStyle(.gray)
             } else {
@@ -379,10 +373,11 @@ private struct ProductDetailsBarcodeSection: View {
                     .frame(maxHeight: .infinity)
             }
             
-            Text(barcode.isEmpty ? "No Barcode" : barcode)
-                .font(.custom("Courier", size: 16))
-                .tracking(4)
-                .foregroundStyle(.gray)
+      
+                Text(barcode.isEmpty ? "No Barcode".newlocalized : barcode)
+                            .font(.custom("Courier", size: 16))
+                            .tracking(4)
+                            .foregroundStyle(.gray)
         }
         .frame(width: 138, height: 81)
         .frame(maxWidth: .infinity)

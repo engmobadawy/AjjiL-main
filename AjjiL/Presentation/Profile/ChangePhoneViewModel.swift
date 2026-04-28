@@ -5,7 +5,6 @@
 //  Created by mohamed mahmoud sobhy badawy on 23/04/2026.
 //
 
-
 import SwiftUI
 import Observation
 
@@ -125,8 +124,6 @@ final class ChangePhoneViewModel {
 }
 
 
-
-
 import SwiftUI
 
 struct ChangePhoneView: View {
@@ -158,18 +155,22 @@ struct ChangePhoneView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                TopRowNotForHome(title: "Change Phone Number".localized(), showBackButton: true, kindOfTopRow: .justNotification
-                ,onBack: {
-                    dismiss()
-                }
-                
+                // 🛠️ FIX: Added .newlocalized
+                TopRowNotForHome(
+                    title: "Change Phone Number".newlocalized,
+                    showBackButton: true,
+                    kindOfTopRow: .justNotification,
+                    onBack: {
+                        dismiss()
+                    }
                 )
                 
                 ScrollView {
                     VStack(spacing: 24) {
                         formFields
                         
-                        GreenButton(title: model.isLoading ? " " : "Save".localized(), action: handleSave)
+                        // 🛠️ FIX: Added .newlocalized
+                        GreenButton(title: model.isLoading ? " " : "Save".newlocalized, action: handleSave)
                             .disabled(!model.isFormValid || model.isLoading)
                             .opacity((model.isFormValid && !model.isLoading) ? 1.0 : 0.45)
                             .overlay {
@@ -189,7 +190,8 @@ struct ChangePhoneView: View {
             }
             .toolbar {
                 ToolbarItemGroup(placement: .keyboard) {
-                    Button("Done".localized()) {
+                    // 🛠️ FIX: Added .newlocalized
+                    Button("Done".newlocalized) {
                         hideKeyboard()
                         handleSave()
                     }
@@ -210,13 +212,15 @@ struct ChangePhoneView: View {
             .toastView(toast: $toast)
             .onChange(of: model.errorMessage) { _, newError in
                 if let message = newError {
-                    toast = FancyToast(type: .error, title: "error".localized(), message: message)
+                    // 🛠️ FIX: Added .newlocalized
+                    toast = FancyToast(type: .error, title: "error".newlocalized, message: message)
                     model.errorMessage = nil
                 }
             }
             .onChange(of: model.successMessage) { _, newSuccess in
                 if let message = newSuccess {
-                    toast = FancyToast(type: .success, title: "success".localized(), message: message)
+                    // 🛠️ FIX: Added .newlocalized
+                    toast = FancyToast(type: .success, title: "success".newlocalized, message: message)
                     model.successMessage = nil
                 }
             }
@@ -240,7 +244,8 @@ struct ChangePhoneView: View {
             
             // 1. Phone Field
             VStack(alignment: .leading, spacing: 8) {
-                fieldHeader(title: "Type Your New Phone Number".localized())
+                // 🛠️ FIX: Added .newlocalized
+                fieldHeader(title: "Type Your New Phone Number".newlocalized)
                 
                 PhoneTextField(
                     isValid: model.phoneError == nil,
@@ -266,13 +271,15 @@ struct ChangePhoneView: View {
             
             // 2. Password Field
             VStack(alignment: .leading, spacing: 8) {
-                fieldHeader(title: "Write Your Password To Confirm".localized())
+                // 🛠️ FIX: Added .newlocalized
+                fieldHeader(title: "Write Your Password To Confirm".newlocalized)
                 
                 SecureCustomTextField(
                     isValid: model.passwordError == nil,
                     errorMessage: model.passwordError,
                     text: $model.password,
-                    placeholder: "password".localized(),
+                    // 🛠️ FIX: Added .newlocalized
+                    placeholder: "password".newlocalized,
                     backgroundColor: .goodGray,
                     strokeColor: passwordStrokeColor,
                     preset: .password,

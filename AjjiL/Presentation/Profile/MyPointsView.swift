@@ -27,7 +27,8 @@ struct MyPointsView: View {
     var body: some View {
         VStack(spacing: 0) {
             TopRowNotForHome(
-                title: "My Points",
+                // 🛠️ FIX: Added .newlocalized
+                title: "My Points".newlocalized,
                 showBackButton: true,
                 kindOfTopRow: .none,
                 onBack: {
@@ -48,13 +49,15 @@ struct MyPointsView: View {
                     )
                     
                     VStack(spacing: 16) {
-                        Text("Redeem Your Points Now")
+                        // 🛠️ FIX: Added .newlocalized
+                        Text("Redeem Your Points Now".newlocalized)
                             .font(.system(size: 28, weight: .semibold)) // Updated size and weight
                         
                         Button {
                             viewModel.showRedeemSheet = true
                         } label: {
-                            Text("Redeem")
+                            // 🛠️ FIX: Added .newlocalized
+                            Text("Redeem".newlocalized)
                                 .font(.headline)
                                 .foregroundStyle(.white)
                                 .frame(maxWidth: .infinity)
@@ -67,7 +70,8 @@ struct MyPointsView: View {
                         .disabled(!viewModel.canOpenRedeemSheet)
                         .padding(.horizontal, 40)
                         
-                        Button("View all promo code") {
+                        // 🛠️ FIX: Added .newlocalized
+                        Button("View all promo code".newlocalized) {
                             // Trigger navigation state
                             navigateToPromoCodes = true
                         }
@@ -86,13 +90,13 @@ struct MyPointsView: View {
         .sheet(isPresented: $viewModel.showRedeemSheet, onDismiss: { viewModel.resetForm() }) {
             RedeemPointsSheet(viewModel: viewModel, greenColor: primaryGreen, onViewPromoCodes: {
                 // 1. Dismiss the sheet
-                                    viewModel.showRedeemSheet = false
-                                    
-                                    // 2. Wait briefly for the sheet to disappear, then trigger navigation
-                                    Task {
-                                        try? await Task.sleep(for: .milliseconds(300))
-                                        navigateToPromoCodes = true
-                                    }
+                viewModel.showRedeemSheet = false
+                
+                // 2. Wait briefly for the sheet to disappear, then trigger navigation
+                Task {
+                    try? await Task.sleep(for: .milliseconds(300))
+                    navigateToPromoCodes = true
+                }
             })
                 .presentationDetents([.medium])
                 .presentationDragIndicator(.visible)
@@ -148,20 +152,21 @@ private struct PointsSummaryView: View {
                         .font(.system(size: 38, weight: .bold)) // Maintained 38px Bold
                         .foregroundStyle(greenColor)
                     
-                    Text("Points")
+                    // 🛠️ FIX: Added .newlocalized
+                    Text("Points".newlocalized)
                         .font(.system(size: 14, weight: .semibold)) // Updated to 14px SemiBold
                         .foregroundStyle(greenColor)
                 }
                 
                 if let minPoints = data.minPoints {
-                    // Text concatenation targets just the number for distinct styling
-                    Text("Minimum Points To Redeem: ")
+                    // 🛠️ FIX: Added .newlocalized and separated the spacing for better layout support
+                    Text("Minimum Points To Redeem: ".newlocalized)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
-                    + Text("\(minPoints)")
+                    + Text(" \(minPoints)") // Add leading space
                         .font(.system(size: 16, weight: .semibold)) // Updated to 16px SemiBold
                         .foregroundStyle(orangeColor)               // Updated to specific orange
-                    + Text(" Points")
+                    + Text(" Points".newlocalized) // Retains space and localizes
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
@@ -301,14 +306,8 @@ final class PointsViewModel {
     func resetForm() {
         pointsToRedeemInput = ""
         calculatedDiscount = ""
-//        successData = nil
     }
 }
-
-
-
-
-
 
 import SwiftUI
 
@@ -325,10 +324,12 @@ struct RedeemPointsSheet: View {
             headerRow
             
             VStack(alignment: .leading, spacing: 8) {
-                Text("Convert Points Into Discount")
+                // 🛠️ FIX: Added .newlocalized
+                Text("Convert Points Into Discount".newlocalized)
                     .font(.headline)
                 
-                Text("Creates a code to gain a discount amount on your order")
+                // 🛠️ FIX: Added .newlocalized
+                Text("Creates a code to gain a discount amount on your order".newlocalized)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -337,7 +338,8 @@ struct RedeemPointsSheet: View {
             conversionInputs
             
             if let maxPoints = viewModel.pointsData?.maxPoints {
-                Text("Maximum limit is \(maxPoints) points")
+                // 🛠️ FIX: Reconstructed for safe localization mapping
+                (Text("Maximum limit is ".newlocalized) + Text("\(maxPoints)") + Text(" points".newlocalized))
                     .font(.caption)
                     .foregroundStyle(.red)
             }
@@ -350,7 +352,8 @@ struct RedeemPointsSheet: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
                 } else {
-                    Text("Create Promo Code")
+                    // 🛠️ FIX: Added .newlocalized
+                    Text("Create Promo Code".newlocalized)
                         .font(.headline)
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
@@ -363,8 +366,8 @@ struct RedeemPointsSheet: View {
             )
             .disabled(!viewModel.isRedeemSubmitValid || viewModel.isLoading)
             
-            // Pass the closure to the reusable button
-            CenterLinkButton(title: "View all promo code", action: onViewPromoCodes)
+            // 🛠️ FIX: Added .newlocalized
+            CenterLinkButton(title: "View all promo code".newlocalized, action: onViewPromoCodes)
             
             Spacer()
         }
@@ -373,7 +376,8 @@ struct RedeemPointsSheet: View {
     
     private var headerRow: some View {
         HStack {
-            Text("Redeem Your Points Now")
+            // 🛠️ FIX: Added .newlocalized
+            Text("Redeem Your Points Now".newlocalized)
                 .font(.title3)
                 .fontWeight(.bold)
             
@@ -448,14 +452,6 @@ private struct CenterLinkButton: View {
     }
 }
 
-
-
-
-
-
-
-
-
 struct PromoCodeSuccessSheet: View {
     @Environment(\.dismiss) private var dismiss
     let viewModel: PointsViewModel
@@ -467,7 +463,8 @@ struct PromoCodeSuccessSheet: View {
     var body: some View {
         VStack(spacing: 24) {
             HStack {
-                Text("Redeem Your Points Now")
+                // 🛠️ FIX: Added .newlocalized
+                Text("Redeem Your Points Now".newlocalized)
                     .font(.custom("Poppins-SemiBold", size: 18))
                     .fontWeight(.bold)
                 Spacer()
@@ -487,12 +484,14 @@ struct PromoCodeSuccessSheet: View {
                 .frame(width: 174, height: 200)
                                     
             VStack(spacing: 8) {
-                Text("Your Promo Code")
+                // 🛠️ FIX: Added .newlocalized
+                Text("Your Promo Code".newlocalized)
                     .font(.custom("Poppins-SemiBold", size: 28))
                     .fontWeight(.bold)
                     .foregroundStyle(greenColor)
                 
-                Text("This code can be used only once")
+                // 🛠️ FIX: Added .newlocalized
+                Text("This code can be used only once".newlocalized)
                     .font(.custom("Poppins-Regular", size: 16))
                     .foregroundStyle(.secondary)
             }
@@ -542,7 +541,8 @@ struct PromoCodeSuccessSheet: View {
             
             if let expiration = viewModel.successData?.expiredAt {
                 HStack(spacing: 4) {
-                    Text("Expires on:")
+                    // 🛠️ FIX: Added .newlocalized
+                    Text("Expires on:".newlocalized)
                         .foregroundStyle(.secondary)
                     Text(expiration)
                         .foregroundStyle(.red)

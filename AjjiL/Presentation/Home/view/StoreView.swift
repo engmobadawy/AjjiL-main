@@ -40,7 +40,7 @@ struct StoreView: View {
         isStoreMode ? .inStore : .online
     }
     
-    @State private var showNotificationsView: Bool = false
+//    @State private var showNotificationsView: Bool = false
     @State private var showCartView: Bool = false
     @State private var showBranchSelection: Bool = true
     
@@ -54,8 +54,8 @@ struct StoreView: View {
                         showBackButton: true,
                         kindOfTopRow: .withCartAndNotification,
                         onBack: { dismiss() },
-                        onCart: { showCartView = true },
-                        onNotification: { showNotificationsView = true }
+                        onCart: { showCartView = true }
+//                        onNotification: { showNotificationsView = true }
                     )
                     
                     StoreTabBar(selectedTab: $selectedTab)
@@ -102,9 +102,7 @@ struct StoreView: View {
             }
             .navigationBarBackButtonHidden(true)
             .background(Color(white: 0.98).ignoresSafeArea())
-            .navigationDestination(isPresented: $showNotificationsView) {
-                HomeView()
-            }
+            
             .navigationDestination(isPresented: $showScannerView) {
                 ScannerMainView()
             }
@@ -333,7 +331,8 @@ struct FeaturedProductsSection: View {
     
     var body: some View {
         VStack(spacing: 16) {
-            SectionHeader(title: "Featured Products", actionTitle: "View All") {selectedTab = .products}
+            // 🛠️ FIX: Localized
+            SectionHeader(title: "Featured Products".newlocalized, actionTitle: "View All".newlocalized) {selectedTab = .products}
             
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
                 ForEach(products) { product in
@@ -477,7 +476,8 @@ struct CategoryGridSection: View {
     
     var body: some View {
         VStack(spacing: 16) {
-            SectionHeader(title: "Categories", actionTitle: "View All", action: onViewAll)
+            // 🛠️ FIX: Localized
+            SectionHeader(title: "Categories".newlocalized, actionTitle: "View All".newlocalized, action: onViewAll)
             
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
                 ForEach(categories) { category in
@@ -548,7 +548,8 @@ struct FilterCarouselView: View {
             LazyHStack(spacing: 12) {
                 // Fixed "All" Button
                 FilterChipView(
-                    title: "All",
+                    // 🛠️ FIX: Localized
+                    title: "All".newlocalized,
                     isSelected: selectedCategoryID == nil,
                     fixedWidth: 81
                 ) {
@@ -634,7 +635,8 @@ struct ShopActionCard: View {
                 .foregroundStyle(tealGreen)
             
             if mode == .inStore {
-                Text("Shop in Store")
+                // 🛠️ FIX: Localized
+                Text("Shop in Store".newlocalized)
                     .font(.custom("Poppins-SemiBold", size: 14))
                     .fontWeight(.semibold)
                     .foregroundStyle(tealGreen)
@@ -650,12 +652,14 @@ struct ShopActionCard: View {
                 
             } else {
                 HStack(spacing: 4) {
-                    Text("Shop Online")
+                    // 🛠️ FIX: Localized
+                    Text("Shop Online".newlocalized)
                         .font(.custom("Poppins-SemiBold", size: 14))
                         .fontWeight(.semibold)
                         .foregroundStyle(tealGreen)
                     
-                    Text("Delivery To Home")
+                    // 🛠️ FIX: Localized
+                    Text("Delivery To Home".newlocalized)
                         .font(.custom("Poppins-Regular", size: 12))
                         .foregroundStyle(Color(red: 0.3, green: 0.3, blue: 0.3))
                 }
@@ -708,7 +712,8 @@ struct StoreTabBar: View {
                     VStack(spacing: 0) {
                         Spacer()
                         
-                        Text(tab.rawValue)
+                        // 🛠️ FIX: Localized Tab Names
+                        Text(tab.rawValue.newlocalized)
                             .font(.subheadline)
                             .fontWeight(selectedTab == tab ? .bold : .semibold)
                             .foregroundStyle(selectedTab == tab ? tealGreen : .secondary)
@@ -773,4 +778,3 @@ struct EmptyProductsStateView: View {
         .frame(maxWidth: .infinity)
     }
 }
-

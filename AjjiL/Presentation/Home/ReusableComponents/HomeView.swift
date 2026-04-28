@@ -1,15 +1,15 @@
 import SwiftUI
-import Shimmer // 1. Import the library
-
-
+import Shimmer
 
 struct HomeView: View {
     @Environment(TabBarVisibility.self) private var tabVisibility
     
     @AppStorage("isStoreMode") private var isStoreMode: Bool = false
     @AppStorage("savedBranchID") private var savedBranchID: Int = 0
+    
     // MARK: - State
-    @State private var viewModel = DependencyContainer.HomeDependency.shared.homeVM
+    // 🛠️ FIX: Use @Bindable for an injected @Observable dependency that needs bindings
+    @Bindable private var viewModel = DependencyContainer.HomeDependency.shared.homeVM
     @State private var searchText: String = ""
    
     @State private var showScannerView: Bool = false
@@ -72,7 +72,6 @@ struct HomeView: View {
             .navigationDestination(isPresented: $showScannerView) {
                 ScannerMainView()
             }
-            // NEW: Add the sheet presentation
             .sheet(isPresented: $showGuestLoginSheet) {
                 GuestLoginSheetView()
                     .presentationDetents([.fraction(0.5), .medium])
@@ -83,7 +82,7 @@ struct HomeView: View {
         .task {
             await viewModel.fetchData()
         }
-        .toastView(toast: $viewModel.toast)
+        .toastView(toast: $viewModel.toast) // 👈 @Bindable makes this $ binding work flawlessly
     }
 
     // MARK: - Skeleton Loading Layout
@@ -146,7 +145,6 @@ struct HomeView: View {
                         product: product,
                         isFavorite: FavoritesManager.shared.isFavorite(product.id),
                         onToggleFavorite: {
-                            // NEW: Check Guest Mode for Favorites
                             if Constants.isGuestMode {
                                 showGuestLoginSheet = true
                             } else {
@@ -154,7 +152,6 @@ struct HomeView: View {
                             }
                         },
                         onAddToCart: {
-                            // NEW: Check Guest Mode for Cart
                             if Constants.isGuestMode {
                                 showGuestLoginSheet = true
                             } else {
@@ -165,7 +162,6 @@ struct HomeView: View {
                             }
                         },
                         onScanToBuy: {
-                            // NEW: Check Guest Mode for Scanner
                             if Constants.isGuestMode {
                                 showGuestLoginSheet = true
                             } else {
@@ -268,18 +264,15 @@ struct GuestLoginSheetView: View {
             
             Text("Login First, To Complete\nYour Order".newlocalized)
                 .font(.system(size: 28, weight: .semibold))
-                // Using the exact brand green from your ShopThroughBanner to match
                 .foregroundStyle(Color(red: 0.28, green: 0.63, blue: 0.44))
                 .multilineTextAlignment(.center)
             
             GreenButton(title: "Sign In".newlocalized) {
-                dismiss() // Close the sheet
+                dismiss()
                 
-                // Clear the skip/guest flags
                 UserDefaults.standard.set(false, forKey: "pressSkip")
                 Constants.isGuestMode = false
                 
-                // Trigger the AppDelegate to re-evaluate the root view
                 if let appDelegate = UIApplication.shared.delegate as? AppDelegate {
                     appDelegate.reset()
                 }
@@ -289,39 +282,3 @@ struct GuestLoginSheetView: View {
         .padding(32)
     }
 }
-
-// MARK: - Custom Components
-
-//struct ShopThroughBanner: View {
-//    @Binding var isStoreMode: Bool
-//    
-//    private let brandGreen = Color(red: 0.21, green: 0.60, blue: 0.51)
-//    private let brandLightGreen = Color(red: 0.88, green: 0.98, blue: 0.95)
-//
-//    var body: some View {
-//        HStack {
-//            HStack(spacing: 10) {
-//                Image(systemName: "storefront.fill")
-//                    .font(.system(size: 18))
-//                Text("Shop through".newlocalized)
-//                    .font(.system(size: 18, weight: .semibold))
-//            }
-//            
-//            Spacer()
-//            
-//            HStack(spacing: 8) {
-//                Text("Store".newlocalized)
-//                    .font(.subheadline.weight(.medium))
-//                
-//                Toggle("", isOn: $isStoreMode)
-//                    .labelsHidden()
-//                    .scaleEffect(0.8)
-//                    .tint(brandGreen)
-//            }
-//        }
-//        .foregroundStyle(brandGreen)
-//        .padding(.horizontal, 18)
-//        .padding(.vertical, 12)
-//        .background(brandLightGreen)
-//    }
-//}

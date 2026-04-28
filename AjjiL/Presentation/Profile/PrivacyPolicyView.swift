@@ -1,24 +1,16 @@
-
-//
-//  TermsAndConditionView.swift
-//  AjjiLMB
-//
-//  Created by mohamed mahmoud sobhy badawy on 23/04/2026.
-//
-
-
 import SwiftUI
 
 struct PrivacyPolicyView: View {
     @Environment(\.dismiss) private var dismiss
     
-    // Applying .capitalized to achieve the "Title case" specified in Figma
-    private let termsText = "Our Privacy Policy explains what personal information we collect, how we use personal information, how personal information is shared, and privacy rights. Our Privacy Policy explains what personal information we collect, how we use personal information, how personal information is shared, and privacy rights. Our Privacy Policy explains what personal information we collect, how we use personal information, how personal information is shared, and privacy rights. personal information we collect, how we use personal information, how personal information is shared, and privacy rights. personal information we collect, how we use personal information, how personal information is shared, and privacy rights. ".capitalized
+    // 🛠️ FIX: Added .newlocalized
+    private let termsText = "Our Privacy Policy explains what personal information we collect, how we use personal information, how personal information is shared, and privacy rights. Our Privacy Policy explains what personal information we collect, how we use personal information, how personal information is shared, and privacy rights. Our Privacy Policy explains what personal information we collect, how we use personal information, how personal information is shared, and privacy rights. personal information we collect, how we use personal information, how personal information is shared, and privacy rights. personal information we collect, how we use personal information, how personal information is shared, and privacy rights. ".newlocalized.capitalized
     
     var body: some View {
         VStack(spacing: 0) {
             TopRowNotForHome(
-                title: "Privacy Policy",
+                // 🛠️ FIX: Added .newlocalized
+                title: "Privacy Policy".newlocalized,
                 showBackButton: true,
                 kindOfTopRow: .none,
                 onBack: {
@@ -38,5 +30,3 @@ struct PrivacyPolicyView: View {
         .navigationBarBackButtonHidden(true)
     }
 }
-
-

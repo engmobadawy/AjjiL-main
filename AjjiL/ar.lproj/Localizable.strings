@@ -366,6 +366,7 @@
 "empty_is_agree_terms" = "يجب الموافقة على الشروط والأحكام.";
 
 "Invalid Code" = "رمز غير صالح";
+"Notification" =  "الإشعارات"; 
 
 
 
@@ -388,3 +389,216 @@
 "Featured Products" = "منتجات مميزة";
 "Shop through" = "تسوق من خلال";
 "Store" = "المتجر";
+
+/* Store View & Tabs */
+"Categories" = "الأقسام";
+"All" = "الكل";
+"Shop in Store" = "التسوق في المتجر";
+"Shop Online" = "التسوق عبر الإنترنت";
+"Delivery To Home" = "توصيل للمنزل";
+"Products" = "المنتجات";
+"Offers" = "العروض";
+
+/* Product Card Actions */
+"Scan to buy" = "امسح للشراء";
+"Add to cart" = "أضف إلى السلة";
+
+/* Search Bar */
+"Find The Store or Product" = "ابحث عن المتجر أو المنتج";
+
+/* Top Row Actions */
+"Filter" = "تصفية";
+"Rate" = "تقييم";
+
+/* Placeholder & Guest Mode */
+"Guest Login Sheet" = "صفحة تسجيل دخول الزائر";
+"Login First, To Complete\nYour Order" = "قم بتسجيل الدخول أولاً لإكمال\nطلبك";
+"Sign In" = "تسجيل الدخول";
+
+/* Favorites View */
+"Favorites" = "المفضلة";
+"No Favorites yet" = "لا توجد مفضلة بعد";
+
+/* Product Details View */
+"Details" = "التفاصيل";
+"OFF" = "خصم";
+"Description" = "الوصف";
+"No description available." = "لا يوجد وصف متاح.";
+"No Barcode" = "لا يوجد باركود";
+
+/* Product Details ViewModel */
+"Failed to update favorite." = "فشل في تحديث المفضلة.";
+"Success" = "نجاح";
+"added to the cart successfully" = "تمت الإضافة إلى السلة بنجاح";
+
+
+///* Notifications View */
+//"Notifications" = "الإشعارات";
+//"Loading notifications..." = "جاري تحميل الإشعارات...";
+//"No notifications yet" = "لا توجد إشعارات بعد";
+//"Notification" = "إشعار";
+"Notifications" = "الإشعارات";
+"Loading notifications..." = "جاري تحميل الإشعارات...";
+"No notifications yet" = "لا توجد إشعارات بعد";
+"Notification" = "إشعار";
+
+/* --- Profile View & Guest State --- */
+"Profile" = "الملف الشخصي";
+"Sign Out" = "تسجيل الخروج";
+"Welcome" = "مرحباً";
+"Get Your Profile Ready" = "قم بإعداد ملفك الشخصي";
+"SIGN IN" = "تسجيل الدخول";
+"welcome" = "مرحباً";
+"get_profile_ready" = "قم بإعداد ملفك الشخصي";
+"QR Profile Code" = "رمز الملف الشخصي";
+
+/* --- Profile Menu Items --- */
+"Setting" = "الإعدادات";
+"Settings" = "الإعدادات";
+"About Us" = "من نحن";
+"Contact Us" = "تواصل معنا";
+"Privacy Policy" = "سياسة الخصوصية";
+"Terms And Conditions" = "الشروط والأحكام";
+"Terms & Conditions" = "الشروط والأحكام";
+"My Orders" = "طلباتي";
+"My Points" = "نقاطي";
+"Coupons" = "الكوبونات";
+"Promo Code" = "كود الخصم";
+"Delete Account" = "حذف الحساب";
+
+/* --- Popups (Logout / Delete Account) --- */
+"Do You Want To Logout?" = "هل تريد تسجيل الخروج؟";
+"Yes" = "نعم";
+"Cancel" = "إلغاء";
+"Do You Want To Delete\nYour Account?" = "هل تريد حذف\nحسابك؟";
+"Yes, Delete" = "نعم، احذف";
+
+/* --- Settings Screen --- */
+"Push Notification" = "الإشعارات";
+"Language" = "اللغة";
+"English" = "الإنجليزية";
+"Change Password" = "تغيير كلمة المرور";
+"Change Phone Number" = "تغيير رقم الهاتف";
+
+/* --- Profile ViewModel Errors --- */
+"Data format error." = "خطأ في تنسيق البيانات.";
+"Missing data error." = "خطأ: بيانات مفقودة.";
+"Null value error." = "خطأ: قيمة فارغة.";
+"Data corrupted." = "بيانات تالفة.";
+"An unexpected error occurred." = "حدث خطأ غير متوقع.";
+
+
+
+/* --- Promo Codes View --- */
+"Try Again" = "حاول مرة أخرى";
+"Promo code copied!" = "تم نسخ كود الخصم!";
+"No Promo Codes Available" = "لا توجد أكواد خصم متاحة";
+"All the available promo codes will be here" = "جميع أكواد الخصم المتاحة ستظهر هنا";
+"N/A" = "غير متوفر";
+"Apply promo code to avail exciting offers" = "طبق كود الخصم للاستفادة من عروض رائعة";
+"Expiration Date: " = "تاريخ الانتهاء: ";
+"Used" = "مستخدم";
+"Not Used" = "غير مستخدم";
+"Stores:" = "المتاجر:";
+"All Stores" = "جميع المتاجر";
+
+
+
+/* --- Personal Data View --- */
+"Personal Data" = "البيانات الشخصية";
+"Your Registration Data" = "بيانات التسجيل الخاصة بك";
+"Save" = "حفظ";
+"done" = "تم";
+"Done" = "تم";
+"username" = "اسم المستخدم";
+"email_placeholder" = "البريد الإلكتروني";
+"Saved Successfully" = "تم الحفظ بنجاح";
+
+/* --- Personal Data ViewModel Errors --- */
+"Username cannot be empty" = "لا يمكن أن يكون اسم المستخدم فارغاً";
+"Email cannot be empty" = "لا يمكن أن يكون البريد الإلكتروني فارغاً";
+
+
+
+
+/* --- My Points View --- */
+"Redeem Your Points Now" = "استبدل نقاطك الآن";
+"Redeem" = "استبدال";
+"View all promo code" = "عرض جميع أكواد الخصم";
+"Points" = "نقاط";
+"Minimum Points To Redeem: " = "الحد الأدنى للنقاط للاستبدال: ";
+" Points" = " نقاط";
+"Convert Points Into Discount" = "تحويل النقاط إلى خصم";
+"Creates a code to gain a discount amount on your order" = "يُنشئ كودًا للحصول على مبلغ خصم على طلبك";
+"Maximum limit is " = "الحد الأقصى هو ";
+" points" = " نقاط";
+"Create Promo Code" = "إنشاء كود خصم";
+"Your Promo Code" = "كود الخصم الخاص بك";
+"This code can be used only once" = "يمكن استخدام هذا الكود مرة واحدة فقط";
+"Expires on:" = "تاريخ الانتهاء:";
+
+
+/* --- Coupons View --- */
+"Coupon copied!" = "تم نسخ الكوبون!";
+"No Coupons Available" = "لا توجد كوبونات متاحة";
+"All the available Coupons will be here" = "جميع الكوبونات المتاحة ستظهر هنا";
+
+
+/* --- Contact Us View --- */
+"Contact us" = "تواصل معنا";
+"Get In Touch" = "تواصل معنا";
+"Tell us about your inquiries" = "أخبرنا عن استفساراتك";
+"Problem Type" = "نوع المشكلة";
+"Message" = "الرسالة";
+"Send" = "إرسال";
+"Sent Successfully" = "تم الإرسال بنجاح";
+
+/* --- Contact Us Errors --- */
+"Please enter your email." = "الرجاء إدخال البريد الإلكتروني.";
+"Please enter a valid email address." = "الرجاء إدخال بريد إلكتروني صحيح.";
+"Please select a problem type." = "الرجاء تحديد نوع المشكلة.";
+"Please enter your message." = "الرجاء إدخال رسالتك.";
+"Message must be at least 10 characters." = "يجب أن تتكون الرسالة من 10 أحرف على الأقل.";
+
+/* --- Change Password & Phone --- */
+"error" = "خطأ";
+"success" = "نجاح";
+"Type your old password to verify you and then type your new password." = "أدخل كلمة المرور القديمة للتحقق ثم أدخل كلمة المرور الجديدة.";
+"Old Password" = "كلمة المرور القديمة";
+"New Password" = "كلمة المرور الجديدة";
+"Confirm New Password" = "تأكيد كلمة المرور الجديدة";
+"Type Your New Phone Number" = "أدخل رقم هاتفك الجديد";
+"Write Your Password To Confirm" = "أدخل كلمة المرور للتأكيد";
+"password" = "كلمة المرور";
+
+
+
+/* --- Cart & Checkout View --- */
+"Cart" = "السلة";
+"Not valid code" = "كود غير صالح";
+"Checkout Now" = "الدفع الآن";
+"Select The Suitable Payment Method For You" = "اختر طريقة الدفع المناسبة لك";
+"Confirm Payment" = "تأكيد الدفع";
+"Checkout" = "الدفع";
+"Subtotal (Excl. VAT)" = "المجموع الفرعي (غير شامل الضريبة)";
+"Subtotal (Incl. VAT)" = "المجموع الفرعي (شامل الضريبة)";
+"Vat Value" = "قيمة الضريبة";
+"Discount" = "الخصم";
+"Total Price" = "السعر الإجمالي";
+"subtotal (no vat)" = "المجموع الفرعي (بدون ضريبة)";
+"subtotal (with vat)" = "المجموع الفرعي (مع ضريبة)";
+"vat" = "الضريبة";
+"discount" = "الخصم";
+"total price" = "السعر الإجمالي";
+"coupons" = "الكوبونات";
+"Applied" = "تم التطبيق";
+"Apply" = "تطبيق";
+"Secure Payment" = "دفع آمن";
+"Unknown error" = "خطأ غير معروف";
+
+
+
+
+/* HomeView & Top Row Strings */
+"Welcome!" = "مرحباً!";
+"AJJil User" = "مستخدم عچل";

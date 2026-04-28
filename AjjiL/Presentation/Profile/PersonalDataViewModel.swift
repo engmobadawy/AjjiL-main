@@ -77,13 +77,13 @@ final class PersonalDataViewModel {
     // MARK: - Validation Methods
     func validateUsername() {
         runValidation(hasInteracted: hasInteractedWithUsername, isValid: &isUsernameValid, error: &usernameError) {
-            if username.isEmpty { throw NSError(domain: "", code: 0, userInfo: [NSLocalizedDescriptionKey: "Username cannot be empty"]) }
+            if username.isEmpty { throw NSError(domain: "", code: 0, userInfo: [NSLocalizedDescriptionKey: "Username cannot be empty".newlocalized]) }
         }
     }
     
     func validateEmail() {
         runValidation(hasInteracted: hasInteractedWithEmail, isValid: &isEmailValid, error: &emailError) {
-            if email.isEmpty { throw NSError(domain: "", code: 0, userInfo: [NSLocalizedDescriptionKey: "Email cannot be empty"]) }
+            if email.isEmpty { throw NSError(domain: "", code: 0, userInfo: [NSLocalizedDescriptionKey: "Email cannot be empty".newlocalized]) }
         }
     }
     

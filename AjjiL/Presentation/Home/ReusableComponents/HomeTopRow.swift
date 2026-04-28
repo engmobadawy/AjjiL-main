@@ -2,33 +2,33 @@
 //  HeaderRow.swift
 //  AjjiL
 //
-//  Created by mohamed mahmoud sobhy badawy on 15/02/2026.
-//
-
 
 import SwiftUI
 
 struct HomeTopRow: View {
     
-    let username: String = "AJJil User"
-    let notificationCount: Int = 9
-    
-    // NEW: Action handler for the bell
+    // Action handler for the bell
     var onNotification: (() -> Void)? = nil
     
-    // NEW: State for guest login sheet
+    // State Management
+    @State private var viewModel = NotificationBadgeViewModel()
     @State private var showGuestLoginSheet: Bool = false
+    @State private var navigateToNotifications: Bool = false
+    
+    // 1. Add local state for the username
+    @State private var username: String = "AJJil User".newlocalized
     
     var body: some View {
         HStack(alignment: .center) {
             // MARK: - Welcome Text & Emoji
             VStack(alignment: .leading, spacing: 0) {
-                Text("Welcome!")
+                Text("Welcome!".newlocalized)
                     .font(.subheadline)
                     .fontWeight(.bold)
                     .foregroundStyle(.secondary)
                 
                 HStack(spacing: 8) {
+                    // 2. Use the state variable
                     Text(username)
                         .font(.system(size: 22, weight: .black))
                         .foregroundStyle(.primary)
@@ -42,13 +42,9 @@ struct HomeTopRow: View {
             
             // Wrapped the bell in a Button to handle taps
             Button {
-                if Constants.isGuestMode {
-                    showGuestLoginSheet = true
-                } else {
-                    onNotification?()
-                }
+                handleNotificationTap()
             } label: {
-                NotificationBell(count: notificationCount)
+                NotificationBell(count: viewModel.unreadCount)
             }
             .buttonStyle(.plain)
         }
@@ -68,12 +64,65 @@ struct HomeTopRow: View {
                 // 4. Push the clear box up into the notch/status bar area
                 .ignoresSafeArea(edges: .top)
         }
-        // NEW: Add the sheet presentation here
         .sheet(isPresented: $showGuestLoginSheet) {
-            GuestLoginSheetView()
+            GuestLoginSheetView() // Replace with your actual view if different
                 .presentationDetents([.fraction(0.5), .medium])
                 .presentationDragIndicator(.visible)
                 .background(.white)
+        }
+        .navigationDestination(isPresented: $navigateToNotifications) {
+            let networkService = NetworkService()
+            let repository = NotificationRepositoryImpl(networkService: networkService)
+            let useCase = GetNotificationsUseCase(repository: repository)
+            
+            NotificationsView(useCase: useCase)
+        }
+        .task {
+            // 3. Fetch both the unread count and the username concurrently
+            await viewModel.fetchUnreadCount()
+            await fetchUserName()
+        }
+        .onChange(of: navigateToNotifications) { oldValue, newValue in
+            // Refresh count when returning from the Notifications view
+            if newValue == false {
+                Task {
+                    await viewModel.fetchUnreadCount()
+                }
+            }
+        }
+    }
+    
+    // MARK: - Actions
+    private func handleNotificationTap() {
+        if Constants.isGuestMode {
+            showGuestLoginSheet = true
+        } else {
+            navigateToNotifications = true
+            onNotification?()
+        }
+    }
+    
+    // MARK: - Data Fetching
+    private func fetchUserName() async {
+        let token = GenericUserDefault.shared.getValue(Constants.shared.token) as? String ?? ""
+        
+        // Bail out early if guest mode or no token is found
+        guard !token.isEmpty, !Constants.isGuestMode else { return }
+        
+        // Initialize the use case just like in ProfileView
+        let networkService = NetworkService()
+        let repository = ProfileRepositoryImp(networkService: networkService)
+        let getProfileUC = GetProfileUC(repo: repository)
+        
+        do {
+            let profile = try await getProfileUC.execute()
+            // Safely update the state on the MainActor
+            await MainActor.run {
+                self.username = profile.name
+            }
+        } catch {
+            print("❌ Failed to fetch user name for HomeTopRow: \(error)")
+            // It fails silently for the UI and keeps the default "AJJil User" text
         }
     }
 }
@@ -83,9 +132,7 @@ struct NotificationBell: View {
     let count: Int
     
     var body: some View {
-
         ZStack(alignment: .topTrailing) {
-           
             Circle()
                 .fill(Color(red: 214/255, green: 255/255, blue: 248/255))
                 .frame(width: 42, height: 42)
@@ -104,6 +151,8 @@ struct NotificationBell: View {
                 .frame(width: 14, height: 14)
                 .background(.orange, in: .circle)
                 .offset(x: -8, y: 5)
+                // Ensures the badge stays hidden if there are 0 notifications
+//                .opacity(count > 0 ? 1 : 0)
         }
     }
 }
