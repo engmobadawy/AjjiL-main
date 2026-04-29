@@ -40,22 +40,26 @@ final class OrderDetailsViewModel {
 struct OrderDetailsView: View {
     @Environment(TabBarVisibility.self) private var tabVisibility
     @Environment(\.dismiss) private var dismiss
-    let orderId: Int
-    @State private var viewModel: OrderDetailsViewModel
     
+    let orderId: Int
+    let isHistoryOrder: Bool
+    
+    @State private var viewModel: OrderDetailsViewModel
     @State private var goToRateServicesView: Bool = false
     
-    init(orderId: Int, viewModel: OrderDetailsViewModel) {
+    init(orderId: Int, isHistoryOrder: Bool, viewModel: OrderDetailsViewModel) {
         self.orderId = orderId
+        self.isHistoryOrder = isHistoryOrder
         self._viewModel = State(initialValue: viewModel)
     }
     
     var body: some View {
         VStack(spacing: 0) {
+            // 1. TOP ROW
             TopRowNotForHome(
-                title: "Order Details",
+                title: "Order Details".newlocalized,
                 showBackButton: true,
-                kindOfTopRow: .rate,
+                kindOfTopRow: isHistoryOrder ? .rate : .none,
                 onBack: {
                     dismiss()
                 },onRate: {
@@ -63,27 +67,27 @@ struct OrderDetailsView: View {
                 }
             )
             
+            // 2. SCROLLABLE CONTENT
+            // The ScrollView will naturally take up the remaining space
+            // between the TopRow and the Footer.
             ScrollView {
                 contentState
             }
             .scrollIndicators(.hidden)
             
-            .safeAreaInset(edge: .bottom) {
-                // Safe area inset is applied to the ScrollView to float the footer properly
-                if let order = viewModel.order {
-                    OrderSummaryFooter(
-                        subtotalExclVat: order.priceExcludeVate,
-                        subtotalInclVat: order.priceIncludeVate,
-                        vatValue: order.totalTax,
-                        discount: order.discount,
-                        totalPrice: order.grandTotal
-                    ).padding(.bottom, 10)
-                } else if viewModel.isLoading {
-                    // 2. Show Footer Skeleton while loading
-                    OrderSummaryFooterSkeleton()
-                        .shimmering()
-                        .padding(.bottom, 10)
-                }
+            // 3. FIXED FOOTER
+            // Sitting strictly at the bottom of the VStack, outside the ScrollView
+            if let order = viewModel.order {
+                OrderSummaryFooter(
+                    subtotalExclVat: order.priceExcludeVate,
+                    subtotalInclVat: order.priceIncludeVate,
+                    vatValue: order.totalTax,
+                    discount: order.discount,
+                    totalPrice: order.grandTotal
+                )
+            } else if viewModel.isLoading {
+                OrderSummaryFooterSkeleton()
+                    .shimmering()
             }
         }
         .onAppear {
@@ -91,19 +95,19 @@ struct OrderDetailsView: View {
             tabVisibility.isHidden = true
         }
         .onDisappear {
-            // Show it again when navigating back
-            tabVisibility.isHidden = false
+            // Show it again ONLY when navigating back to the main tabs,
+            // not when pushing forward to RateServicesView
+            if !goToRateServicesView {
+                tabVisibility.isHidden = false
+            }
         }
+        
         .navigationDestination(isPresented: $goToRateServicesView) {
-            // 1. Initialize your dependencies (matching your project's pattern)
             let repo = OrdersRepositoryImp(networkService: NetworkService())
             let useCase = ReviewOrderUC(repo: repo)
             let rateViewModel = RateServicesViewModel(orderId: orderId, reviewOrderUC: useCase)
             
-            // 2. Return the RateServicesView
             RateServicesView(viewModel: rateViewModel) {
-                // onSuccessDoubleDismiss closure
-                // This dismisses the OrderDetailsView, returning the user to the OrdersView
                 dismiss()
             }
         }
@@ -119,7 +123,6 @@ struct OrderDetailsView: View {
 
     @ViewBuilder
     private var contentState: some View {
-        // 1. If we have the order, show it immediately.
         if let order = viewModel.order {
             VStack(spacing: 24) {
                 OrderDetailsHeaderCard(
@@ -134,8 +137,7 @@ struct OrderDetailsView: View {
                 productListSection(items: order.items, status: order.status)
             }
             .padding()
-            // Optional: If you ever add a "Pull to Refresh", this overlays
-            // a small spinner on top of the existing details so the screen doesn't flash.
+            .padding(.bottom, 16) // Extra padding so the last item doesn't hug the footer tightly
             .overlay {
                 if viewModel.isLoading {
                     ProgressView()
@@ -145,7 +147,6 @@ struct OrderDetailsView: View {
                 }
             }
             
-        // 2. If we hit an error, show the message.
         } else if let error = viewModel.errorMessage {
             Text(error)
                 .foregroundStyle(.red)
@@ -153,7 +154,6 @@ struct OrderDetailsView: View {
                 .padding()
                 .containerRelativeFrame([.horizontal, .vertical])
                 
-        // 3. Fallback: Replaced ProgressView with Shimmer Skeleton!
         } else {
             OrderDetailsContentSkeleton()
                 .shimmering()
@@ -164,7 +164,7 @@ struct OrderDetailsView: View {
     private func productListSection(items: [OrderItemEntity], status: String) -> some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
-                Text("Product List")
+                Text("Product List".newlocalized)
                     .font(.title3)
                     .fontWeight(.bold)
                 
@@ -284,7 +284,9 @@ struct OrderSummaryFooterSkeleton: View {
             }
         }
         .padding()
-        .background(Color.brandGreen.opacity(0.1))
+        // If the footer sits directly at the bottom edge of the screen, we need to extend the background color into the safe area.
+        // We use `.bottom` so it doesn't affect the top edges
+        .background(Color.brandGreen.opacity(0.1).ignoresSafeArea(edges: .bottom))
     }
 }
 
@@ -297,7 +299,7 @@ struct OrderDetailsHeaderCard: View {
     let dateString: String
     let storeName: String
     let storeImageUrl: URL?
-    let rating: String? // 👈 Changed from Int? to String?
+    let rating: String?
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -314,19 +316,24 @@ struct OrderDetailsHeaderCard: View {
             
             HStack(spacing: 8) {
                 Image(systemName: "clock")
-                    .foregroundStyle(.brandGreen)
-                Text("Requested Date: \(dateString)")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-            
-            HStack(spacing: 8) {
-                Image(systemName: "storefront")
-                    .foregroundStyle(.brandGreen)
-                
-                Text("Store")
-                    .font(.subheadline)
-                    .foregroundStyle(.brandGreen)
+                                    .foregroundStyle(.brandGreen)
+                                // 🛠️ FIX: Safely separated string and variable to maintain localization formatting
+                                Text("Requested Date: ".newlocalized)
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                + Text(dateString)
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                            }
+                            
+                            HStack(spacing: 8) {
+                                Image(systemName: "storefront")
+                                    .foregroundStyle(.brandGreen)
+                                
+                                // 🛠️ FIX: Added .newlocalized
+                                Text("Store".newlocalized)
+                                    .font(.subheadline)
+                                    .foregroundStyle(.brandGreen)
                 
                 // Store Logo
                 AsyncImage(url: storeImageUrl) { phase in
@@ -420,9 +427,12 @@ struct OrderProductCell: View {
                     .foregroundStyle(.primary)
                 
                 HStack {
-                    Text("Quantity: \(quantity)")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                    Text("Quantity: ".newlocalized)
+                                            .font(.subheadline)
+                                            .foregroundStyle(.secondary)
+                                        + Text("\(quantity)")
+                                            .font(.subheadline)
+                                            .foregroundStyle(.secondary)
                     
                     Spacer()
                     
@@ -449,16 +459,16 @@ struct OrderSummaryFooter: View {
     
     var body: some View {
         VStack(spacing: 12) {
-            summaryRow(title: "Subtotal (Excl. VAT)", value: subtotalExclVat)
-            summaryRow(title: "Subtotal (Incl. VAT)", value: subtotalInclVat)
-            summaryRow(title: "Vat Value", value: vatValue)
-            summaryRow(title: "Discount", value: discount, valueColor: .red, isDiscount: true)
+            summaryRow(title: "Subtotal (Excl. VAT)".newlocalized, value: subtotalExclVat)
+                        summaryRow(title: "Subtotal (Incl. VAT)".newlocalized, value: subtotalInclVat)
+                        summaryRow(title: "Vat Value".newlocalized, value: vatValue)
+                        summaryRow(title: "Discount".newlocalized, value: discount, valueColor: .red, isDiscount: true)
             
             Divider()
                 .padding(.vertical, 4)
             
             HStack {
-                Text("Total Price")
+                Text("Total Price".newlocalized)
                     .font(.title3)
                     .fontWeight(.bold)
                 
@@ -468,7 +478,9 @@ struct OrderSummaryFooter: View {
             }
         }
         .padding()
-        .background(Color.brandGreen.opacity(0.1))
+        // Applying `.ignoresSafeArea` specifically on the background
+        // ensures the green color extends down behind the home bar at the bottom of the screen.
+        .background(Color.brandGreen.opacity(0.1).ignoresSafeArea(edges: .bottom))
     }
     
     private func summaryRow(title: String, value: String, valueColor: Color = .primary, isDiscount: Bool = false) -> some View {
@@ -504,7 +516,6 @@ struct PriceView: View {
         }
     }
     
-    // Helper to map SwiftUI Font to UIFont.TextStyle for relative image sizing
     private func textStyle(for font: Font) -> UIFont.TextStyle {
         switch font {
         case .title3: return .title3
@@ -517,13 +528,11 @@ struct PriceView: View {
 }
 
 #Preview {
-    // 1. Setup Mock Repository and Use Case
     let mockRepo = OrdersRepositoryImp(networkService: NetworkService())
     let useCase = GetOrderDetailsUC(repo: mockRepo)
     let viewModel = OrderDetailsViewModel(getOrderDetailsUC: useCase)
     
-    // 2. Initialize View with the specific Order ID
     NavigationStack {
-        OrderDetailsView(orderId: 229, viewModel: viewModel)
+        OrderDetailsView(orderId: 229, isHistoryOrder: true, viewModel: viewModel)
     }
 }

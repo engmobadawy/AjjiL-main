@@ -39,7 +39,8 @@ struct OrdersTabBar: View {
                     VStack(spacing: 0) {
                         Spacer()
                         
-                        Text(tab.rawValue)
+                        // 🛠️ FIX: Added .newlocalized
+                        Text(tab.rawValue.newlocalized)
                             .font(.subheadline)
                             .fontWeight(selectedTab == tab ? .bold : .semibold)
                             .foregroundStyle(selectedTab == tab ? tealGreen : .secondary)

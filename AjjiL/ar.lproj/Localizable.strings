@@ -602,3 +602,56 @@
 /* HomeView & Top Row Strings */
 "Welcome!" = "مرحباً!";
 "AJJil User" = "مستخدم عچل";
+
+
+/* --- Orders View --- */
+"Generating Code..." = "جاري إنشاء الكود...";
+"No orders yet" = "لا توجد طلبات بعد";
+"Login To start your order" = "قم بتسجيل الدخول لبدء طلبك";
+"Hit the orange button down\nbelow to Create an order" = "اضغط على الزر البرتقالي بالأسفل\nلإنشاء طلب";
+"Start Ordering" = "ابدأ الطلب";
+"No history yet" = "لا يوجد سجل بعد";
+"Current Orders" = "الطلبات الحالية";
+"History" = "السجل";
+
+/* --- Order Details View --- */
+"Order Details" = "تفاصيل الطلب";
+"Requested Date: " = "تاريخ الطلب: ";
+"Product List" = "قائمة المنتجات";
+"Quantity: " = "الكمية: ";
+
+/* --- Rate Services View --- */
+"Rate Us" = "قيمنا";
+"Rate Our Services" = "تقييم خدماتنا";
+"Your Evaluation will referred to all the products you ordered in this order." = "سيتم تطبيق تقييمك على جميع المنتجات التي قمت بطلبها في هذا الطلب.";
+"Submitting..." = "جاري الإرسال...";
+"Submit" = "إرسال";
+"Submission Failed" = "فشل الإرسال";
+"OK" = "حسناً";
+"Your Evaluation Has Been\nReceived." = "تم استلام\nتقييمك.";
+"Back To Order" = "العودة للطلب";
+
+/* --- Cashier Scan View --- */
+"Receive Order" = "استلام الطلب";
+"Scane Code" = "مسح الكود";
+"Confirm that you are receiving your\norder by scanning the order" = "قم بتأكيد استلام\nطلبك عن طريق مسح الطلب";
+"QR Error" = "خطأ في رمز الاستجابة السريعة";
+"Reward You Gain For Completing The Order" = "المكافأة التي تحصل عليها لإكمال الطلب";
+
+
+
+/* --- Order History Cell --- */
+"Requested Date: " = "تاريخ الطلب: ";
+"Stores:" = "المتاجر:";
+"View Order" = "عرض الطلب";
+"Cashier Scan" = "مسح لدى الكاشير";
+"Re-Turn" = "إرجاع";
+
+
+
+/* --- Orders Tab Bar --- */
+"Current Orders" = "الطلبات الحالية";
+"History" = "السجل";
+
+/* --- Tab Bar --- */
+"Orders" = "الطلبات";

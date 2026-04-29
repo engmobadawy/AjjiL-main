@@ -63,6 +63,7 @@ struct RateServicesView: View {
     // Inject @Observable classes needing bindings via @Bindable, rather than @State
     @Bindable var viewModel: RateServicesViewModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(TabBarVisibility.self) private var tabVisibility
     
     // Closure to tell the parent view to dismiss itself
     var onSuccessDoubleDismiss: () -> Void
@@ -78,7 +79,7 @@ struct RateServicesView: View {
             VStack(spacing: 0) {
                 // Assuming TopRowNotForHome is defined elsewhere
                 TopRowNotForHome(
-                    title: "Rate Us",
+                    title: "Rate Us".newlocalized,
                     showBackButton: true,
                     kindOfTopRow: .none,
                     onBack: { dismiss() }
@@ -93,12 +94,12 @@ struct RateServicesView: View {
                             .padding(.top, 16)
 
                         VStack(spacing: 12) {
-                            Text("Rate Our Services")
+                            Text("Rate Our Services".newlocalized)
                                 .font(.title)
                                 .fontWeight(.bold)
                                 .foregroundStyle(Color(red: 0.18, green: 0.49, blue: 0.36)) // Modern API
 
-                            Text("Your Evaluation will referred to all the products you ordered in this order.")
+                            Text("Your Evaluation will referred to all the products you ordered in this order.".newlocalized)
                                 .font(.custom("Poppins-Regular", size: 16))
                                 .foregroundStyle(.secondary) // Modern API
                                 .multilineTextAlignment(.center)
@@ -119,8 +120,8 @@ struct RateServicesView: View {
                                     ProgressView()
                                         .tint(.white)
                                 }
-                                Text(viewModel.isSubmitting ? "Submitting..." : "Submit")
-                                    .font(.headline)
+                                Text(viewModel.isSubmitting ? "Submitting...".newlocalized : "Submit".newlocalized)
+                                                                    .font(.headline)
                             }
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)
@@ -151,10 +152,14 @@ struct RateServicesView: View {
                 .zIndex(1) // Ensure it stays on top of the navigation bar
             }
         }
+        .onAppear {
+                    tabVisibility.isHidden = true
+                }
+    
         // Utilizing modern tool bar modifiers to hide the navigation bar
         .toolbar(.hidden, for: .navigationBar)
         // Ensure errors from the ViewModel are presented to the user
-        .alert("Submission Failed", isPresented: $viewModel.showErrorAlert) {
+        .alert("Submission Failed".newlocalized, isPresented: $viewModel.showErrorAlert) {
             Button("OK", role: .cancel) { }
         } message: {
             Text(viewModel.errorMessage)
@@ -203,7 +208,8 @@ struct EvaluationSuccessPopup: View {
                 .frame(height: 220)
                 .padding(.top, 16)
             
-            Text("Your Evaluation Has Been\nReceived.")
+            // 🛠️ FIX: Added .newlocalized
+            Text("Your Evaluation Has Been\nReceived.".newlocalized)
                 .font(.title2)
                 .fontWeight(.bold)
                 .foregroundStyle(Color(red: 0.33, green: 0.70, blue: 0.43))
@@ -213,7 +219,8 @@ struct EvaluationSuccessPopup: View {
             Button {
                 onBackToOrder()
             } label: {
-                Text("Back To Order")
+                // 🛠️ FIX: Added .newlocalized
+                Text("Back To Order".newlocalized)
                     .font(.headline)
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)

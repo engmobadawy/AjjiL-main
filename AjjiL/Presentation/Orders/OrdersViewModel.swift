@@ -2,8 +2,6 @@
 //  OrdersViewModel.swift
 //  AjjiLMB
 //
-//  Created by mohamed mahmoud sobhy badawy on 24/03/2026.
-//
 
 import SwiftUI
 import Combine
@@ -13,6 +11,7 @@ import Combine
 final class OrdersViewModel {
     private let getOrderHistoryUC: GetOrderHistoryUC
     private let getCurrentOrdersUC: GetCurrentOrdersUC
+    private let getQRCodeUC: GetQRCodeUC
     
     // MARK: - State
     var isLoadingHistory: Bool = false
@@ -21,16 +20,21 @@ final class OrdersViewModel {
     var isLoadingCurrent: Bool = false
     var currentOrders: [OrderHistoryEntity] = []
     
+    var isFetchingQR: Bool = false
     var errorMessage: String? = nil
     
     // MARK: - Init
-    init(getOrderHistoryUC: GetOrderHistoryUC, getCurrentOrdersUC: GetCurrentOrdersUC) {
+    init(
+        getOrderHistoryUC: GetOrderHistoryUC,
+        getCurrentOrdersUC: GetCurrentOrdersUC,
+        getQRCodeUC: GetQRCodeUC
+    ) {
         self.getOrderHistoryUC = getOrderHistoryUC
         self.getCurrentOrdersUC = getCurrentOrdersUC
+        self.getQRCodeUC = getQRCodeUC
     }
     
     // MARK: - Actions
-    
     func fetchHistory(storeName: String? = nil, date: String? = nil) async {
         isLoadingHistory = true
         errorMessage = nil
@@ -53,17 +57,37 @@ final class OrdersViewModel {
         isLoadingCurrent = false
     }
     
+    func fetchQRCode(for orderId: Int) async -> QRCodeEntity? {
+        isFetchingQR = true
+        errorMessage = nil
+        defer { isFetchingQR = false }
+        
+        do {
+            return try await getQRCodeUC.execute(orderId: orderId)
+        } catch {
+            errorMessage = error.localizedDescription
+            return nil
+        }
+    }
+    
     // MARK: - Mappers
-    func mapToConfig(_ entity: OrderHistoryEntity) -> OrderCellConfig {
+    func mapToConfig(_ entity: OrderHistoryEntity, isHistory: Bool) -> OrderCellConfig {
+        let showBadge = shouldShowBadge(for: entity.statusId)
+        
+        let canScanCashier = !isHistory && !showBadge
+        let canReturn = isHistory && entity.isReturnable && !showBadge
+        
         return OrderCellConfig(
+            id: entity.id,
             referenceNo: entity.referenceNo,
             dateString: entity.createdAt,
             storeName: entity.store,
             storeImageUrl: URL(string: entity.storeImage),
             totalAmount: "\(entity.grandTotal)",
-            statusText: shouldShowBadge(for: entity.statusId) ? entity.statusName : nil,
+            statusText: showBadge ? entity.statusName : nil,
             statusColor: color(for: entity.statusId),
-            isReturnable: entity.isReturnable
+            canReturn: canReturn,
+            canScanCashier: canScanCashier
         )
     }
     
@@ -76,6 +100,7 @@ final class OrdersViewModel {
         switch statusId {
         case 6: return .orange
         case 7: return .red
+        case 8: return Color(red: 0.16, green: 0.53, blue: 0.38)
         default: return Color(red: 0.16, green: 0.53, blue: 0.38)
         }
     }

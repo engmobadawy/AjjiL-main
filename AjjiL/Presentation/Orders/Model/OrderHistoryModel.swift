@@ -9,7 +9,6 @@ import Foundation
 // MARK: - 1. NETWORK DTOs (Raw Backend Responses)
 // MARK: - ==========================================
 
-// MARK: Order History & Current Orders
 struct OrderHistoryModel: Codable {
     let status: Bool?
     let message: String?
@@ -65,7 +64,6 @@ struct OrderHistoryData: Identifiable, Codable {
     }
 }
 
-// MARK: Order Details
 struct OrderDetailModel: Codable {
     let status: Bool?
     let message: String?
@@ -84,7 +82,6 @@ struct OrderDetailData: Codable {
     let grandTotal: String?
     let isReturnable: Bool?
     let isRated: Int?
-//    let rate: String?
     let rate: Int?
     let priceExcludeVate: String?
     let totalTax: String?
@@ -136,43 +133,22 @@ struct OrderItemData: Codable {
     }
 }
 
-// MARK: Review Order Action
 struct SimpleActionModel: Codable {
     let status: Bool?
     let message: String?
 }
 
 // MARK: QR Code
-struct QRCodeDataModel: Codable {
+struct QRCodeDataModel: Decodable {
     let status: Bool?
     let message: String?
-    let data: QRCodeData?
+    let data: QRCodePayloadModel?
 }
 
-struct QRCodeData: Codable {
-    let qrCode: String?
-    
-    enum CodingKeys: String, CodingKey {
-        case qrCode = "qr_code"
-    }
+struct QRCodePayloadModel: Decodable {
+    let points: Int?
+    let qrcode: String?
 }
-
-// MARK: Submit Order
-//struct SubmitOrderModel: Codable {
-//    let status: Bool?
-//    let message: String?
-//    let data: SubmitOrderData?
-//}
-//
-//struct SubmitOrderData: Codable {
-//    let orderId: Int?
-//    let paymentLink: String?
-//    
-//    enum CodingKeys: String, CodingKey {
-//        case orderId = "order_id"
-//        case paymentLink = "payment_link"
-//    }
-//}
 
 // MARK: - ==========================================
 // MARK: - 2. DOMAIN ENTITIES (Clean UI Models)
@@ -239,22 +215,15 @@ struct SimpleActionEntity: Hashable {
     var message: String
 }
 
-struct QRCodeEntity: Hashable {
-    var qrCodeUrl: String
+struct QRCodeEntity: Equatable {
+    let points: Int
+    let qrcode: String
 }
-
-//struct SubmitOrderEntity: Hashable {
-//    var status: Bool
-//    var message: String
-//    var orderId: Int
-//    var paymentLink: String
-//}
 
 // MARK: - ==========================================
 // MARK: - 3. MAPPERS (The Bridge)
 // MARK: - ==========================================
 
-// MARK: History Mappers
 extension OrderHistoryModel {
     func map() -> [OrderHistoryEntity] {
         return data?.compactMap { $0.map() } ?? []
@@ -289,7 +258,6 @@ extension OrderHistoryData {
     }
 }
 
-// MARK: Details Mappers
 extension OrderDetailModel {
     func map() -> OrderDetailEntity {
         return data?.map() ?? OrderDetailEntity.empty()
@@ -341,7 +309,6 @@ extension OrderDetailEntity {
     }
 }
 
-// MARK: Action Mappers
 extension SimpleActionModel {
     func map() -> SimpleActionEntity {
         return SimpleActionEntity(
@@ -351,29 +318,11 @@ extension SimpleActionModel {
     }
 }
 
-// MARK: QR Code Mappers
 extension QRCodeDataModel {
     func map() -> QRCodeEntity {
-        return data?.map() ?? QRCodeEntity(qrCodeUrl: "")
-    }
-}
-
-extension QRCodeData {
-    func map() -> QRCodeEntity {
         return QRCodeEntity(
-            qrCodeUrl: self.qrCode ?? ""
+            points: data?.points ?? 0,
+            qrcode: data?.qrcode ?? ""
         )
     }
 }
-
-// MARK: Submit Order Mappers
-//extension SubmitOrderModel {
-//    func map() -> SubmitOrderEntity {
-//        return SubmitOrderEntity(
-//            status: self.status ?? false,
-//            message: self.message ?? "Unknown error occurred",
-//            orderId: self.data?.orderId ?? 0,
-//            paymentLink: self.data?.paymentLink ?? ""
-//        )
-//    }
-//}

@@ -6,7 +6,7 @@
 //
 
 import SwiftUI
-import Shimmer // 1. Import Shimmer
+import Shimmer
 
 // MARK: - Helper Types
 
@@ -15,11 +15,15 @@ enum ActiveSheet: String, Identifiable {
     var id: String { rawValue }
 }
 
-/// Bundles the dependencies required to trigger a network fetch into a single Equatable type.
 private struct FilterTaskID: Equatable {
     let tab: OrdersTab
     let storeName: String
-    let date: Date? // UPDATE: Now matches the appliedOrderDate type
+    let date: Date?
+}
+
+enum OrderDestination: Hashable {
+    case details(id: Int, isHistory: Bool)
+    case cashierScan(orderId: Int, qrCode: String, points: Int)
 }
 
 // MARK: - Main View
@@ -28,29 +32,22 @@ struct OrdersView: View {
     @Environment(TabBarVisibility.self) private var tabVisibility
     @State private var selectedTab: OrdersTab = .currentOrders
     @State private var activeSheet: ActiveSheet?
-    @State private var selectedOrderId: Int?
     
-    // State initialization for view models
+    @State private var navigationDestination: OrderDestination?
+    
     @State private var filterStore = OrderFilterViewModel()
     @State private var viewModel: OrdersViewModel
 
     init() {
-        // 1. Set up the dependencies
         let repo = OrdersRepositoryImp(networkService: NetworkService())
-        let historyUC = GetOrderHistoryUC(repo: repo)
-        let currentUC = GetCurrentOrdersUC(repo: repo)
-        
-        // 2. Create the View Model
         let vm = OrdersViewModel(
-            getOrderHistoryUC: historyUC,
-            getCurrentOrdersUC: currentUC
+            getOrderHistoryUC: GetOrderHistoryUC(repo: repo),
+            getCurrentOrdersUC: GetCurrentOrdersUC(repo: repo),
+            getQRCodeUC: GetQRCodeUC(repo: repo)
         )
-        
-        // 3. Initialize the @State property wrapper
         self._viewModel = State(initialValue: vm)
     }
     
-    // Computes the current state of filters and selected tab to drive the .task(id:) modifier
     private var currentTaskID: FilterTaskID {
         FilterTaskID(
             tab: selectedTab,
@@ -60,16 +57,15 @@ struct OrdersView: View {
     }
     
     var body: some View {
-        NavigationStack{
+        NavigationStack {
             VStack(spacing: 0) {
-                
                 TopRowNotForHome(
-                    title: "My Orders",
+                    title: "My Orders".newlocalized,
                     showBackButton: false,
                     kindOfTopRow: .filter,
                     onFilter: {
-                        filterStore.loadDrafts() // Prep the draft data before showing
-                        activeSheet = .filter    // Trigger the sheet
+                        filterStore.loadDrafts()
+                        activeSheet = .filter
                     }
                 )
                 
@@ -77,7 +73,6 @@ struct OrdersView: View {
                 
                 ScrollView {
                     VStack(spacing: 0) {
-                        // Check for Guest Mode before trying to show orders
                         if Constants.isGuestMode {
                             guestModeState
                         } else {
@@ -89,60 +84,37 @@ struct OrdersView: View {
                     }
                 }
                 .scrollIndicators(.hidden)
-                // Automatic fetching whenever the tab or applied filters change
                 .task(id: currentTaskID) {
-                    // Prevent API calls if the user is a guest
-                    guard !Constants.isGuestMode else { return }
-                    
-                    // Convert empty strings to nil for the API request
-                    let search = filterStore.appliedStoreName.isEmpty ? nil : filterStore.appliedStoreName
-                    
-                    // UPDATE: Format Date? to String? for the ViewModel
-                    var dateString: String? = nil
-                    if let dateToFetch = filterStore.appliedOrderDate {
-                        dateString = dateToFetch.formatted(
-                            .iso8601
-                                .year()
-                                .month()
-                                .day()
-                                .dateSeparator(.dash)
-                        )
-                    }
-                    
-                    if selectedTab == .history {
-                        await viewModel.fetchHistory(storeName: search, date: dateString)
-                    } else if selectedTab == .currentOrders {
-                        await viewModel.fetchCurrentOrders(storeName: search, date: dateString)
+                    await fetchOrders()
+                }
+                .overlay {
+                    if viewModel.isFetchingQR {
+                        VStack(spacing: 12) {
+                            ProgressView()
+                                .controlSize(.large)
+                            Text("Generating Code...".newlocalized)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(24)
+                        .background(.regularMaterial)
+                        .clipShape(.rect(cornerRadius: 16))
                     }
                 }
-                
             }
             .onAppear {
-                Task {
-                    // Prevent API calls if the user is a guest
-                    guard !Constants.isGuestMode else { return }
-                    
-                    // Replicate the exact same fetch logic to force a refresh
-                    let search = filterStore.appliedStoreName.isEmpty ? nil : filterStore.appliedStoreName
-                    
-                    var dateString: String? = nil
-                    if let dateToFetch = filterStore.appliedOrderDate {
-                        dateString = dateToFetch.formatted(.iso8601.year().month().day().dateSeparator(.dash))
-                    }
-                    
-                    if selectedTab == .history {
-                        await viewModel.fetchHistory(storeName: search, date: dateString)
-                    } else if selectedTab == .currentOrders {
-                        await viewModel.fetchCurrentOrders(storeName: search, date: dateString)
-                    }
-                }
+                Task { await fetchOrders() }
             }
-            .navigationDestination(item: $selectedOrderId) { id in
-                let repo = OrdersRepositoryImp(networkService: NetworkService())
-                let useCase = GetOrderDetailsUC(repo: repo)
-                let detailsViewModel = OrderDetailsViewModel(getOrderDetailsUC: useCase)
-                
-                OrderDetailsView(orderId: id, viewModel: detailsViewModel)
+            .navigationDestination(item: $navigationDestination) { destination in
+                switch destination {
+                case .details(let id, let isHistory):
+                    let repo = OrdersRepositoryImp(networkService: NetworkService())
+                    let detailsViewModel = OrderDetailsViewModel(getOrderDetailsUC: GetOrderDetailsUC(repo: repo))
+                    OrderDetailsView(orderId: id, isHistoryOrder: isHistory, viewModel: detailsViewModel)
+                    
+                case .cashierScan(let id, let qrCode, let points):
+                    CashierScanView(orderId: id, qrCode: qrCode, points: points)
+                }
             }
             .sheet(item: $activeSheet) { sheet in
                 switch sheet {
@@ -156,22 +128,48 @@ struct OrdersView: View {
         .navigationBarBackButtonHidden(true)
     }
     
+    // MARK: - Actions
+    
+    private func fetchOrders() async {
+        guard !Constants.isGuestMode else { return }
+        
+        let search = filterStore.appliedStoreName.isEmpty ? nil : filterStore.appliedStoreName
+        var dateString: String? = nil
+        if let dateToFetch = filterStore.appliedOrderDate {
+            dateString = dateToFetch.formatted(.iso8601.year().month().day().dateSeparator(.dash))
+        }
+        
+        if selectedTab == .history {
+            await viewModel.fetchHistory(storeName: search, date: dateString)
+        } else {
+            await viewModel.fetchCurrentOrders(storeName: search, date: dateString)
+        }
+    }
+    
+    private func handleCashierScan(for orderId: Int) {
+        Task {
+            if let qrData = await viewModel.fetchQRCode(for: orderId) {
+                navigationDestination = .cashierScan(
+                    orderId: orderId,
+                    qrCode: qrData.qrcode,
+                    points: qrData.points
+                )
+            }
+        }
+    }
+    
     // MARK: - Subviews
     
     @ViewBuilder
     private var guestModeState: some View {
         EmptyStateView(
             iconName: "ordersCar",
-            title: "No orders yet",
-            subtitle: "Login To start your order",
-            buttonTitle: "Log In",
+            title: "No orders yet".newlocalized,
+            subtitle: "Login To start your order".newlocalized,
+            buttonTitle: "Log In".newlocalized,
             action: {
-                // Clear the skip/guest flags
-                UserDefaults.standard.set(false, forKey: "pressSkip")
+                UserDefaults.standard.set(false, forKey: "pressSkip".newlocalized)
                 Constants.isGuestMode = false
-                
-                // Trigger the AppDelegate to re-evaluate the root view
-                // This will smoothly transition the user back to the LogInView
                 if let appDelegate = UIApplication.shared.delegate as? AppDelegate {
                     appDelegate.reset()
                 }
@@ -183,16 +181,19 @@ struct OrdersView: View {
     @ViewBuilder
     private var currentOrdersState: some View {
         if viewModel.isLoadingCurrent && viewModel.currentOrders.isEmpty {
-            // 2. Replace ProgressView with Skeleton + Shimmer
-            OrdersListSkeleton()
-                .shimmering()
+            OrdersListSkeleton().shimmering()
         } else if !viewModel.currentOrders.isEmpty {
             LazyVStack(spacing: 16) {
                 ForEach(viewModel.currentOrders) { order in
                     OrderHistoryCell(
-                        config: viewModel.mapToConfig(order),
-                        onViewOrder: { selectedOrderId = order.id },
-                        onReturn: { print("Tapped Return for \(order.referenceNo)") }
+                        config: viewModel.mapToConfig(order, isHistory: false),
+                        onViewOrder: {
+                            navigationDestination = .details(id: order.id, isHistory: false)
+                        },
+                        onReturn: { },
+                        onCashierScan: {
+                            handleCashierScan(for: order.id)
+                        }
                     )
                 }
             }
@@ -201,9 +202,9 @@ struct OrdersView: View {
         } else {
             EmptyStateView(
                 iconName: "ordersCar",
-                title: "No orders yet",
-                subtitle: "Hit the orange button down\nbelow to Create an order",
-                buttonTitle: "Start Ordering"
+                title: "No orders yet".newlocalized,
+                subtitle: "Hit the orange button down\nbelow to Create an order".newlocalized,
+                buttonTitle: "Start Ordering".newlocalized
             ) { }
             .containerRelativeFrame(.vertical)
         }
@@ -212,16 +213,19 @@ struct OrdersView: View {
     @ViewBuilder
     private var historyState: some View {
         if viewModel.isLoadingHistory && viewModel.historyOrders.isEmpty {
-            // 3. Replace ProgressView with Skeleton + Shimmer
-            OrdersListSkeleton()
-                .shimmering()
+            OrdersListSkeleton().shimmering()
         } else if !viewModel.historyOrders.isEmpty {
             LazyVStack(spacing: 16) {
                 ForEach(viewModel.historyOrders) { order in
                     OrderHistoryCell(
-                        config: viewModel.mapToConfig(order),
-                        onViewOrder: { selectedOrderId = order.id },
-                        onReturn: { print("Tapped Return for \(order.referenceNo)") }
+                        config: viewModel.mapToConfig(order, isHistory: true),
+                        onViewOrder: {
+                            navigationDestination = .details(id: order.id, isHistory: true)
+                        },
+                        onReturn: {
+                            print("Tapped Return for \(order.referenceNo)")
+                        },
+                        onCashierScan: { }
                     )
                 }
             }
@@ -230,9 +234,9 @@ struct OrdersView: View {
         } else {
             EmptyStateView(
                 iconName: "calendar",
-                title: "No history yet",
-                subtitle: "Hit the orange button down\nbelow to Create an order",
-                buttonTitle: "Start Ordering"
+                title: "No history yet".newlocalized,
+                subtitle: "Hit the orange button down\nbelow to Create an order".newlocalized,
+                buttonTitle: "Start Ordering".newlocalized
             ) { }
             .containerRelativeFrame(.vertical)
         }
@@ -241,13 +245,11 @@ struct OrdersView: View {
 
 // MARK: - Skeleton Loading View
 
-/// 4. Dedicated Skeleton View mimicking an Order Card
 struct OrdersListSkeleton: View {
     var body: some View {
         LazyVStack(spacing: 16) {
             ForEach(0..<5, id: \.self) { _ in
                 VStack(spacing: 16) {
-                    // Top Row: Image & Texts
                     HStack(alignment: .top, spacing: 12) {
                         Circle()
                             .fill(.gray.opacity(0.3))
@@ -267,7 +269,6 @@ struct OrdersListSkeleton: View {
                         
                         Spacer()
                         
-                        // Status Badge placeholder
                         Rectangle()
                             .fill(.gray.opacity(0.3))
                             .frame(width: 70, height: 24)
@@ -276,7 +277,6 @@ struct OrdersListSkeleton: View {
                     
                     Divider()
                     
-                    // Bottom Row: Date & Button placeholder
                     HStack {
                         Rectangle()
                             .fill(.gray.opacity(0.3))
@@ -294,7 +294,6 @@ struct OrdersListSkeleton: View {
                 .padding()
                 .background(Color.white)
                 .clipShape(.rect(cornerRadius: 16))
-                // Optional: mimic the shadow your real cards likely have
                 .shadow(color: .black.opacity(0.05), radius: 5, x: 0, y: 2)
             }
         }
@@ -339,7 +338,7 @@ struct EmptyStateView: View {
                     .padding(.horizontal, 32)
                     .frame(maxWidth: .infinity)
             }
-            .background(Color.brandGreen)
+            .background(Color(red: 0.16, green: 0.53, blue: 0.38))
             .clipShape(.rect(cornerRadius: 12))
             .padding(.top, 16)
             .padding(.horizontal, 40)

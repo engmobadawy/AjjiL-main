@@ -5,7 +5,6 @@
 //  Created by mohamed mahmoud sobhy badawy on 16/02/2026.
 //
 
-
 import SwiftUI
 import Firebase
 import FirebaseMessaging
@@ -15,6 +14,7 @@ struct TabBarView: View {
     @State private var tabRouter = TabRouter() // Use the new router
     @State private var tabVisibility = TabBarVisibility()
     @State private var tokenViewModel = TokenSubmitterViewModel()
+    
     var body: some View {
         ZStack {
             // Content for selected tab
@@ -34,6 +34,7 @@ struct TabBarView: View {
                 ProfileView()
                     .tag(4)
             }
+            
             if !tabVisibility.isHidden {
                 // Custom Tab Bar
                 VStack {
@@ -42,9 +43,11 @@ struct TabBarView: View {
                     HStack(spacing: 0) {
                         // Stores Tab
                         TabBarButton(
-                            icon: "tabBarStoresGray",
-                            title: "Stores",
-                            isSelected: tabRouter.selectedTab == 0
+                            icon: tabRouter.selectedTab == 0 ? "greenStore" : "grayStore",
+                            // 🛠️ FIX: Added .newlocalized
+                            title: "Stores".newlocalized,
+                            isSelected: tabRouter.selectedTab == 0,
+                            keepOriginalColor: true // Prevents SwiftUI from tinting these specific icons
                         ) {
                             tabRouter.selectedTab = 0
                         }
@@ -52,7 +55,8 @@ struct TabBarView: View {
                         // Orders Tab
                         TabBarButton(
                             icon: "tabBarOrders",
-                            title: "Orders",
+                            // 🛠️ FIX: Added .newlocalized
+                            title: "Orders".newlocalized,
                             isSelected: tabRouter.selectedTab == 1
                         ) {
                             tabRouter.selectedTab = 1
@@ -69,7 +73,7 @@ struct TabBarView: View {
                                 
                                 Image("tabBarHome")
                                     .font(.system(size: 28))
-                                    .foregroundColor(.white)
+                                    .foregroundStyle(.white)
                             }
                         }
                         .offset(y: -8)
@@ -78,7 +82,8 @@ struct TabBarView: View {
                         // Favorites Tab
                         TabBarButton(
                             icon: "tabBarLove",
-                            title: "Favorites",
+                            // 🛠️ FIX: Added .newlocalized
+                            title: "Favorites".newlocalized,
                             isSelected: tabRouter.selectedTab == 3
                         ) {
                             tabRouter.selectedTab = 3
@@ -87,7 +92,8 @@ struct TabBarView: View {
                         // Profile Tab
                         TabBarButton(
                             icon: "tabBarProfile",
-                            title: "Profile",
+                            // 🛠️ FIX: Added .newlocalized
+                            title: "Profile".newlocalized,
                             isSelected: tabRouter.selectedTab == 4
                         ) {
                             tabRouter.selectedTab = 4
@@ -97,21 +103,17 @@ struct TabBarView: View {
                     .padding(.bottom, 8)
                     .padding(.top, 12)
                     .background(Color.white)
-                }.ignoresSafeArea(.keyboard, edges: .bottom)
+                }
+                .ignoresSafeArea(.keyboard, edges: .bottom)
             }
         }
         .environment(tabVisibility)
         .environment(tabRouter) // Inject the router into the environment
         .task {
-                    await tokenViewModel.submitTokenIfNeeded()
-                }
+            await tokenViewModel.submitTokenIfNeeded()
+        }
     }
 }
-
-
-
-
-
 
 @Observable
 @MainActor
@@ -165,40 +167,36 @@ final class TokenSubmitterViewModel {
     }
 }
 
-
 @Observable
 @MainActor
 final class TabRouter {
     var selectedTab: Int = 2 // Home is selected by default
 }
 
-
-
-
-
 struct TabBarButton: View {
     let icon: String
     let title: String
     let isSelected: Bool
+    var keepOriginalColor: Bool = false // Allows specific icons to bypass template tinting
     let action: () -> Void
     
     var body: some View {
         Button(action: action) {
             VStack(spacing: 4) {
                 Image(icon)
-                    .renderingMode(.template)
+                    // Use original mode to keep the asset's exact colors if requested
+                    .renderingMode(keepOriginalColor ? .original : .template)
                     .font(.system(size: 24))
-                    .foregroundColor(isSelected ? .darkMainGreen: Color(red: 0.62, green: 0.66, blue: 0.66))
+                    .foregroundStyle(isSelected ? .darkMainGreen: Color(red: 0.62, green: 0.66, blue: 0.66))
                 
                 Text(title)
                     .font(.system(size: 12))
-                    .foregroundColor(isSelected ? .darkMainGreen : Color(red: 0.62, green: 0.66, blue: 0.66))
+                    .foregroundStyle(isSelected ? .darkMainGreen : Color(red: 0.62, green: 0.66, blue: 0.66))
             }
         }
         .frame(maxWidth: .infinity)
     }
 }
-
 
 struct StoresView: View {
     var body: some View {
@@ -207,16 +205,11 @@ struct StoresView: View {
     }
 }
 
-
-
-
 @Observable
 @MainActor
 final class TabBarVisibility {
     var isHidden: Bool = false
 }
-
-
 
 #Preview {
     TabBarView()

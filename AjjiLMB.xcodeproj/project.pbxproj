@@ -22,6 +22,7 @@
 		451ED6AB2F5860C6009AC3EA /* IQKeyboardManagerSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 451ED6AA2F5860C6009AC3EA /* IQKeyboardManagerSwift */; };
 		4580C6E92F7F0B05003BBEBE /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 4580C6E82F7F0B05003BBEBE /* Kingfisher */; };
 		459EB32B2F9E3B4C00C1F436 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 459EB32A2F9E3B4C00C1F436 /* FirebaseMessaging */; };
+		459EB3302FA165BA00C1F436 /* GoogleMaps in Frameworks */ = {isa = PBXBuildFile; productRef = 459EB32F2FA165BA00C1F436 /* GoogleMaps */; };
 		45AFE61E2F90E84700380C1C /* Shimmer in Frameworks */ = {isa = PBXBuildFile; productRef = 45AFE61D2F90E84700380C1C /* Shimmer */; };
 		45D324022F4C721D00C34BF1 /* MOLH in Frameworks */ = {isa = PBXBuildFile; productRef = 45D324012F4C721D00C34BF1 /* MOLH */; };
 /* End PBXBuildFile section */
@@ -70,6 +71,7 @@
 			files = (
 				4580C6E92F7F0B05003BBEBE /* Kingfisher in Frameworks */,
 				45D324022F4C721D00C34BF1 /* MOLH in Frameworks */,
+				459EB3302FA165BA00C1F436 /* GoogleMaps in Frameworks */,
 				459EB32B2F9E3B4C00C1F436 /* FirebaseMessaging in Frameworks */,
 				45AFE61E2F90E84700380C1C /* Shimmer in Frameworks */,
 				451ED6AB2F5860C6009AC3EA /* IQKeyboardManagerSwift in Frameworks */,
@@ -156,6 +158,7 @@
 				4580C6E82F7F0B05003BBEBE /* Kingfisher */,
 				45AFE61D2F90E84700380C1C /* Shimmer */,
 				459EB32A2F9E3B4C00C1F436 /* FirebaseMessaging */,
+				459EB32F2FA165BA00C1F436 /* GoogleMaps */,
 			);
 			productName = AjjiL;
 			productReference = 45E1DEE42F39C78500F2A199 /* AjjiLMB.app */;
@@ -192,6 +195,7 @@
 				4580C6E72F7F0B05003BBEBE /* XCRemoteSwiftPackageReference "kingfisher" */,
 				45AFE61C2F90E84700380C1C /* XCRemoteSwiftPackageReference "swiftui-Shimmer" */,
 				459EB3292F9E3B4C00C1F436 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				459EB32E2FA165BA00C1F436 /* XCRemoteSwiftPackageReference "ios-maps-sdk" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 45E1DEE52F39C78500F2A199 /* Products */;
@@ -493,6 +497,14 @@
 				version = 12.12.1;
 			};
 		};
+		459EB32E2FA165BA00C1F436 /* XCRemoteSwiftPackageReference "ios-maps-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/googlemaps/ios-maps-sdk";
+			requirement = {
+				kind = exactVersion;
+				version = 10.12.0;
+			};
+		};
 		45AFE61C2F90E84700380C1C /* XCRemoteSwiftPackageReference "swiftui-Shimmer" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/markiv/swiftui-Shimmer";
@@ -526,6 +538,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 459EB3292F9E3B4C00C1F436 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseMessaging;
+		};
+		459EB32F2FA165BA00C1F436 /* GoogleMaps */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 459EB32E2FA165BA00C1F436 /* XCRemoteSwiftPackageReference "ios-maps-sdk" */;
+			productName = GoogleMaps;
 		};
 		45AFE61D2F90E84700380C1C /* Shimmer */ = {
 			isa = XCSwiftPackageProductDependency;
