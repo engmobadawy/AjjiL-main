@@ -72,12 +72,10 @@ final class ProductDetailsViewModel {
             }
             
             // 3. Revert if backend says it failed
-            // 3. Revert if backend says it failed
-                        if response.status == false {
-                            revertFavoriteState(for: productID, wasFavorite: isCurrentlyFavorite)
-                            // 🛠️ FIX: Added .newlocalized
-                            errorMessage = response.message ?? "Failed to update favorite.".newlocalized
-                        }
+            if response.status == false {
+                revertFavoriteState(for: productID, wasFavorite: isCurrentlyFavorite)
+                errorMessage = response.message ?? "Failed to update favorite.".newlocalized
+            }
         } catch {
             revertFavoriteState(for: productID, wasFavorite: isCurrentlyFavorite)
             errorMessage = error.localizedDescription
@@ -104,11 +102,34 @@ final class ProductDetailsViewModel {
             quantity: defaultQuantity
         )
         
-        // 🛠️ FIX: Added .newlocalized to the toast titles and messages
-                toast = FancyToast(
-                    type: .success,
-                    title: "Success".newlocalized,
-                    message: "added to the cart successfully".newlocalized
-                )
+        toast = FancyToast(
+            type: .success,
+            title: "Success".newlocalized,
+            message: "added to the cart successfully".newlocalized
+        )
+    }
+}
+
+// MARK: - Adapter for Scanner Routing
+extension ProductDetailResponse {
+    var asHomeProduct: HomeFeaturedProductDataEntity {
+        HomeFeaturedProductDataEntity(
+            id: self.productBranchId,
+            branchId: self.branchId,
+            productId: self.productId,
+            name: self.name,
+            category: self.categoryName,
+            storeId: self.storeId,
+            brand: self.storeName,
+            brandImage: self.storeImage,
+            imageURL: self.images,
+            price: self.finalPrice,
+            originalPrice: self.price,
+            offerType: self.offerType,
+            offerId: self.offerId,
+            discount: self.offerDiscount,
+            barcode: self.barcode,
+            isFavorite: self.isFavorite
+        )
     }
 }

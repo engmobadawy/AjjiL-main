@@ -8,6 +8,7 @@
 import SwiftUI
 import Foundation
 import Shimmer
+import WebKit
 
 @MainActor
 @Observable
@@ -17,7 +18,7 @@ final class CartViewModel {
     private let removeProductFromCartUC: RemoveProductFromCartUC
     private let verifyPromoCodeUC: VerifyPromoCodeUseCase
     private let submitOrderUC: SubmitOrderUC // NEW
-   
+    
     private(set) var isLoading = false
     private(set) var cart: CartEntity? = nil
     private(set) var errorMessage: String? = nil
@@ -267,9 +268,9 @@ struct CartView: View {
         .task(id: branchId) {
             await viewModel.fetchCart(branchId: branchId)
         }
-        .sheet(item: $viewModel.paymentDestination) { destination in
-                    PaymentGatewaySheet(destination: destination)
-                }
+        .navigationDestination(item: $viewModel.paymentDestination) { destination in
+            PaymentGatewayView(destination: destination)
+        }
     }
     
     // MARK: - View States
@@ -872,20 +873,13 @@ struct PaymentMethodCell: View {
 }
 
 
+// MARK: - Navigation Trigger Model
+struct PaymentDestination: Identifiable, Hashable {
+    let id = UUID()
+    let url: URL
+}
 
-
-
-
-
-import WebKit
-
-// Navigation trigger model
-//struct PaymentDestination: Identifiable {
-//    let id = UUID()
-//    let url: URL
-//}
-
-// Reusable WKWebView Wrapper
+// MARK: - Reusable WKWebView Wrapper
 struct WebView: UIViewRepresentable {
     let url: URL
 
@@ -899,25 +893,26 @@ struct WebView: UIViewRepresentable {
     }
 }
 
-// The Sheet presented over the Cart
-struct PaymentGatewaySheet: View {
+// MARK: - Payment Gateway View
+struct PaymentGatewayView: View {
     @Environment(\.dismiss) private var dismiss
     let destination: PaymentDestination
     
     var body: some View {
-        NavigationStack {
-            WebView(url: destination.url)
-                // 🛠️ FIX: Added .newlocalized
-                .navigationTitle("Secure Payment".newlocalized)
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        // 🛠️ FIX: Added .newlocalized
-                        Button("back".newlocalized) {
-                            dismiss()
-                        }
-                    }
+        VStack(spacing: 0) {
+            TopRowNotForHome(
+                title: "Secure Payment".newlocalized,
+                showBackButton: true,
+                kindOfTopRow: .justNotification,
+                onBack: {
+                    dismiss()
                 }
+            )
+            
+            WebView(url: destination.url)
         }
+        .navigationBarBackButtonHidden(true)
+        .toolbar(.hidden, for: .navigationBar)
+        .toolbar(.hidden, for: .tabBar)
     }
 }

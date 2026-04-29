@@ -5,7 +5,9 @@ import Shimmer
 
 struct ProductDetailsView: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var showScannerView: Bool = false
+    
+    // NEW: Replaced the boolean with the destination wrapper
+    @State private var scannerDestination: ScannerDestination?
     @State private var showGuestLoginSheet: Bool = false
     
     @AppStorage("isStoreMode") private var isStoreMode: Bool = false
@@ -16,11 +18,11 @@ struct ProductDetailsView: View {
     var body: some View {
         VStack(spacing: 0) {
             TopRowNotForHome(
-                            title: "Details".newlocalized,
-                            showBackButton: true,
-                            kindOfTopRow: .justNotification,
-                            onBack: { dismiss() }
-                        )
+                title: "Details".newlocalized,
+                showBackButton: true,
+                kindOfTopRow: .justNotification,
+                onBack: { dismiss() }
+            )
             
             if viewModel.isLoading && viewModel.productDetail == nil {
                 ScrollView {
@@ -59,7 +61,8 @@ struct ProductDetailsView: View {
                             if Constants.isGuestMode {
                                 showGuestLoginSheet = true
                             } else if isStoreMode {
-                                showScannerView = true
+                                // NEW: Pass the mapped product to the scanner
+                                scannerDestination = ScannerDestination(product: product.asHomeProduct)
                             } else {
                                 let branchId = savedBranchID == 0 ? 1 : savedBranchID
                                 Task {
@@ -96,8 +99,23 @@ struct ProductDetailsView: View {
                 .scrollIndicators(.hidden)
             }
         }
-        .navigationDestination(isPresented: $showScannerView) {
-            ScannerMainView()
+        // NEW: Model-based routing using our item
+        .navigationDestination(item: $scannerDestination) { destination in
+            ScannerMainView(
+                product: destination.product,
+                onAddToCart: { _ in
+                    // The view model already knows which product it is displaying,
+                    // so we just execute the standard add to cart flow
+                    let branchId = savedBranchID == 0 ? 1 : savedBranchID
+                    await viewModel.addToCart(branchId: branchId)
+                },
+                onGoToCart: {
+                    print("Navigate to Cart from Product Details...")
+                },
+                onGoToStore: {
+                    // Handled automatically by dismiss
+                }
+            )
         }
         .sheet(isPresented: $showGuestLoginSheet) {
             GuestLoginSheetView()
@@ -436,5 +454,3 @@ private struct ProductDetailRibbon: View {
             .offset(x: 38, y: 12)
     }
 }
-
-

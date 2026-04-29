@@ -2,13 +2,8 @@
 //  HomeModel.swift
 //  AjjiL
 //
-//  Created by mohamed mahmoud sobhy badawy on 04/03/2026.
-//
-
 
 import Foundation
-
-
 
 // MARK: - HomeBannerModel
 struct HomeBannerModel: Codable {
@@ -23,11 +18,11 @@ struct HomeStoresModel: Codable {
     let data: [HomeStoresData]?
 }
 
-// MARK: - Datum
 struct HomeBannerData: Identifiable, Codable {
     var id: Int?
     var image: String?
 }
+
 struct HomeStoresData: Identifiable, Codable {
     var id: Int?
     var image: String?
@@ -37,6 +32,7 @@ struct HomeStoresData: Identifiable, Codable {
 struct HomeBannerEntity {
     var data: [HomeBannerDataEntity]
 }
+
 struct HomeStoresEntity {
     var data: [HomeStoresDataEntity]
 }
@@ -46,12 +42,10 @@ struct HomeBannerDataEntity: Identifiable, Hashable {
     var image: String
 }
 
-
-
 struct HomeStoresDataEntity: Identifiable, Hashable {
     var id: Int
     var image: String
-    var name: String // Added to support dynamic store names
+    var name: String
 }
 
 extension HomeBannerModel {
@@ -59,6 +53,7 @@ extension HomeBannerModel {
         return data?.compactMap { $0.map() } ?? []
     }
 }
+
 extension HomeStoresModel {
     func map() -> [HomeStoresDataEntity] {
         return data?.compactMap { $0.map() } ?? []
@@ -70,16 +65,12 @@ extension HomeBannerData {
         HomeBannerDataEntity(id: self.id ?? 0, image: self.image ?? "")
     }
 }
+
 extension HomeStoresData {
     func map() -> HomeStoresDataEntity {
-        HomeStoresDataEntity(id: self.id ?? 0, image: self.image ?? "", name: self.name )
+        HomeStoresDataEntity(id: self.id ?? 0, image: self.image ?? "", name: self.name)
     }
 }
-
-
-
-// MARK: - Product API Models
-
 
 // MARK: - Product API Models
 
@@ -97,48 +88,60 @@ struct HomeFeaturedProductDataWrapper: Codable {
 
 struct HomeFeaturedProductData: Identifiable, Codable {
     var id: Int?
+    var branchId: Int?
     var productId: Int?
-    var category: String?
     var name: String?
+    var category: String?
+    var storeId: Int?
     var brand: String?
-    var brandImage : String?
+    var brandImage: String?
+    var image: String?
     var price: Double?
     var originalPrice: Double?
+    var offerType: String?
+    var offerId: Int?
     var discount: String?
-    var image: String?
     var barcode: String?
-    var isFavorite: Bool? // NEW
+    var isFavorite: Bool?
     
     enum CodingKeys: String, CodingKey {
         case id = "product_branch_id"
+        case branchId = "branch_id"
         case productId = "product_id"
-        case category = "category_name"
         case name
+        case category = "category_name"
+        case storeId = "store_id"
         case brand = "store_name"
         case brandImage = "store_image"
+        case image = "images"
         case price = "final_price"
         case originalPrice = "price"
+        case offerType = "offer_type"
+        case offerId = "offer_id"
         case discount = "offer_discount"
-        case image = "images"
         case barcode
-        case isFavorite = "is_favorite" // NEW
+        case isFavorite = "is_favorite"
     }
 }
 
 // MARK: - 2. Domain Entities (Clean UI Models)
 struct HomeFeaturedProductDataEntity: Identifiable, Hashable {
-    var id: Int
-    var productId: Int
-    var category: String
-    var name: String
-    var brand: String
-    var brandImage: String
-    var price: Double
-    var originalPrice: Double
-    var discount: String
-    var imageURL: String
-    var barcode: String
-    var isFavorite: Bool // NEW
+    let id: Int
+    let branchId: Int
+    let productId: Int
+    let name: String
+    let category: String
+    let storeId: Int
+    let brand: String
+    let brandImage: String
+    let imageURL: String
+    let price: Double
+    let originalPrice: Double
+    let offerType: String?
+    let offerId: Int?
+    let discount: String
+    let barcode: String
+    var isFavorite: Bool
 }
 
 // MARK: - 3. Mappers (The Bridge)
@@ -152,17 +155,21 @@ extension HomeFeaturedProductData {
     func map() -> HomeFeaturedProductDataEntity {
         HomeFeaturedProductDataEntity(
             id: self.id ?? 0,
+            branchId: self.branchId ?? 0,
             productId: self.productId ?? 0,
-            category: self.category ?? "General",
             name: self.name ?? "Unknown",
+            category: self.category ?? "General",
+            storeId: self.storeId ?? 0,
             brand: self.brand ?? "Unknown",
             brandImage: self.brandImage ?? "",
+            imageURL: self.image ?? "",
             price: self.price ?? 0.0,
             originalPrice: self.originalPrice ?? 0.0,
-            discount: self.discount ?? "",
-            imageURL: self.image ?? "",
+            offerType: self.offerType,
+            offerId: self.offerId,
+            discount: self.discount ?? "0",
             barcode: self.barcode ?? "",
-            isFavorite: self.isFavorite ?? false // NEW (defaults to false if null)
+            isFavorite: self.isFavorite ?? false
         )
     }
 }

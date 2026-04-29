@@ -1,34 +1,34 @@
 import SwiftUI
 import Shimmer
 
+// Add this small struct at the top or bottom of the file
+struct ScannerDestination: Hashable {
+    let product: HomeFeaturedProductDataEntity
+}
+
 struct HomeView: View {
     @Environment(TabBarVisibility.self) private var tabVisibility
     
     @AppStorage("isStoreMode") private var isStoreMode: Bool = false
     @AppStorage("savedBranchID") private var savedBranchID: Int = 0
     
-    // MARK: - State
-    // 🛠️ FIX: Use @Bindable for an injected @Observable dependency that needs bindings
     @Bindable private var viewModel = DependencyContainer.HomeDependency.shared.homeVM
     @State private var searchText: String = ""
    
-    @State private var showScannerView: Bool = false
     @State private var showNotificationsView: Bool = false
-    
-    // NEW: State to control the guest login sheet
     @State private var showGuestLoginSheet: Bool = false
+    
+    // NEW: Object-based routing for the scanner
+    @State private var scannerDestination: ScannerDestination?
     
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
                 HomeTopRow()
                 
-                // 2. Search & Shop Header
                 searchAndToggleHeader
                 
-                // 3. Main Scrollable Content
                 ScrollView {
-                    // Toggle between Skeleton and Actual Data
                     if viewModel.isLoading {
                         skeletonLayout
                             .shimmering()
@@ -69,8 +69,22 @@ struct HomeView: View {
             .navigationDestination(isPresented: $showNotificationsView) {
                 HomeView()
             }
-            .navigationDestination(isPresented: $showScannerView) {
-                ScannerMainView()
+            // NEW: Model-based navigation to Scanner
+            .navigationDestination(item: $scannerDestination) { destination in
+                ScannerMainView(
+                    product: destination.product,
+                    onAddToCart: { scannedProduct in
+                        let branchId = savedBranchID == 0 ? 1 : savedBranchID
+                        await viewModel.addToCart(product: scannedProduct, branchId: branchId)
+                    },
+                    onGoToCart: {
+                        // Adjust based on your TabBar structure
+                        print("Navigating to cart...")
+                    },
+                    onGoToStore: {
+                        // Dismiss happens in ScannerMainView, add any additional state resets here
+                    }
+                )
             }
             .sheet(isPresented: $showGuestLoginSheet) {
                 GuestLoginSheetView()
@@ -82,7 +96,7 @@ struct HomeView: View {
         .task {
             await viewModel.fetchData()
         }
-        .toastView(toast: $viewModel.toast) // 👈 @Bindable makes this $ binding work flawlessly
+        .toastView(toast: $viewModel.toast)
     }
 
     // MARK: - Skeleton Loading Layout
@@ -165,8 +179,8 @@ struct HomeView: View {
                             if Constants.isGuestMode {
                                 showGuestLoginSheet = true
                             } else {
-                                print("Scanning \(product.name)")
-                                showScannerView = true
+                                // NEW: Pass the product to the router state
+                                scannerDestination = ScannerDestination(product: product)
                             }
                         }
                     )

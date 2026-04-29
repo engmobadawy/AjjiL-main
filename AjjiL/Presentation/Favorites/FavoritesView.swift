@@ -14,7 +14,8 @@ struct FavoritesView: View {
     // 🛠️ FIX: Use @Bindable for an injected @Observable dependency that needs bindings
     @Bindable private var viewModel: FavoritesViewModel = DependencyContainer.FavoritesDependency.shared.favoritesVM
     
-    @State private var showScannerView: Bool = false
+    // NEW: Replaced boolean with our item-based routing state
+    @State private var scannerDestination: ScannerDestination?
     
     private enum ViewState {
         case loading
@@ -41,10 +42,10 @@ struct FavoritesView: View {
         VStack(spacing: 0) {
             NavigationStack {
                 TopRowNotForHome(
-                                    title: "Favorites".newlocalized,
-                                    showBackButton: false,
-                                    kindOfTopRow: .justNotification
-                                )
+                    title: "Favorites".newlocalized,
+                    showBackButton: false,
+                    kindOfTopRow: .justNotification
+                )
             
                 ScrollView {
                     switch currentState {
@@ -54,16 +55,15 @@ struct FavoritesView: View {
                             .padding(.top, 16)
                             
                     case .empty:
-                                            VStack(alignment: .center, spacing: 28) {
-                                                Image("NoFavorites")
-                                                    .resizable()
-                                                    .frame(width: 168, height: 168)
-                                                
-                                        
-                                                Text("No Favorites yet".newlocalized)
-                                                    .font(.custom("Poppins-SemiBold", size: 28))
-                                            }
-                                            .padding(.top, 198)
+                        VStack(alignment: .center, spacing: 28) {
+                            Image("NoFavorites")
+                                .resizable()
+                                .frame(width: 168, height: 168)
+                            
+                            Text("No Favorites yet".newlocalized)
+                                .font(.custom("Poppins-SemiBold", size: 28))
+                        }
+                        .padding(.top, 198)
                         
                     case .notEmpty:
                         LazyVGrid(columns: columns, spacing: 16) {
@@ -83,7 +83,10 @@ struct FavoritesView: View {
                                                 await viewModel.addToCart(product: product.asHomeProduct, branchId: branchId)
                                             }
                                         },
-                                        onScanToBuy: { showScannerView = true }
+                                        onScanToBuy: {
+                                            // NEW: Trigger the scanner route with the specific product
+                                            scannerDestination = ScannerDestination(product: product.asHomeProduct)
+                                        }
                                     )
                                 }
                                 .buttonStyle(.plain)
@@ -106,8 +109,23 @@ struct FavoritesView: View {
                         )
                     )
                 }
-                .navigationDestination(isPresented: $showScannerView) {
-                    ScannerMainView()
+                // NEW: Model-based navigation to Scanner
+                .navigationDestination(item: $scannerDestination) { destination in
+                    ScannerMainView(
+                        product: destination.product,
+                        onAddToCart: { scannedProduct in
+                            let branchId = savedBranchID == 0 ? 1 : savedBranchID
+                            await viewModel.addToCart(product: scannedProduct, branchId: branchId)
+                        },
+                        onGoToCart: {
+                            // Adjust based on your TabBar structure to switch to the Cart tab
+                            print("Navigating to cart from Favorites...")
+                        },
+                        onGoToStore: {
+                            // Dismiss happens automatically in ScannerMainView
+                            print("Returning to Favorites...")
+                        }
+                    )
                 }
             }
         }
@@ -115,7 +133,7 @@ struct FavoritesView: View {
         .task {
             await viewModel.fetchFavorites()
         }
-        .toastView(toast: $viewModel.toast) // 👈 @Bindable allows this $ binding to work flawlessly
+        .toastView(toast: $viewModel.toast)
     }
 }
 

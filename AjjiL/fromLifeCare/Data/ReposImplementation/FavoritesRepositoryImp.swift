@@ -56,20 +56,26 @@ class FavoritesRepositoryImp: FavoritesRepository {
 }
 
 // MARK: - Adapter for HomeProductCard
+// MARK: - Adapter for HomeProductCard
 extension FavoriteProductDataEntity {
     var asHomeProduct: HomeFeaturedProductDataEntity {
         HomeFeaturedProductDataEntity(
             id: self.id,
+            branchId: self.branchId,       // NEW
             productId: self.productId,
-            category: self.category,
             name: self.name,
+            category: self.category,
+            storeId: self.storeId,         // NEW
             brand: self.brand,
             brandImage: self.brandImage,
+            imageURL: self.imageURL,
             price: self.price,
             originalPrice: self.originalPrice,
+            offerType: self.offerType,     // NEW (Optional)
+            offerId: self.offerId,         // NEW (Optional)
             discount: self.discount,
-            imageURL: self.imageURL,
-            barcode: self.barcode, isFavorite: self.isFavorite
+            barcode: self.barcode,
+            isFavorite: self.isFavorite
         )
     }
 }

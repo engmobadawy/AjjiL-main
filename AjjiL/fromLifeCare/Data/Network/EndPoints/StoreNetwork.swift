@@ -271,15 +271,19 @@ extension ProductItem {
     func asFeaturedProductEntity() -> HomeFeaturedProductDataEntity {
         return HomeFeaturedProductDataEntity(
             id: self.productBranchId ?? 0,
+            branchId: self.branchId ?? 0,          // NEW
             productId: self.productId ?? 0,
-            category: self.categoryName ?? "General",
             name: self.name ?? "Unknown",
+            category: self.categoryName ?? "General",
+            storeId: self.storeId ?? 0,            // NEW
             brand: self.storeName ?? "Unknown",
             brandImage: self.storeImage ?? "",
+            imageURL: self.images ?? "",
             price: self.finalPrice ?? 0.0,
             originalPrice: self.price ?? 0.0,
-            discount: self.offerDiscount ?? "",
-            imageURL: self.images ?? "",
+            offerType: self.offerType,             // NEW (Optional)
+            offerId: self.offerId,                 // NEW (Optional)
+            discount: self.offerDiscount ?? "0",
             barcode: self.barcode ?? "",
             isFavorite: self.isFavorite ?? false
         )

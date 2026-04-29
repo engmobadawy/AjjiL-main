@@ -8,7 +8,9 @@ struct StoreView: View {
     
     @Environment(\.dismiss) private var dismiss
     @State private var showAllCategories: Bool = false
-    @State private var showScannerView: Bool = false
+    
+    // NEW: Object-based routing for the scanner
+    @State private var scannerDestination: ScannerDestination?
     
     // NEW: State to control the guest login sheet
     @State private var showGuestLoginSheet: Bool = false
@@ -40,7 +42,7 @@ struct StoreView: View {
         isStoreMode ? .inStore : .online
     }
     
-//    @State private var showNotificationsView: Bool = false
+//  @State private var showNotificationsView: Bool = false
     @State private var showCartView: Bool = false
     @State private var showBranchSelection: Bool = true
     
@@ -55,7 +57,7 @@ struct StoreView: View {
                         kindOfTopRow: .withCartAndNotification,
                         onBack: { dismiss() },
                         onCart: { showCartView = true }
-//                        onNotification: { showNotificationsView = true }
+//                      onNotification: { showNotificationsView = true }
                     )
                     
                     StoreTabBar(selectedTab: $selectedTab)
@@ -72,8 +74,9 @@ struct StoreView: View {
                                 onViewAllCategories: {
                                     showAllCategories = true
                                 },
-                                onScanToBuy: {
-                                    showScannerView = true
+                                onScanToBuy: { product in
+                                    // NEW: Pass the product to the destination
+                                    scannerDestination = ScannerDestination(product: product)
                                 },
                                 onGuestAction: {
                                     showGuestLoginSheet = true
@@ -83,8 +86,9 @@ struct StoreView: View {
                             ProductCatalogView(
                                 storeViewModel: storeViewModel,
                                 selectedCategoryID: $selectedCategoryID,
-                                onScanToBuy: {
-                                    showScannerView = true
+                                onScanToBuy: { product in
+                                    // NEW: Pass the product to the destination
+                                    scannerDestination = ScannerDestination(product: product)
                                 },
                                 onGuestAction: {
                                     showGuestLoginSheet = true
@@ -103,8 +107,22 @@ struct StoreView: View {
             .navigationBarBackButtonHidden(true)
             .background(Color(white: 0.98).ignoresSafeArea())
             
-            .navigationDestination(isPresented: $showScannerView) {
-                ScannerMainView()
+            // NEW: Model-based navigation to Scanner
+            .navigationDestination(item: $scannerDestination) { destination in
+                ScannerMainView(
+                    product: destination.product,
+                    onAddToCart: { scannedProduct in
+                        let branchId = savedBranchID == 0 ? 1 : savedBranchID
+                        await storeViewModel.addToCart(product: scannedProduct, branchId: branchId)
+                    },
+                    onGoToCart: {
+                        // Switch immediately to the CartView within the store context
+                        showCartView = true
+                    },
+                    onGoToStore: {
+                        // Dismiss happens in ScannerMainView automatically
+                    }
+                )
             }
             .navigationDestination(isPresented: $showCartView) {
                 let branchIdToFetch = savedBranchID == 0 ? 1 : savedBranchID
@@ -198,8 +216,8 @@ struct StoreContentView: View {
     @Binding var search: String
     let currentMode: ShopMode
     var onViewAllCategories: () -> Void
-    var onScanToBuy: () -> Void
-    var onGuestAction: () -> Void // NEW
+    var onScanToBuy: (HomeFeaturedProductDataEntity) -> Void // NEW: Expects product
+    var onGuestAction: () -> Void
     
     private var isStoreEmpty: Bool {
         storeViewModel.storeSliders.isEmpty && storeViewModel.storeProducts.isEmpty && storeViewModel.storeCategories.isEmpty
@@ -240,8 +258,8 @@ struct StoreContentView: View {
                     FeaturedProductsSection(
                         storeViewModel: storeViewModel,
                         products: storeViewModel.storeProducts,
-                        onScanToBuy: onScanToBuy,
-                        onGuestAction: onGuestAction // Passed down
+                        onScanToBuy: onScanToBuy, // Passes the product up
+                        onGuestAction: onGuestAction
                     )
                 }
             }
@@ -255,8 +273,8 @@ struct StoreContentView: View {
 struct ProductCatalogView: View {
     var storeViewModel: StoreViewModel
     @Binding var selectedCategoryID: Int?
-    var onScanToBuy: () -> Void
-    var onGuestAction: () -> Void // NEW
+    var onScanToBuy: (HomeFeaturedProductDataEntity) -> Void // NEW: Expects product
+    var onGuestAction: () -> Void
     
     @AppStorage("savedBranchID") private var savedBranchID: Int = 0
     
@@ -284,7 +302,6 @@ struct ProductCatalogView: View {
                                 product: product,
                                 isFavorite: FavoritesManager.shared.isFavorite(product.id),
                                 onToggleFavorite: {
-                                    // NEW: Check Guest Mode
                                     if Constants.isGuestMode {
                                         onGuestAction()
                                     } else {
@@ -292,7 +309,6 @@ struct ProductCatalogView: View {
                                     }
                                 },
                                 onAddToCart: {
-                                    // NEW: Check Guest Mode
                                     if Constants.isGuestMode {
                                         onGuestAction()
                                     } else {
@@ -301,11 +317,11 @@ struct ProductCatalogView: View {
                                     }
                                 },
                                 onScanToBuy: {
-                                    // NEW: Check Guest Mode
+                                    // NEW: Check Guest Mode, pass product back up
                                     if Constants.isGuestMode {
                                         onGuestAction()
                                     } else {
-                                        onScanToBuy()
+                                        onScanToBuy(product)
                                     }
                                 }
                             )
@@ -323,15 +339,14 @@ struct ProductCatalogView: View {
 struct FeaturedProductsSection: View {
     var storeViewModel: StoreViewModel
     let products: [HomeFeaturedProductDataEntity]
-    var onScanToBuy: () -> Void
-    var onGuestAction: () -> Void // NEW
+    var onScanToBuy: (HomeFeaturedProductDataEntity) -> Void // NEW: Expects product
+    var onGuestAction: () -> Void
     
     @AppStorage("selectedTab") private var selectedTab: StoreTab = .store
     @AppStorage("savedBranchID") private var savedBranchID: Int = 0
     
     var body: some View {
         VStack(spacing: 16) {
-            // 🛠️ FIX: Localized
             SectionHeader(title: "Featured Products".newlocalized, actionTitle: "View All".newlocalized) {selectedTab = .products}
             
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
@@ -341,7 +356,6 @@ struct FeaturedProductsSection: View {
                             product: product,
                             isFavorite: FavoritesManager.shared.isFavorite(product.id),
                             onToggleFavorite: {
-                                // NEW: Check Guest Mode
                                 if Constants.isGuestMode {
                                     onGuestAction()
                                 } else {
@@ -349,7 +363,6 @@ struct FeaturedProductsSection: View {
                                 }
                             },
                             onAddToCart: {
-                                // NEW: Check Guest Mode
                                 if Constants.isGuestMode {
                                     onGuestAction()
                                 } else {
@@ -358,11 +371,11 @@ struct FeaturedProductsSection: View {
                                 }
                             },
                             onScanToBuy: {
-                                // NEW: Check Guest Mode
+                                // NEW: Check Guest Mode, pass product back up
                                 if Constants.isGuestMode {
                                     onGuestAction()
                                 } else {
-                                    onScanToBuy()
+                                    onScanToBuy(product)
                                 }
                             }
                         )
@@ -370,8 +383,8 @@ struct FeaturedProductsSection: View {
                     .buttonStyle(.plain)
                 }
             }
-            .padding(.horizontal, 18)
         }
+        .padding(.horizontal, 18)
     }
 }
 
@@ -476,7 +489,6 @@ struct CategoryGridSection: View {
     
     var body: some View {
         VStack(spacing: 16) {
-            // 🛠️ FIX: Localized
             SectionHeader(title: "Categories".newlocalized, actionTitle: "View All".newlocalized, action: onViewAll)
             
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
@@ -548,7 +560,6 @@ struct FilterCarouselView: View {
             LazyHStack(spacing: 12) {
                 // Fixed "All" Button
                 FilterChipView(
-                    // 🛠️ FIX: Localized
                     title: "All".newlocalized,
                     isSelected: selectedCategoryID == nil,
                     fixedWidth: 81
@@ -635,7 +646,6 @@ struct ShopActionCard: View {
                 .foregroundStyle(tealGreen)
             
             if mode == .inStore {
-                // 🛠️ FIX: Localized
                 Text("Shop in Store".newlocalized)
                     .font(.custom("Poppins-SemiBold", size: 14))
                     .fontWeight(.semibold)
@@ -652,13 +662,11 @@ struct ShopActionCard: View {
                 
             } else {
                 HStack(spacing: 4) {
-                    // 🛠️ FIX: Localized
                     Text("Shop Online".newlocalized)
                         .font(.custom("Poppins-SemiBold", size: 14))
                         .fontWeight(.semibold)
                         .foregroundStyle(tealGreen)
                     
-                    // 🛠️ FIX: Localized
                     Text("Delivery To Home".newlocalized)
                         .font(.custom("Poppins-Regular", size: 12))
                         .foregroundStyle(Color(red: 0.3, green: 0.3, blue: 0.3))
@@ -712,7 +720,6 @@ struct StoreTabBar: View {
                     VStack(spacing: 0) {
                         Spacer()
                         
-                        // 🛠️ FIX: Localized Tab Names
                         Text(tab.rawValue.newlocalized)
                             .font(.subheadline)
                             .fontWeight(selectedTab == tab ? .bold : .semibold)

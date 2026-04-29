@@ -44,10 +44,10 @@ extension SubmitOrderModel {
 
 // MARK: - 4. View Models & Helpers
 
-struct PaymentDestination: Identifiable {
-    let id = UUID()
-    let url: URL
-}
+//struct PaymentDestination: Identifiable {
+//    let id = UUID()
+//    let url: URL
+//}
 //
 //@Observable
 //@MainActor
