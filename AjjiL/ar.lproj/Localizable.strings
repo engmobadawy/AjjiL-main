@@ -655,3 +655,28 @@
 
 /* --- Tab Bar --- */
 "Orders" = "الطلبات";
+
+
+/* --- Search View --- */
+"Search" = "البحث";
+"Search beverages or foods" = "ابحث عن المشروبات أو الأطعمة";
+"NO Result For Now" = "لا توجد نتائج حالياً";
+"Back To Store" = "العودة للمتجر";
+
+/* Shared Strings utilized in Search View */
+"Error" = "خطأ";
+"Success" = "نجاح";
+"added to the cart successfully" = "تمت الإضافة إلى السلة بنجاح";
+
+
+/* --- Scanner View --- */
+"Scan" = "مسح";
+"Can't scan the barcode, Type the ID." = "لا يمكن مسح الباركود، أدخل المعرف.";
+"Product Barcode" = "باركود المنتج";
+"Camera not available in Simulator" = "الكاميرا غير متاحة في المحاكي";
+"Scann Success" = " المسح نجح ";
+"Not Match" = "غير متطابق";
+"Check the validity of the branch or product." = "تحقق من صلاحية الفرع أو المنتج.";
+"Go To The Cart" = "الذهاب إلى السلة";
+"Try Again" = "حاول مرة أخرى";
+"Back To Store" = "العودة للمتجر";

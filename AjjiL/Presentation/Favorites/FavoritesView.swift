@@ -8,14 +8,37 @@
 import SwiftUI
 import Shimmer
 
+// MARK: - Routing Destinations
+struct ScannerDestination: Hashable {
+    let product: HomeFeaturedProductDataEntity
+    var storeId: Int? = nil
+    var storeName: String? = nil
+    var branchId: Int? = nil
+}
+
+struct StoreRoutingDestination: Hashable {
+    let storeId: Int
+    let storeName: String
+    var skipBranchSelection: Bool = false
+}
+
+// 🛠️ NEW: Added CartRoutingDestination
+//struct CartRoutingDestination: Hashable {
+//    let storeId: Int
+//    let storeName: String
+//    let branchId: Int
+//}
+
+// MARK: - Main View
 struct FavoritesView: View {
     @AppStorage("savedBranchID") private var savedBranchID: Int = 0
     
-    // 🛠️ FIX: Use @Bindable for an injected @Observable dependency that needs bindings
     @Bindable private var viewModel: FavoritesViewModel = DependencyContainer.FavoritesDependency.shared.favoritesVM
     
-    // NEW: Replaced boolean with our item-based routing state
+    // Routing states
     @State private var scannerDestination: ScannerDestination?
+    @State private var storeDestination: StoreRoutingDestination?
+    @State private var cartDestination: CartRoutingDestination? // 🛠️ NEW: State for Cart routing
     
     private enum ViewState {
         case loading
@@ -84,8 +107,12 @@ struct FavoritesView: View {
                                             }
                                         },
                                         onScanToBuy: {
-                                            // NEW: Trigger the scanner route with the specific product
-                                            scannerDestination = ScannerDestination(product: product.asHomeProduct)
+                                            scannerDestination = ScannerDestination(
+                                                product: product.asHomeProduct,
+                                                storeId: product.storeId,
+                                                storeName: product.brand,
+                                                branchId: product.branchId
+                                            )
                                         }
                                     )
                                 }
@@ -96,6 +123,10 @@ struct FavoritesView: View {
                     }
                 }
                 .padding(.horizontal, 18)
+                
+                // MARK: Navigation Routing
+                
+                // 1. Details Route
                 .navigationDestination(for: FavoriteProductDataEntity.self) { product in
                     ProductDetailsView(
                         viewModel: ProductDetailsViewModel(
@@ -109,7 +140,8 @@ struct FavoritesView: View {
                         )
                     )
                 }
-                // NEW: Model-based navigation to Scanner
+                
+                // 2. Scanner Route
                 .navigationDestination(item: $scannerDestination) { destination in
                     ScannerMainView(
                         product: destination.product,
@@ -118,13 +150,69 @@ struct FavoritesView: View {
                             await viewModel.addToCart(product: scannedProduct, branchId: branchId)
                         },
                         onGoToCart: {
-                            // Adjust based on your TabBar structure to switch to the Cart tab
-                            print("Navigating to cart from Favorites...")
+                            // 🛠️ NEW: Unwrap data, delay, and route to Cart
+                            if let sId = destination.storeId,
+                               let sName = destination.storeName,
+                               let bId = destination.branchId {
+                                
+                                savedBranchID = bId // Pre-select the branch globally
+                                
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                                    cartDestination = CartRoutingDestination(
+                                        storeId: sId,
+                                        storeName: sName,
+                                        branchId: bId
+                                    )
+                                }
+                            }
                         },
                         onGoToStore: {
-                            // Dismiss happens automatically in ScannerMainView
-                            print("Returning to Favorites...")
+                            if let sId = destination.storeId,
+                               let sName = destination.storeName,
+                               let bId = destination.branchId {
+                                
+                                savedBranchID = bId // Pre-select the branch
+                                
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                                    storeDestination = StoreRoutingDestination(
+                                        storeId: sId,
+                                        storeName: sName,
+                                        skipBranchSelection: true
+                                    )
+                                }
+                            }
                         }
+                    )
+                }
+                
+                // 3. Store Route (Triggered from Scanner)
+                .navigationDestination(item: $storeDestination) { destination in
+                    StoreView(
+                        storeName: destination.storeName,
+                        storeId: destination.storeId,
+                        showBranchSelection: !destination.skipBranchSelection
+                    )
+                }
+                
+                // 4. Cart Route (Triggered from Scanner)
+                .navigationDestination(item: $cartDestination) { destination in
+                    // 🛠️ NEW: Initialize and inject the CartViewModel
+                    let cartRepo = CartRepositoryImp(networkService: DependencyContainer.shared.networkService)
+                    let ordersRepo = OrdersRepositoryImp(networkService: DependencyContainer.shared.networkService)
+                    
+                    let cartViewModel = CartViewModel(
+                        getCartUC: GetCartUC(repo: cartRepo),
+                        changeCartItemQuantityUC: ChangeCartItemQuantityUC(repo: cartRepo),
+                        removeProductFromCartUC: RemoveProductFromCartUC(repo: cartRepo),
+                        verifyPromoCodeUC: VerifyPromoCodeUseCase(networkService: DependencyContainer.shared.networkService),
+                        submitOrderUC: SubmitOrderUC(repo: ordersRepo)
+                    )
+                    
+                    CartView(
+                        viewModel: cartViewModel,
+                        branchId: String(destination.branchId),
+                        storeName: destination.storeName,
+                        storeId: String(destination.storeId)
                     )
                 }
             }

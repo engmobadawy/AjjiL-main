@@ -1,11 +1,29 @@
 import SwiftUI
 import Shimmer
 
-// Add this small struct at the top or bottom of the file
-struct ScannerDestination: Hashable {
-    let product: HomeFeaturedProductDataEntity
-}
 
+//// MARK: - Routing Destinations
+//struct ScannerDestination: Hashable {
+//    let product: HomeFeaturedProductDataEntity
+//    var storeId: Int? = nil
+//    var storeName: String? = nil
+//    var branchId: Int? = nil
+//}
+//
+//struct StoreRoutingDestination: Hashable {
+//    let storeId: Int
+//    let storeName: String
+//    var skipBranchSelection: Bool = false
+//}
+//
+//// 🛠️ NEW: Added CartRoutingDestination
+//struct CartRoutingDestination: Hashable {
+//    let storeId: Int
+//    let storeName: String
+//    let branchId: Int
+//}
+
+// MARK: - Main View
 struct HomeView: View {
     @Environment(TabBarVisibility.self) private var tabVisibility
     
@@ -13,13 +31,15 @@ struct HomeView: View {
     @AppStorage("savedBranchID") private var savedBranchID: Int = 0
     
     @Bindable private var viewModel = DependencyContainer.HomeDependency.shared.homeVM
-    @State private var searchText: String = ""
+//    @State private var searchText: String = ""
    
     @State private var showNotificationsView: Bool = false
     @State private var showGuestLoginSheet: Bool = false
     
-    // NEW: Object-based routing for the scanner
+    // Routing Destinations
     @State private var scannerDestination: ScannerDestination?
+    @State private var storeDestination: StoreRoutingDestination?
+    @State private var cartDestination: CartRoutingDestination? // 🛠️ NEW: State for Cart routing
     
     var body: some View {
         NavigationStack {
@@ -50,6 +70,8 @@ struct HomeView: View {
             }
             .background(.white)
             .navigationBarBackButtonHidden(true)
+            
+            // 1. Standard Product Details Route
             .navigationDestination(for: HomeFeaturedProductDataEntity.self) { product in
                 ProductDetailsView(
                     viewModel: ProductDetailsViewModel(
@@ -63,13 +85,17 @@ struct HomeView: View {
                     )
                 )
             }
+            
+            // 2. Standard Store Route (From Store List -> SHOWS Popup)
             .navigationDestination(for: HomeStoresDataEntity.self) { store in
                 StoreView(storeName: store.name, storeId: store.id)
             }
+            
             .navigationDestination(isPresented: $showNotificationsView) {
                 HomeView()
             }
-            // NEW: Model-based navigation to Scanner
+            
+            // 3. Scanner Route
             .navigationDestination(item: $scannerDestination) { destination in
                 ScannerMainView(
                     product: destination.product,
@@ -78,14 +104,74 @@ struct HomeView: View {
                         await viewModel.addToCart(product: scannedProduct, branchId: branchId)
                     },
                     onGoToCart: {
-                        // Adjust based on your TabBar structure
-                        print("Navigating to cart...")
+                        // 🛠️ NEW: Safely unwrap and route to cart!
+                        if let sId = destination.storeId,
+                           let sName = destination.storeName,
+                           let bId = destination.branchId {
+                            
+                            savedBranchID = bId // Pre-select the branch globally
+                            
+                            // Delay execution to let the scanner completely dismiss
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                                cartDestination = CartRoutingDestination(
+                                    storeId: sId,
+                                    storeName: sName,
+                                    branchId: bId
+                                )
+                            }
+                        }
                     },
                     onGoToStore: {
-                        // Dismiss happens in ScannerMainView, add any additional state resets here
+                        // Safely unwrap.
+                        if let sId = destination.storeId,
+                           let sName = destination.storeName,
+                           let bId = destination.branchId {
+                            
+                            savedBranchID = bId // Pre-select the branch in AppStorage
+                            
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                                storeDestination = StoreRoutingDestination(
+                                    storeId: sId,
+                                    storeName: sName,
+                                    skipBranchSelection: true // Skips the branch popup
+                                )
+                            }
+                        }
                     }
                 )
             }
+            
+            // 4. Scanner-To-Store Route (SKIPS Popup)
+            .navigationDestination(item: $storeDestination) { destination in
+                StoreView(
+                    storeName: destination.storeName,
+                    storeId: destination.storeId,
+                    showBranchSelection: !destination.skipBranchSelection
+                )
+            }
+            
+            // 5. Cart Route (Triggered from Scanner's "Go To Cart")
+            .navigationDestination(item: $cartDestination) { destination in
+                // Initialize the CartViewModel exactly as StoreView does
+                let cartRepo = CartRepositoryImp(networkService: DependencyContainer.shared.networkService)
+                let ordersRepo = OrdersRepositoryImp(networkService: DependencyContainer.shared.networkService)
+                
+                let cartViewModel = CartViewModel(
+                    getCartUC: GetCartUC(repo: cartRepo),
+                    changeCartItemQuantityUC: ChangeCartItemQuantityUC(repo: cartRepo),
+                    removeProductFromCartUC: RemoveProductFromCartUC(repo: cartRepo),
+                    verifyPromoCodeUC: VerifyPromoCodeUseCase(networkService: DependencyContainer.shared.networkService),
+                    submitOrderUC: SubmitOrderUC(repo: ordersRepo)
+                )
+                
+                CartView(
+                    viewModel: cartViewModel,
+                    branchId: String(destination.branchId),
+                    storeName: destination.storeName,
+                    storeId: String(destination.storeId)
+                )
+            }
+            
             .sheet(isPresented: $showGuestLoginSheet) {
                 GuestLoginSheetView()
                     .presentationDetents([.fraction(0.5), .medium])
@@ -142,10 +228,10 @@ struct HomeView: View {
         VStack(spacing: 7) {
             ShopThroughBanner(isStoreMode: $isStoreMode)
             
-            SearchBarButton(text: $searchText) {
-                print("Searching for: \(searchText)")
-            }
-            .padding(.horizontal, 18)
+//            SearchBarButton(text: $searchText) {
+//                print("Searching for: \(searchText)")
+//            }
+//            .padding(.horizontal, 18)
         }
         .padding(.bottom, 12)
     }
@@ -179,8 +265,12 @@ struct HomeView: View {
                             if Constants.isGuestMode {
                                 showGuestLoginSheet = true
                             } else {
-                                // NEW: Pass the product to the router state
-                                scannerDestination = ScannerDestination(product: product)
+                                scannerDestination = ScannerDestination(
+                                    product: product,
+                                    storeId: product.storeId,
+                                    storeName: product.brand, // Maps to the brand field
+                                    branchId: product.branchId
+                                )
                             }
                         }
                     )

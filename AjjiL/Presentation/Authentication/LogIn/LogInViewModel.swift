@@ -88,27 +88,31 @@ final class LoginViewModel {
     // MARK: - Actions
 
     func logIn() async -> Bool {
-        guard validateAll() else { return false }
-        
-        isLoading = true
-        defer { isLoading = false }
+            guard validateAll() else { return false }
+            
+            isLoading = true
+            defer { isLoading = false }
 
-        do {
-            let parameters = [
-                "phone_number": phone.trimmingCharacters(in: .whitespaces),
-                "password": password
-            ]
-            let response = try await loginUseCase.login(with: parameters)
-            userDataUseCase.saveToken(token: response.token)
-            return true
-        } catch {
-            let mappedError = error.mapErrorToMessage()
-            if errorMessage != mappedError {
-                errorMessage = mappedError
+            do {
+                let parameters = [
+                    "phone_number": phone.trimmingCharacters(in: .whitespaces),
+                    "password": password
+                ]
+                let response = try await loginUseCase.login(with: parameters)
+                userDataUseCase.saveToken(token: response.token) // Existing code
+                
+                // 👇 ADD THE NEW LINE RIGHT HERE
+                GenericUserDefault.shared.setValue(response.isCashier, Constants.shared.isCashier)
+                
+                return true
+            } catch {
+                let mappedError = error.mapErrorToMessage()
+                if errorMessage != mappedError {
+                    errorMessage = mappedError
+                }
+                return false
             }
-            return false
         }
-    }
     
     // MARK: - Performance Optimizations
     

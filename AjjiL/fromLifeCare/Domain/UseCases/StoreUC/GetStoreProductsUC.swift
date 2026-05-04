@@ -1,11 +1,3 @@
-//
-//  GetStoreProductsUC.swift
-//  AjjiLMB
-//
-//  Created by mohamed mahmoud sobhy badawy on 02/04/2026.
-//
-
-
 import Foundation
 
 class GetStoreProductsUC {
@@ -15,7 +7,8 @@ class GetStoreProductsUC {
         self.repo = repo
     }
     
-    func execute(storeId: Int, branchId: Int, search: String) async throws -> ProductListResponse {
+    // 🛠️ CHANGED: Return type is now CategoryProductsResponse
+    func execute(storeId: Int, branchId: Int, search: String) async throws -> CategoryProductsResponse {
         return try await repo.getStoreProducts(storeId: storeId, branchId: branchId, search: search)
     }
 }

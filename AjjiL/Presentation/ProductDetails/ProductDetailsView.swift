@@ -3,11 +3,20 @@ import Kingfisher
 import Shimmer
 
 
+
+struct CartRoutingDestination: Hashable {
+    let storeId: Int
+    let storeName: String
+    let branchId: Int
+}
+
 struct ProductDetailsView: View {
     @Environment(\.dismiss) private var dismiss
     
-    // NEW: Replaced the boolean with the destination wrapper
+    // Navigation states
     @State private var scannerDestination: ScannerDestination?
+    @State private var storeDestination: StoreRoutingDestination?
+    @State private var cartDestination: CartRoutingDestination? // 🛠️ NEW: Added Cart routing state
     @State private var showGuestLoginSheet: Bool = false
     
     @AppStorage("isStoreMode") private var isStoreMode: Bool = false
@@ -38,7 +47,6 @@ struct ProductDetailsView: View {
                         ProductDetailsImageHeader(
                             imageURL: product.images,
                             discount: product.offerDiscount,
-                            // 🛠️ FIX: Query the manager using productBranchId, not id!
                             isFavorite: FavoritesManager.shared.isFavorite(product.productBranchId),
                             onToggleFavorite: {
                                 if Constants.isGuestMode {
@@ -61,8 +69,13 @@ struct ProductDetailsView: View {
                             if Constants.isGuestMode {
                                 showGuestLoginSheet = true
                             } else if isStoreMode {
-                                // NEW: Pass the mapped product to the scanner
-                                scannerDestination = ScannerDestination(product: product.asHomeProduct)
+                                let homeProduct = product.asHomeProduct
+                                scannerDestination = ScannerDestination(
+                                    product: homeProduct,
+                                    storeId: homeProduct.storeId,
+                                    storeName: homeProduct.brand, // Brand represents the storeName in your model
+                                    branchId: homeProduct.branchId
+                                )
                             } else {
                                 let branchId = savedBranchID == 0 ? 1 : savedBranchID
                                 Task {
@@ -99,24 +112,89 @@ struct ProductDetailsView: View {
                 .scrollIndicators(.hidden)
             }
         }
-        // NEW: Model-based routing using our item
+        
+        // MARK: - Navigation Routing
+        
+        // 1. Scanner Route
         .navigationDestination(item: $scannerDestination) { destination in
             ScannerMainView(
                 product: destination.product,
                 onAddToCart: { _ in
-                    // The view model already knows which product it is displaying,
-                    // so we just execute the standard add to cart flow
                     let branchId = savedBranchID == 0 ? 1 : savedBranchID
                     await viewModel.addToCart(branchId: branchId)
                 },
                 onGoToCart: {
-                    print("Navigate to Cart from Product Details...")
+                    // 🛠️ FIX: Same logic as onGoToStore, but triggers the cart destination instead
+                    if let sId = destination.storeId,
+                       let sName = destination.storeName,
+                       let bId = destination.branchId {
+                        
+                        savedBranchID = bId // Pre-select the branch globally
+                        
+                        // Delay execution to let the scanner completely dismiss and prevent the empty view crash
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                            cartDestination = CartRoutingDestination(
+                                storeId: sId,
+                                storeName: sName,
+                                branchId: bId
+                            )
+                        }
+                    } else {
+                        dismiss()
+                    }
                 },
                 onGoToStore: {
-                    // Handled automatically by dismiss
+                    if let sId = destination.storeId,
+                       let sName = destination.storeName,
+                       let bId = destination.branchId {
+                        
+                        savedBranchID = bId
+                        
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                            storeDestination = StoreRoutingDestination(
+                                storeId: sId,
+                                storeName: sName,
+                                skipBranchSelection: true
+                            )
+                        }
+                    } else {
+                        dismiss()
+                    }
                 }
             )
         }
+        
+        // 2. Store Route
+        .navigationDestination(item: $storeDestination) { destination in
+            StoreView(
+                storeName: destination.storeName,
+                storeId: destination.storeId,
+                showBranchSelection: !destination.skipBranchSelection
+            )
+        }
+        
+        // 3. Cart Route (Triggered from Scanner's "Go To Cart")
+        .navigationDestination(item: $cartDestination) { destination in
+            // 🛠️ FIX: Initialize the CartViewModel and inject it exactly as StoreView does
+            let cartRepo = CartRepositoryImp(networkService: DependencyContainer.shared.networkService)
+            let ordersRepo = OrdersRepositoryImp(networkService: DependencyContainer.shared.networkService)
+            
+            let cartViewModel = CartViewModel(
+                getCartUC: GetCartUC(repo: cartRepo),
+                changeCartItemQuantityUC: ChangeCartItemQuantityUC(repo: cartRepo),
+                removeProductFromCartUC: RemoveProductFromCartUC(repo: cartRepo),
+                verifyPromoCodeUC: VerifyPromoCodeUseCase(networkService: DependencyContainer.shared.networkService),
+                submitOrderUC: SubmitOrderUC(repo: ordersRepo)
+            )
+            
+            CartView(
+                viewModel: cartViewModel,
+                branchId: String(destination.branchId),
+                storeName: destination.storeName,
+                storeId: String(destination.storeId)
+            )
+        }
+        
         .sheet(isPresented: $showGuestLoginSheet) {
             GuestLoginSheetView()
                 .presentationDetents([.fraction(0.5), .medium])
@@ -136,19 +214,15 @@ struct ProductDetailsView: View {
 
 
 // MARK: - Skeleton View
-
-/// 3. Dedicated Skeleton mimicking your Product Details layout
 struct ProductDetailsSkeletonView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            // Header Image Skeleton
             VStack(spacing: 16) {
                 Rectangle()
                     .fill(.gray.opacity(0.3))
-                    .frame(height: 250) // Matches the main image height
+                    .frame(height: 250)
                 
                 HStack {
-                    // Thumbnail Skeleton
                     Rectangle()
                         .fill(.gray.opacity(0.3))
                         .frame(width: 56, height: 56)
@@ -158,23 +232,18 @@ struct ProductDetailsSkeletonView: View {
                 }
                 .padding(.bottom, 8)
             }
-            .frame(height: 321) // Matches your ProductDetailsImageHeader exact height
+            .frame(height: 321)
 
-            // Info Section Skeleton
             VStack(alignment: .leading, spacing: 10) {
-                // Category
                 Rectangle().fill(.gray.opacity(0.3)).frame(width: 80, height: 16).clipShape(.rect(cornerRadius: 4))
-                // Title
                 Rectangle().fill(.gray.opacity(0.3)).frame(width: 220, height: 28).clipShape(.rect(cornerRadius: 6))
                 
-                // Store Info
                 HStack(spacing: 10) {
                     Circle().fill(.gray.opacity(0.3)).frame(width: 28, height: 28)
                     Rectangle().fill(.gray.opacity(0.3)).frame(width: 100, height: 16).clipShape(.rect(cornerRadius: 4))
                 }
                 .padding(.bottom, 6)
                 
-                // Prices
                 HStack(alignment: .firstTextBaseline, spacing: 12) {
                     Rectangle().fill(.gray.opacity(0.3)).frame(width: 120, height: 32).clipShape(.rect(cornerRadius: 6))
                     Rectangle().fill(.gray.opacity(0.3)).frame(width: 60, height: 20).clipShape(.rect(cornerRadius: 4))
@@ -182,7 +251,6 @@ struct ProductDetailsSkeletonView: View {
             }
             .padding(.horizontal, 20)
             
-            // Description Section Skeleton
             VStack(alignment: .leading, spacing: 14) {
                 Rectangle().fill(.gray.opacity(0.3)).frame(width: 120, height: 20).clipShape(.rect(cornerRadius: 4))
                 
@@ -194,7 +262,6 @@ struct ProductDetailsSkeletonView: View {
             }
             .padding(.horizontal, 20)
             
-            // Barcode Section Skeleton
             Rectangle()
                 .fill(.gray.opacity(0.3))
                 .frame(height: 117)
@@ -202,7 +269,6 @@ struct ProductDetailsSkeletonView: View {
                 .padding(.horizontal, 20)
                 .padding(.top, 20)
             
-            // Scan to Buy Button Skeleton
             Rectangle()
                 .fill(.gray.opacity(0.3))
                 .frame(height: 55)
@@ -214,8 +280,6 @@ struct ProductDetailsSkeletonView: View {
 }
 
 // MARK: - Subviews
-// (Subviews remain pure and stateless, taking only the data they need)
-
 private struct ProductDetailsImageHeader: View {
     let imageURL: String
     let discount: String
@@ -225,18 +289,13 @@ private struct ProductDetailsImageHeader: View {
     var body: some View {
         VStack(spacing: 16) {
             ZStack(alignment: .top) {
-                // 1. Updated Main Header Image
                 KFImage(URL(string: imageURL))
-                    .placeholder {
-                        ProgressView()
-                    }
+                    .placeholder { ProgressView() }
                     .resizable()
                     .scaledToFit()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 
-                // Top Overlays
                 HStack(alignment: .top) {
-                    // Favorite Button
                     Button(action: onToggleFavorite) {
                         Image(systemName: isFavorite ? "heart.fill" : "heart")
                             .font(.system(size: 24, weight: .semibold))
@@ -246,7 +305,6 @@ private struct ProductDetailsImageHeader: View {
                     
                     Spacer()
                     
-                    // Diagonal Ribbon
                     if !discount.isEmpty && discount != "0" {
                         ProductDetailRibbon(text: "\(discount)% OFF")
                     }
@@ -255,14 +313,9 @@ private struct ProductDetailsImageHeader: View {
             .frame(maxWidth: .infinity)
             .clipped()
             
-            // Single Thumbnail (Leading Aligned)
             HStack {
-                ThumbnailView(
-                    imageURL: imageURL,
-                    isSelected: true
-                )
-                .padding(.leading, 8)
-                
+                ThumbnailView(imageURL: imageURL, isSelected: true)
+                    .padding(.leading, 8)
                 Spacer()
             }
             .padding(.bottom, 8)
@@ -276,11 +329,8 @@ private struct ThumbnailView: View {
     let isSelected: Bool
     
     var body: some View {
-        // 2. Updated Thumbnail Image
         KFImage(URL(string: imageURL))
-            .placeholder {
-                Color.gray.opacity(0.1)
-            }
+            .placeholder { Color.gray.opacity(0.1) }
             .resizable()
             .scaledToFit()
             .frame(width: 56, height: 56)
@@ -353,13 +403,11 @@ private struct ProductDetailsDescriptionSection: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            // 🛠️ FIX: Added .newlocalized
             Text("Description".newlocalized)
                 .font(.custom("Poppins-SemiBold", size: 18))
                 .foregroundStyle(.black)
             
             if descriptionText.isEmpty {
-                // 🛠️ FIX: Added .newlocalized
                 Text("No description available.".newlocalized)
                     .font(.custom("Poppins-Regular", size: 15))
                     .foregroundStyle(.gray)
@@ -391,11 +439,10 @@ private struct ProductDetailsBarcodeSection: View {
                     .frame(maxHeight: .infinity)
             }
             
-      
-                Text(barcode.isEmpty ? "No Barcode".newlocalized : barcode)
-                            .font(.custom("Courier", size: 16))
-                            .tracking(4)
-                            .foregroundStyle(.gray)
+            Text(barcode.isEmpty ? "No Barcode".newlocalized : barcode)
+                .font(.custom("Courier", size: 16))
+                .tracking(4)
+                .foregroundStyle(.gray)
         }
         .frame(width: 138, height: 81)
         .frame(maxWidth: .infinity)
@@ -410,7 +457,6 @@ private struct ProductDetailsBarcodeSection: View {
 }
 
 // MARK: - Helpers
-
 private struct CurrencyAmount: View {
     let amount: Double
     let amountFont: Font

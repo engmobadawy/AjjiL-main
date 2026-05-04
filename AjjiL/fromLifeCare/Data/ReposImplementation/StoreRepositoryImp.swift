@@ -87,10 +87,11 @@ class StoreRepositoryImp: StoreRepository {
         throw URLError(.badServerResponse)
     }
     
-    func getStoreProducts(storeId: Int, branchId: Int, search: String) async throws -> ProductListResponse {
+    // 🛠️ CORRECTED: Only ONE getStoreProducts method, returning CategoryProductsResponse
+    func getStoreProducts(storeId: Int, branchId: Int, search: String) async throws -> CategoryProductsResponse {
         let publisher = networkService.fetchData(
             target: StoreNetwork.getStoreProducts(storeId: storeId, branchId: branchId, search: search),
-            responseClass: ProductListResponse.self
+            responseClass: CategoryProductsResponse.self
         )
         
         for try await modelDTO in publisher.values {
@@ -100,11 +101,10 @@ class StoreRepositoryImp: StoreRepository {
         throw URLError(.badServerResponse)
     }
     
-    // MARK: - CHANGED METHOD
+    // 🛠️ RESTORED: This was missing in your pasted code!
     func getProductsByCategory(storeId: Int, branchId: Int, categoryId: Int) async throws -> CategoryProductsResponse {
         let publisher = networkService.fetchData(
             target: StoreNetwork.getProductsByCategory(storeId: storeId, branchId: branchId, categoryId: categoryId),
-            // CHANGED: Update the responseClass here so the network service decodes the right type
             responseClass: CategoryProductsResponse.self
         )
         

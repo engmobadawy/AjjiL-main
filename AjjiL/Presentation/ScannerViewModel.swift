@@ -5,7 +5,6 @@
 //  Created by mohamed mahmoud sobhy badawy on 11/03/2026.
 //
 
-
 import SwiftUI
 import Observation
 import VisionKit
@@ -68,7 +67,8 @@ struct ScannerMainView: View {
         ZStack {
             VStack(spacing: 0) {
                 TopRowNotForHome(
-                    title: "Scan",
+                    // 🛠️ FIX: Added .newlocalized
+                    title: "Scan".newlocalized,
                     showBackButton: true,
                     kindOfTopRow: .justNotification,
                     onBack: { dismiss() }
@@ -125,21 +125,19 @@ struct ScannerMainView: View {
     }
 }
 
-
-             
-
-
 struct ManualEntrySection: View {
     @Bindable var viewModel: ScannerViewModel
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Can't scan the barcode, Type the ID.")
+            // 🛠️ FIX: Added .newlocalized
+            Text("Can't scan the barcode, Type the ID.".newlocalized)
                 .font(.headline)
                 .foregroundStyle(.secondary)
             
             HStack(spacing: 12) {
-                TextField("Product Barcode", text: $viewModel.manualInput)
+                // 🛠️ FIX: Added .newlocalized
+                TextField("Product Barcode".newlocalized, text: $viewModel.manualInput)
                     .padding()
                     .background(Color(.systemGray6))
                     .clipShape(.rect(cornerRadius: 12))
@@ -172,7 +170,8 @@ struct ScannerCameraSection: View {
                 VStack {
                     Image(systemName: "camera.viewfinder")
                         .font(.largeTitle)
-                    Text("Camera not available in Simulator")
+                    // 🛠️ FIX: Added .newlocalized
+                    Text("Camera not available in Simulator".newlocalized)
                         .font(.caption)
                 }
                 .foregroundStyle(.white.opacity(0.5))
@@ -262,11 +261,6 @@ struct VisionBarcodeScanner: UIViewControllerRepresentable {
     }
 }
 
-
-
-
-
-
 import SwiftUI
 
 // MARK: - State Model
@@ -278,8 +272,9 @@ enum ScanStatus {
         self == .success ? "done" : "notdone"
     }
     
+    // 🛠️ FIX: Added .newlocalized directly to properties
     var title: String {
-        self == .success ? "Scann Success" : "Not Match"
+        self == .success ? "Scann Success".newlocalized : "Not Match".newlocalized
     }
     
     var titleColor: Color {
@@ -287,15 +282,15 @@ enum ScanStatus {
     }
     
     var subtitle: String? {
-        self == .success ? nil : "Check the validity of the branch or product."
+        self == .success ? nil : "Check the validity of the branch or product.".newlocalized
     }
     
     var primaryButtonText: String {
-        self == .success ? "Go To Cart" : "Try Again"
+        self == .success ? "Go To The Cart".newlocalized : "Try Again".newlocalized
     }
     
     var secondaryButtonText: String {
-        self == .success ? "Back To Store" : "Back To Store"
+        self == .success ? "Back To Store".newlocalized : "Back To Store".newlocalized
     }
 }
 
@@ -397,7 +392,6 @@ private extension ScanResultSheet {
         }
     }
 }
-
 
 
 #Preview{

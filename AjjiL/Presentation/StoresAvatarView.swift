@@ -32,7 +32,7 @@ struct AvatarBaseView: View {
                     .resizable()
                     .scaledToFill()
             } else {
-                Image("car")
+                Image("profil")
                     .resizable()
                     .scaledToFit()
                     .padding(20)

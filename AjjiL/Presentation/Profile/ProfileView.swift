@@ -85,8 +85,8 @@ struct ProfileView: View {
                                 errorStateView(message: errorMessage)
                             }
                             
-                            qrProfileButton
-                                .padding(.top, 10)
+//                            qrProfileButton
+//                                .padding(.top, 10)
                             
                             // Menu List UI
                             menuSection

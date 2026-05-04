@@ -45,6 +45,7 @@ struct HomeProductCard: View {
                 onAddToCart: onAddToCart
             )
         }
+        .contentShape(.rect)
         .frame(maxWidth: .infinity)
         .frame(height: HomeProductCardMetrics.cardHeight)
         .background(.white)
@@ -167,7 +168,9 @@ private struct ProductImageHeader: View {
                         .contentShape(.rect)
                         .padding(8)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.borderless) // 👈 MUST BE .borderless, NOT .plain
+                .zIndex(1)
+                
                 .padding(8)
             }
             .overlay(alignment: .topTrailing) {
@@ -215,7 +218,9 @@ private struct ProductActionRow: View {
                 in: .rect(cornerRadius: HomeProductCardMetrics.actionButtonCornerRadius)
             )
         }
-        .buttonStyle(.borderless)
+        .buttonStyle(.borderless) // 👈 Ensure this is .borderless
+        .zIndex(1)
+//        .buttonStyle(.borderless)
         .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isStoreMode)
         .padding(.horizontal, HomeProductCardMetrics.contentHPadding)
         .padding(.bottom, HomeProductCardMetrics.contentBottomPadding)

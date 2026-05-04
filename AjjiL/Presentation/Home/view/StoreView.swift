@@ -1,6 +1,7 @@
 import SwiftUI
 import Kingfisher
 import Shimmer
+struct StoreSearchDestination: Hashable {}
 
 struct StoreView: View {
     let storeName: String
@@ -41,10 +42,17 @@ struct StoreView: View {
     private var currentMode: ShopMode {
         isStoreMode ? .inStore : .online
     }
-    
+//    @State private var showSearchView: Bool = false
 //  @State private var showNotificationsView: Bool = false
     @State private var showCartView: Bool = false
-    @State private var showBranchSelection: Bool = true
+    @State private var showBranchSelection: Bool
+
+    init(storeName: String, storeId: Int, showBranchSelection: Bool = true) {
+        self.storeName = storeName
+        self.storeId = storeId
+        // Initialize the state variable with the passed value
+        self._showBranchSelection = State(initialValue: showBranchSelection)
+    }
     
     var body: some View {
         ZStack {
@@ -75,20 +83,30 @@ struct StoreView: View {
                                     showAllCategories = true
                                 },
                                 onScanToBuy: { product in
-                                    // NEW: Pass the product to the destination
-                                    scannerDestination = ScannerDestination(product: product)
+                                    scannerDestination = ScannerDestination(
+                                        product: product,
+                                        storeId: storeId,
+                                        storeName: storeName,
+                                        branchId: savedBranchID == 0 ? 1 : savedBranchID
+                                    )
                                 },
                                 onGuestAction: {
                                     showGuestLoginSheet = true
                                 }
+                                // ❌ REMOVED: onSearchTapped line here
                             )
                         case .products:
                             ProductCatalogView(
                                 storeViewModel: storeViewModel,
                                 selectedCategoryID: $selectedCategoryID,
                                 onScanToBuy: { product in
-                                    // NEW: Pass the product to the destination
-                                    scannerDestination = ScannerDestination(product: product)
+                                    // 🛠️ FIXED: Pass the current store and branch details
+                                    scannerDestination = ScannerDestination(
+                                        product: product,
+                                        storeId: storeId,
+                                        storeName: storeName,
+                                        branchId: savedBranchID == 0 ? 1 : savedBranchID
+                                    )
                                 },
                                 onGuestAction: {
                                     showGuestLoginSheet = true
@@ -107,7 +125,7 @@ struct StoreView: View {
             .navigationBarBackButtonHidden(true)
             .background(Color(white: 0.98).ignoresSafeArea())
             
-            // NEW: Model-based navigation to Scanner
+            // MARK: - Scanner Navigation
             .navigationDestination(item: $scannerDestination) { destination in
                 ScannerMainView(
                     product: destination.product,
@@ -116,14 +134,26 @@ struct StoreView: View {
                         await storeViewModel.addToCart(product: scannedProduct, branchId: branchId)
                     },
                     onGoToCart: {
-                        // Switch immediately to the CartView within the store context
-                        showCartView = true
+                        // 🛠️ FIX: Update branch and delay pushing CartView to prevent the empty screen
+                        if let bId = destination.branchId {
+                            savedBranchID = bId
+                        }
+                        
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                            showCartView = true
+                        }
                     },
                     onGoToStore: {
-                        // Dismiss happens in ScannerMainView automatically
+                        // 🛠️ FIX: We are already in the StoreView, so we just let the scanner dismiss!
+                        // We just update the branch ID to ensure we are looking at the right inventory.
+                        if let bId = destination.branchId {
+                            savedBranchID = bId
+                        }
                     }
                 )
             }
+            
+            // MARK: - Cart Navigation
             .navigationDestination(isPresented: $showCartView) {
                 let branchIdToFetch = savedBranchID == 0 ? 1 : savedBranchID
                 
@@ -145,9 +175,36 @@ struct StoreView: View {
                     viewModel: cartViewModel,
                     branchId: String(branchIdToFetch),
                     storeName: storeName,
-                    storeId: String(storeId) // <--- Added missing argument
+                    storeId: String(storeId) // <--- Uses the current Store's ID
                 )
             }
+            // MARK: - Search Navigation
+            // MARK: - Search Navigation
+
+            // MARK: - Search Navigation
+            .navigationDestination(for: StoreSearchDestination.self) { _ in
+                let branchIdToFetch = savedBranchID == 0 ? 1 : savedBranchID
+                
+                // 1. Initialize the required repository
+                let storeRepo = StoreRepositoryImp(networkService: DependencyContainer.shared.networkService)
+                
+                // 2. Initialize the ViewModel with all dependencies
+                let searchViewModel = SearchViewModel(
+                    storeId: storeId,
+                    branchId: branchIdToFetch,
+                    getStoreProductsUC: GetStoreProductsUC(repo: storeRepo),
+                    addFavoriteProductUC: DependencyContainer.FavoritesDependency.shared.addFavoriteProductUC,
+                    removeFavoriteProductUC: DependencyContainer.FavoritesDependency.shared.removeFavoriteProductUC,
+                    addProductByBarcodeToCartUC: AddProductByBarcodeToCartUC(
+                        repo: CartRepositoryImp(networkService: DependencyContainer.shared.networkService)
+                    )
+                )
+                
+                // 3. Inject the ViewModel into the View
+                SearchView(viewModel: searchViewModel)
+            }
+
+
             .navigationDestination(isPresented: $showAllCategories) {
                 CategoriesView(
                     storeId: storeId,
@@ -216,15 +273,16 @@ struct StoreContentView: View {
     @Binding var search: String
     let currentMode: ShopMode
     var onViewAllCategories: () -> Void
-    var onScanToBuy: (HomeFeaturedProductDataEntity) -> Void // NEW: Expects product
+    var onScanToBuy: (HomeFeaturedProductDataEntity) -> Void
     var onGuestAction: () -> Void
+    
+    // ❌ REMOVE: var onSearchTapped: () -> Void
     
     private var isStoreEmpty: Bool {
         storeViewModel.storeSliders.isEmpty && storeViewModel.storeProducts.isEmpty && storeViewModel.storeCategories.isEmpty
     }
     
     var body: some View {
-        // Toggle Shimmer layout
         if storeViewModel.isLoading {
             StoreContentSkeleton()
                 .shimmering()
@@ -234,11 +292,17 @@ struct StoreContentView: View {
             VStack(spacing: 0) {
                 ShopActionCard(mode: currentMode)
                 
-                SearchBarButton(text: $search) {
-                    print("Searching for: \(search)")
-                }
-                .padding(.horizontal, 18)
-                .padding(.vertical, 14)
+                // ✅ UPDATED: Use NavigationLink instead of onTapGesture overlay
+                SearchBarButton(text: .constant(""))
+                    .disabled(true)
+                    .overlay {
+                        NavigationLink(value: StoreSearchDestination()) {
+                            Color.clear
+                                .contentShape(.rect(cornerRadius: 8))
+                        }
+                    }
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 14)
                 
                 if !storeViewModel.storeSliders.isEmpty {
                     BannerCollectionView(banners: storeViewModel.storeSliders.map { $0.asHomeBanner })
@@ -258,7 +322,7 @@ struct StoreContentView: View {
                     FeaturedProductsSection(
                         storeViewModel: storeViewModel,
                         products: storeViewModel.storeProducts,
-                        onScanToBuy: onScanToBuy, // Passes the product up
+                        onScanToBuy: onScanToBuy,
                         onGuestAction: onGuestAction
                     )
                 }

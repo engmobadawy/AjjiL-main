@@ -15,6 +15,6 @@ protocol StoreRepository {
     func getStoreSliders(storeId: Int) async throws -> StoreSliderResponse
     func getProductDetails(branchProductId: Int) async throws -> ProductDetailResponse
     func getStoreSubcategories(storeId: Int) async throws -> StoreSubcategoryResponse
-    func getStoreProducts(storeId: Int, branchId: Int, search: String) async throws -> ProductListResponse
+    func getStoreProducts(storeId: Int, branchId: Int, search: String) async throws -> CategoryProductsResponse
     func getProductsByCategory(storeId: Int, branchId: Int, categoryId: Int) async throws -> CategoryProductsResponse
 }

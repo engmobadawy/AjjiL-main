@@ -10,7 +10,7 @@ import Foundation
 class Constants {
     static var shared = Constants()
 
-   
+    let isCashier = "isCashier"
     var isAR: Bool { return (MOLHLanguage.currentAppleLanguage() == "ar") }
     let baseURL =  "https://ajjil.appssquare.com/public/api/"
     let developerMode = false

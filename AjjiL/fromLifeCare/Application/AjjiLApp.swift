@@ -58,24 +58,27 @@ class AppDelegate: UIResponder, UIApplicationDelegate, MOLHResetable {
         let resetLanguage = GenericUserDefault.shared.getValue(Constants.shared.resetLanguage) as? Bool ?? false
         let pressSkip = GenericUserDefault.shared.getValue("pressSkip") as? Bool ?? false
         
+        // 👇 ADD THIS LINE TO READ CASHIER STATE
+        let isCashier = GenericUserDefault.shared.getValue(Constants.shared.isCashier) as? Bool ?? false
         
         // Debug logging
         print("🔍 App State Debug:")
         print("Onboarding completed: \(onBoarding)")
         print("Token: \(token)")
+        print("Is Cashier: \(isCashier)") // Optional: helpful for debugging
         
         // Determine root view based on user state
         let rootView: AnyView
         
-        
-        
         if !token.isEmpty  {
-            // User is logged in and profile is complete - show main app
-            print("✅ Navigating to TabBarView")
-            rootView = AnyView(/*NavigationStack {*/ TabBarView() /*}*/)
-            UserDefaults.standard.set(false, forKey: Constants.shared.resetLanguage)
-        }
-        else if !onBoarding && !passwordChanged {
+                    // ✅ Send EVERYONE to the TabBarView now, because TabBarView handles the isCashier logic internally.
+                    print("✅ Navigating to TabBarView")
+                    rootView = AnyView(TabBarView())
+                    
+                    UserDefaults.standard.set(false, forKey: Constants.shared.resetLanguage)
+                }
+                else if !onBoarding && !passwordChanged {
+         
             // First time user - show welcome/onboarding
             print("✅ Navigating to WelcomeView")
             rootView = AnyView(OnBoardingView(window: window))
@@ -84,13 +87,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate, MOLHResetable {
             rootView = AnyView(LogInView())
             UserDefaults.standard.set(false, forKey: Constants.shared.resetLanguage)
             UserDefaults.standard.set(false, forKey: Constants.shared.passwordChanged)
-        }else if pressSkip {
+        } else if pressSkip {
             print("✅ Navigating to HomeView as a guest ya bro")
             rootView = AnyView(TabBarView())
             UserDefaults.standard.set(false, forKey: Constants.shared.resetLanguage)
             UserDefaults.standard.set(false, forKey: Constants.shared.passwordChanged)
-        }
-        else {
+        } else {
             // User needs to login
             print("✅ Navigating to LoginView")
             rootView = AnyView(LogInView())
@@ -98,17 +100,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate, MOLHResetable {
             UserDefaults.standard.set(false, forKey: Constants.shared.passwordChanged)
         }
         
-        
-        
-        
-        // Create hosting controller with language environments
         // Create hosting controller with language environments
         let hostingController = UIHostingController(
             rootView: rootView
-                .id(UUID()) // 👈 ADD THIS EXACT LINE
+                .id(UUID())
                 .environment(\.locale, Locale(identifier: Constants.shared.isAR ? "ar" : "en"))
                 .environment(\.layoutDirection, Constants.shared.isAR ? .rightToLeft : .leftToRight)
         )
+        
+        // ... existing window transition logic ...
+    
         
         // Set root view controller with smooth transition
         if window.rootViewController != nil {

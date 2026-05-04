@@ -1,38 +1,53 @@
-//
-//  CustomTabBar.swift
-//  AjjiL
-//
-//  Created by mohamed mahmoud sobhy badawy on 16/02/2026.
-//
-
 import SwiftUI
 import Firebase
 import FirebaseMessaging
 import UserNotifications
 
 struct TabBarView: View {
-    @State private var tabRouter = TabRouter() // Use the new router
+    @State private var tabRouter = TabRouter()
     @State private var tabVisibility = TabBarVisibility()
     @State private var tokenViewModel = TokenSubmitterViewModel()
+    
+    // Read the cashier state once when the TabBar initializes
+    @State private var isCashier: Bool = GenericUserDefault.shared.getValue(Constants.shared.isCashier) as? Bool ?? false
     
     var body: some View {
         ZStack {
             // Content for selected tab
-            TabView(selection: $tabRouter.selectedTab) { // Bind to router state
-                StoresView()
-                    .tag(0)
-                
-                OrdersView()
-                    .tag(1)
-                
-                HomeView()
-                    .tag(2)
-                
-                FavoritesView()
-                    .tag(3)
-                
-                ProfileView()
-                    .tag(4)
+            TabView(selection: $tabRouter.selectedTab) {
+                if isCashier {
+                    // MARK: - Cashier Views
+                    ScanCashier()
+                        .tag(0)
+                    
+                    HistoryCashier()
+                        .tag(1)
+                    
+                    HomeCashier()
+                        .tag(2)
+                    
+                    OrderCashier()
+                        .tag(3)
+                    
+                    MoreCashier()
+                        .tag(4)
+                } else {
+                    // MARK: - User Views
+                    StoresView()
+                        .tag(0)
+                    
+                    OrdersView()
+                        .tag(1)
+                    
+                    HomeView()
+                        .tag(2)
+                    
+                    FavoritesView()
+                        .tag(3)
+                    
+                    ProfileView()
+                        .tag(4)
+                }
             }
             
             if !tabVisibility.isHidden {
@@ -41,62 +56,62 @@ struct TabBarView: View {
                     Spacer()
                     
                     HStack(spacing: 0) {
-                        // Stores Tab
-                        TabBarButton(
-                            icon: tabRouter.selectedTab == 0 ? "greenStore" : "grayStore",
-                            // 🛠️ FIX: Added .newlocalized
-                            title: "Stores".newlocalized,
-                            isSelected: tabRouter.selectedTab == 0,
-                            keepOriginalColor: true // Prevents SwiftUI from tinting these specific icons
-                        ) {
-                            tabRouter.selectedTab = 0
-                        }
-                        
-                        // Orders Tab
-                        TabBarButton(
-                            icon: "tabBarOrders",
-                            // 🛠️ FIX: Added .newlocalized
-                            title: "Orders".newlocalized,
-                            isSelected: tabRouter.selectedTab == 1
-                        ) {
-                            tabRouter.selectedTab = 1
-                        }
-                        
-                        // Home Tab (Center - Prominent)
-                        Button(action: {
-                            tabRouter.selectedTab = 2
-                        }) {
-                            ZStack {
-                                Circle()
-                                    .fill(Color(red: 0.0, green: 0.62, blue: 0.58))
-                                    .frame(width: 70, height: 70)
-                                
-                                Image("tabBarHome")
-                                    .font(.system(size: 28))
-                                    .foregroundStyle(.white)
-                            }
-                        }
-                        .offset(y: -8)
-                        .frame(maxWidth: .infinity)
-                        
-                        // Favorites Tab
-                        TabBarButton(
-                            icon: "tabBarLove",
-                            // 🛠️ FIX: Added .newlocalized
-                            title: "Favorites".newlocalized,
-                            isSelected: tabRouter.selectedTab == 3
-                        ) {
-                            tabRouter.selectedTab = 3
-                        }
-                        
-                        // Profile Tab
-                        TabBarButton(
-                            icon: "tabBarProfile",
-                            // 🛠️ FIX: Added .newlocalized
-                            title: "Profile".newlocalized,
-                            isSelected: tabRouter.selectedTab == 4
-                        ) {
-                            tabRouter.selectedTab = 4
+                        if isCashier {
+                            // MARK: - Cashier Tab Bar Buttons
+                            TabBarButton(
+                                icon: "tabBarScan",
+                                title: "Scan".newlocalized,
+                                isSelected: tabRouter.selectedTab == 0
+                            ) { tabRouter.selectedTab = 0 }
+                            
+                            TabBarButton(
+                                icon: "tabBarHistory",
+                                title: "History".newlocalized,
+                                isSelected: tabRouter.selectedTab == 1
+                            ) { tabRouter.selectedTab = 1 }
+                            
+                            centerHomeButton
+                            
+                            TabBarButton(
+                                icon: "tabBarOrder",
+                                title: "Order".newlocalized,
+                                isSelected: tabRouter.selectedTab == 3
+                            ) { tabRouter.selectedTab = 3 }
+                            
+                            TabBarButton(
+                                icon: "tabBarMore",
+                                title: "More".newlocalized,
+                                isSelected: tabRouter.selectedTab == 4
+                            ) { tabRouter.selectedTab = 4 }
+                            
+                        } else {
+                            // MARK: - User Tab Bar Buttons
+                            TabBarButton(
+                                icon: tabRouter.selectedTab == 0 ? "greenStore" : "grayStore",
+                                title: "Stores".newlocalized,
+                                isSelected: tabRouter.selectedTab == 0,
+                                keepOriginalColor: true
+                            ) { tabRouter.selectedTab = 0 }
+                            
+                            TabBarButton(
+                                icon: "tabBarOrders",
+                                title: "Orders".newlocalized,
+                                isSelected: tabRouter.selectedTab == 1
+                            ) { tabRouter.selectedTab = 1 }
+                            
+                            centerHomeButton
+                            
+                            TabBarButton(
+                                icon: "tabBarLove",
+                                title: "Favorites".newlocalized,
+                                isSelected: tabRouter.selectedTab == 3
+                            ) { tabRouter.selectedTab = 3 }
+                            
+                            TabBarButton(
+                                icon: "tabBarProfile",
+                                title: "Profile".newlocalized,
+                                isSelected: tabRouter.selectedTab == 4
+                            ) { tabRouter.selectedTab = 4 }
                         }
                     }
                     .padding(.horizontal)
@@ -108,12 +123,37 @@ struct TabBarView: View {
             }
         }
         .environment(tabVisibility)
-        .environment(tabRouter) // Inject the router into the environment
+        .environment(tabRouter)
         .task {
             await tokenViewModel.submitTokenIfNeeded()
         }
     }
+    
+    private var centerHomeButton: some View {
+        Button(action: {
+            tabRouter.selectedTab = 2
+        }) {
+            ZStack {
+                Circle()
+                    .fill(Color(red: 0.0, green: 0.62, blue: 0.58))
+                    .frame(width: 70, height: 70)
+                
+                Image("tabBarHome")
+                    .font(.system(size: 28))
+                    .foregroundStyle(.white)
+            }
+        }
+        .offset(y: -8)
+        .frame(maxWidth: .infinity)
+    }
 }
+
+// MARK: - Placeholder Cashier Views
+struct ScanCashier: View { var body: some View { Text("Scan Cashier").font(.largeTitle) } }
+struct HistoryCashier: View { var body: some View { Text("History Cashier").font(.largeTitle) } }
+struct HomeCashier: View { var body: some View { Text("Home Cashier").font(.largeTitle) } }
+struct OrderCashier: View { var body: some View { Text("Order Cashier").font(.largeTitle) } }
+struct MoreCashier: View { var body: some View { Text("More Cashier").font(.largeTitle) } }
 
 @Observable
 @MainActor
